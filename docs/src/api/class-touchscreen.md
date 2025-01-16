@@ -10,13 +10,17 @@ touchscreen can only be used in browser contexts that have been initialized with
 Dispatches a `touchstart` and `touchend` event with a single touch at the position ([`param: x`],[`param: y`]).
 
 :::note
-[`method: Page.tap`] the method will throw if [`option: hasTouch`] option of the browser context is false.
+[`method: Page.tap`] the method will throw if [`option: Browser.newContext.hasTouch`] option of the browser context is false.
 :::
 
 ### param: Touchscreen.tap.x
 * since: v1.8
 - `x` <[float]>
 
+X coordinate relative to the main frame's viewport in CSS pixels.
+
 ### param: Touchscreen.tap.y
 * since: v1.8
 - `y` <[float]>
+
+Y coordinate relative to the main frame's viewport in CSS pixels.

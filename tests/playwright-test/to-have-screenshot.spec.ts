@@ -263,9 +263,7 @@ test('should report toHaveScreenshot step with expectation name in title', async
     `end browserContext.newPage`,
     `end fixture: page`,
     `end Before Hooks`,
-    `end attach "foo-actual.png"`,
     `end expect.toHaveScreenshot(foo.png)`,
-    `end attach "is-a-test-1-actual.png"`,
     `end expect.toHaveScreenshot(is-a-test-1.png)`,
     `end fixture: page`,
     `end fixture: context`,
@@ -549,7 +547,7 @@ test('should fail when screenshot is different pixels', async ({ runInlineTest }
     `
   });
   expect(result.exitCode).toBe(1);
-  expect(result.output).toContain('Screenshot comparison failed');
+  expect(result.output).toContain('Error: expect(page).toHaveScreenshot(expected)');
   expect(result.output).toContain('12345 pixels');
   expect(result.output).toContain('Call log');
   expect(result.output).toContain('ratio 0.02');
@@ -654,12 +652,22 @@ test('should write missing expectations locally twice and attach them', async ({
 
   const attachments = result.outputLines.map(l => JSON.parse(l))[0];
   for (const attachment of attachments)
-    attachment.path = attachment.path.replace(/\\/g, '/').replace(/.*test-results\//, '');
+    attachment.path = attachment.path.replace(/\\/g, '/').replace(/.*test-results\//, '').replace(/.*__screenshots__/, '__screenshots__');
   expect(attachments).toEqual([
+    {
+      name: 'snapshot-expected.png',
+      contentType: 'image/png',
+      path: '__screenshots__/a.spec.js/snapshot.png'
+    },
     {
       name: 'snapshot-actual.png',
       contentType: 'image/png',
       path: 'a-is-a-test/snapshot-actual.png'
+    },
+    {
+      name: 'snapshot2-expected.png',
+      contentType: 'image/png',
+      path: '__screenshots__/a.spec.js/snapshot2.png'
     },
     {
       name: 'snapshot2-actual.png',
@@ -667,6 +675,30 @@ test('should write missing expectations locally twice and attach them', async ({
       path: 'a-is-a-test/snapshot2-actual.png'
     },
   ]);
+});
+
+test('should attach missing expectations to right step', async ({ runInlineTest }) => {
+  const result = await runInlineTest({
+    'reporter.ts': `
+      class Reporter {
+        onStepEnd(test, result, step) {
+          if (step.attachments.length > 0)
+            console.log(\`%%\${step.title}: \${step.attachments.map(a => a.name).join(", ")}\`);
+        }
+      }
+      module.exports = Reporter;
+    `,
+    ...playwrightConfig({ reporter: [['dot'], ['./reporter']] }),
+    'a.spec.js': `
+      const { test, expect } = require('@playwright/test');
+      test('is a test', async ({ page }) => {
+        await expect(page).toHaveScreenshot('snapshot.png');
+      });
+    `,
+  }, { reporter: '' });
+
+  expect(result.exitCode).toBe(1);
+  expect(result.outputLines).toEqual(['expect.toHaveScreenshot(snapshot.png): snapshot-expected.png, snapshot-actual.png']);
 });
 
 test('shouldn\'t write missing expectations locally for negated matcher', async ({ runInlineTest }, testInfo) => {
@@ -1320,3 +1352,141 @@ function playwrightConfig(obj: any) {
     `,
   };
 }
+
+test('should trim+sanitize attachment names and paths', async ({ runInlineTest }, testInfo) => {
+  const result = await runInlineTest({
+    ...playwrightConfig({
+      snapshotPathTemplate: '__screenshots__/{testFilePath}/{arg}{ext}',
+    }),
+    'a.spec.js': `
+      const { test, expect } = require('@playwright/test');
+      test.afterEach(async ({}, testInfo) => {
+        console.log('## ' + JSON.stringify(testInfo.attachments));
+      });
+      const title = 'long '.repeat(30) + 'title';
+      test(title, async ({ page }) => {
+        await expect.soft(page).toHaveScreenshot();
+        const name = 'long '.repeat(30) + 'name.png';
+        await expect.soft(page).toHaveScreenshot(name);
+        await expect.soft(page).toHaveScreenshot(['dir', name]);
+      });
+    `
+  });
+
+  expect(result.exitCode).toBe(1);
+  const attachments = result.output.split('\n').filter(l => l.startsWith('## ')).map(l => l.substring(3)).map(l => JSON.parse(l))[0];
+  for (const attachment of attachments) {
+    attachment.path = attachment.path.replace(testInfo.outputDir, '').substring(1).replace(/\\/g, '/');
+    attachment.name = attachment.name.replace(/\\/g, '/');
+  }
+  expect(attachments).toEqual([
+    {
+      name: 'long-long-long-long-long-l-852e1-long-long-long-long-title-1-expected.png',
+      contentType: 'image/png',
+      path: '__screenshots__/a.spec.js/long-long-long-long-long-long-long-long-long-l-852e1-long-long-long-long-long-long-long-long-title-1.png',
+    },
+    {
+      name: 'long-long-long-long-long-l-852e1-long-long-long-long-title-1-actual.png',
+      contentType: 'image/png',
+      path: 'test-results/a-long-long-long-long-long-abd51-g-long-long-long-long-title/long-long-long-long-long-l-852e1-long-long-long-long-title-1-actual.png',
+    },
+    {
+      name: 'long-long-long-long-long-l-6bf1e-ong-long-long-long-name-expected.png',
+      contentType: 'image/png',
+      path: '__screenshots__/a.spec.js/long-long-long-long-long-long-long-long-long-long-long-long-long-long-long-long-long-long-long-long-long-long-long-long-long-long-long-long-long-long-name.png',
+    },
+    {
+      name: 'long-long-long-long-long-l-6bf1e-ong-long-long-long-name-actual.png',
+      contentType: 'image/png',
+      path: 'test-results/a-long-long-long-long-long-abd51-g-long-long-long-long-title/long-long-long-long-long-l-6bf1e-ong-long-long-long-name-actual.png',
+    },
+    {
+      name: 'dir/long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long name-expected.png',
+      contentType: 'image/png',
+      path: '__screenshots__/a.spec.js/dir/long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long name.png',
+    },
+    {
+      name: 'dir/long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long name-actual.png',
+      contentType: 'image/png',
+      path: 'test-results/a-long-long-long-long-long-abd51-g-long-long-long-long-title/dir/long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long name-actual.png',
+    },
+  ]);
+});
+
+test.describe('update-snapshots', () => {
+  test('should rebase non-matching image', async ({ runInlineTest }) => {
+    const BAD_PIXELS = 10;
+    const EXPECTED_SNAPSHOT = paintBlackPixels(whiteImage, BAD_PIXELS);
+
+    const result = await runInlineTest({
+      ...playwrightConfig({
+        snapshotPathTemplate: '__screenshots__/{testFilePath}/{arg}{ext}',
+      }),
+      '__screenshots__/a.spec.js/snapshot.png': EXPECTED_SNAPSHOT,
+      'a.spec.js': `
+        const { test, expect } = require('@playwright/test');
+        test('is a test', async ({ page }) => {
+          await expect(page).toHaveScreenshot('snapshot.png', { timeout: 2000 });
+        });
+      `
+    }, { 'update-snapshots': 'changed' });
+    expect(result.exitCode).toBe(0);
+    const newBaseline = fs.readFileSync(test.info().outputPath('__screenshots__/a.spec.js/snapshot.png'));
+    expect(comparePNGs(newBaseline, whiteImage)).toBe(null);
+    expect(comparePNGs(newBaseline, EXPECTED_SNAPSHOT)).not.toBe(null);
+  });
+
+  test('should not rebase matching image', async ({ runInlineTest }) => {
+    const BAD_PIXELS = 10;
+    const EXPECTED_SNAPSHOT = paintBlackPixels(whiteImage, BAD_PIXELS);
+
+    const result = await runInlineTest({
+      ...playwrightConfig({
+        snapshotPathTemplate: '__screenshots__/{testFilePath}/{arg}{ext}',
+        expect: {
+          toHaveScreenshot: {
+            maxDiffPixels: BAD_PIXELS
+          }
+        }
+      }),
+      '__screenshots__/a.spec.js/snapshot.png': EXPECTED_SNAPSHOT,
+      'a.spec.js': `
+        const { test, expect } = require('@playwright/test');
+        test('is a test', async ({ page }) => {
+          await expect(page).toHaveScreenshot('snapshot.png', { timeout: 2000 });
+        });
+      `
+    }, { 'update-snapshots': 'changed' });
+    expect(result.exitCode).toBe(0);
+    const newBaseline = fs.readFileSync(test.info().outputPath('__screenshots__/a.spec.js/snapshot.png'));
+    expect(comparePNGs(newBaseline, EXPECTED_SNAPSHOT)).toBe(null);
+    expect(comparePNGs(newBaseline, whiteImage)).not.toBe(null);
+  });
+
+  test('should rebase matching image with update-snapshots=all', async ({ runInlineTest }) => {
+    const BAD_PIXELS = 10;
+    const EXPECTED_SNAPSHOT = paintBlackPixels(whiteImage, BAD_PIXELS);
+
+    const result = await runInlineTest({
+      ...playwrightConfig({
+        snapshotPathTemplate: '__screenshots__/{testFilePath}/{arg}{ext}',
+        expect: {
+          toHaveScreenshot: {
+            maxDiffPixels: BAD_PIXELS
+          }
+        }
+      }),
+      '__screenshots__/a.spec.js/snapshot.png': EXPECTED_SNAPSHOT,
+      'a.spec.js': `
+        const { test, expect } = require('@playwright/test');
+        test('is a test', async ({ page }) => {
+          await expect(page).toHaveScreenshot('snapshot.png', { timeout: 2000 });
+        });
+      `
+    }, { 'update-snapshots': 'all' });
+    expect(result.exitCode).toBe(0);
+    const newBaseline = fs.readFileSync(test.info().outputPath('__screenshots__/a.spec.js/snapshot.png'));
+    expect(comparePNGs(newBaseline, whiteImage)).toBe(null);
+    expect(comparePNGs(newBaseline, EXPECTED_SNAPSHOT)).not.toBe(null);
+  });
+});

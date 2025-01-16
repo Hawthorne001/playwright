@@ -21,7 +21,8 @@ import type { BrowserOptions } from '../browser';
 import { Browser } from '../browser';
 import { assertBrowserContextIsNotOwned, BrowserContext, verifyGeolocation } from '../browserContext';
 import * as network from '../network';
-import type { Page, PageBinding, PageDelegate } from '../page';
+import type { InitScript, Page } from '../page';
+import { PageBinding } from '../page';
 import type { ConnectionTransport } from '../transport';
 import type * as types from '../types';
 import type * as channels from '@protocol/channels';
@@ -57,8 +58,9 @@ export class FFBrowser extends Browser {
       browser._defaultContext = new FFBrowserContext(browser, undefined, options.persistent);
       promises.push((browser._defaultContext as FFBrowserContext)._initialize());
     }
-    if (options.proxy)
-      promises.push(browser.session.send('Browser.setBrowserProxy', toJugglerProxyOptions(options.proxy)));
+    const proxy = options.originalLaunchOptions.proxyOverride || options.proxy;
+    if (proxy)
+      promises.push(browser.session.send('Browser.setBrowserProxy', toJugglerProxyOptions(proxy)));
     await Promise.all(promises);
     return browser;
   }
@@ -87,7 +89,7 @@ export class FFBrowser extends Browser {
     return !this._connection._closed;
   }
 
-  async doCreateNewContext(options: channels.BrowserNewContextParams): Promise<BrowserContext> {
+  async doCreateNewContext(options: types.BrowserContextOptions): Promise<BrowserContext> {
     if (options.isMobile)
       throw new Error('options.isMobile is not supported in Firefox');
     const { browserContextId } = await this.session.send('Browser.createBrowserContext', { removeOnDetach: true });
@@ -134,14 +136,14 @@ export class FFBrowser extends Browser {
     // Abort the navigation that turned into download.
     ffPage._page._frameManager.frameAbortedNavigation(payload.frameId, 'Download is starting');
 
-    let originPage = ffPage._initializedPage;
+    let originPage = ffPage._page.initializedOrUndefined();
     // If it's a new window download, report it on the opener page.
     if (!originPage) {
       // Resume the page creation with an error. The page will automatically close right
       // after the download begins.
       ffPage._markAsError(new Error('Starting new page download'));
       if (ffPage._opener)
-        originPage = ffPage._opener._initializedPage;
+        originPage = ffPage._opener._page.initializedOrUndefined();
     }
     if (!originPage)
       return;
@@ -171,14 +173,17 @@ export class FFBrowser extends Browser {
 export class FFBrowserContext extends BrowserContext {
   declare readonly _browser: FFBrowser;
 
-  constructor(browser: FFBrowser, browserContextId: string | undefined, options: channels.BrowserNewContextParams) {
+  constructor(browser: FFBrowser, browserContextId: string | undefined, options: types.BrowserContextOptions) {
     super(browser, options, browserContextId);
   }
 
   override async _initialize() {
     assert(!this._ffPages().length);
     const browserContextId = this._browserContextId;
-    const promises: Promise<any>[] = [super._initialize()];
+    const promises: Promise<any>[] = [
+      super._initialize(),
+      this._browser.session.send('Browser.addBinding', { browserContextId: this._browserContextId, name: PageBinding.kPlaywrightBinding, script: '' }),
+    ];
     if (this._options.acceptDownloads !== 'internal-browser-default') {
       promises.push(this._browser.session.send('Browser.setDownloadOptions', {
         browserContextId,
@@ -201,7 +206,7 @@ export class FFBrowserContext extends BrowserContext {
       promises.push(this._browser.session.send('Browser.setUserAgentOverride', { browserContextId, userAgent: this._options.userAgent }));
     if (this._options.bypassCSP)
       promises.push(this._browser.session.send('Browser.setBypassCSP', { browserContextId, bypassCSP: true }));
-    if (this._options.ignoreHTTPSErrors)
+    if (this._options.ignoreHTTPSErrors || this._options.internalIgnoreHTTPSErrors)
       promises.push(this._browser.session.send('Browser.setIgnoreHTTPSErrors', { browserContextId, ignoreHTTPSErrors: true }));
     if (this._options.javaScriptEnabled === false)
       promises.push(this._browser.session.send('Browser.setJavaScriptDisabled', { browserContextId, javaScriptDisabled: true }));
@@ -247,10 +252,11 @@ export class FFBrowserContext extends BrowserContext {
         });
       }));
     }
-    if (this._options.proxy) {
+    const proxy = this._options.proxyOverride || this._options.proxy;
+    if (proxy) {
       promises.push(this._browser.session.send('Browser.setContextProxy', {
         browserContextId: this._browserContextId,
-        ...toJugglerProxyOptions(this._options.proxy)
+        ...toJugglerProxyOptions(proxy)
       }));
     }
 
@@ -261,11 +267,11 @@ export class FFBrowserContext extends BrowserContext {
     return Array.from(this._browser._ffPages.values()).filter(ffPage => ffPage._browserContext === this);
   }
 
-  pages(): Page[] {
-    return this._ffPages().map(ffPage => ffPage._initializedPage).filter(pageOrNull => !!pageOrNull) as Page[];
+  override possiblyUninitializedPages(): Page[] {
+    return this._ffPages().map(ffPage => ffPage._page);
   }
 
-  async newPageDelegate(): Promise<PageDelegate> {
+  override async doCreateNewPage(): Promise<Page> {
     assertBrowserContextIsNotOwned(this);
     const { targetId } = await this._browser.session.send('Browser.newPage', {
       browserContextId: this._browserContextId
@@ -274,7 +280,7 @@ export class FFBrowserContext extends BrowserContext {
         throw new Error(`Invalid timezone ID: ${this._options.timezoneId}`);
       throw e;
     });
-    return this._browser._ffPages.get(targetId)!;
+    return this._browser._ffPages.get(targetId)!._page;
   }
 
   async doGetCookies(urls: string[]): Promise<channels.NetworkCookie[]> {
@@ -352,22 +358,18 @@ export class FFBrowserContext extends BrowserContext {
     await this._browser.session.send('Browser.setHTTPCredentials', { browserContextId: this._browserContextId, credentials });
   }
 
-  async doAddInitScript(source: string) {
-    await this._browser.session.send('Browser.setInitScripts', { browserContextId: this._browserContextId, scripts: this.initScripts.map(script => ({ script })) });
+  async doAddInitScript(initScript: InitScript) {
+    await this._updateInitScripts();
   }
 
-  async doRemoveInitScripts() {
-    await this._browser.session.send('Browser.setInitScripts', { browserContextId: this._browserContextId, scripts: [] });
+  async doRemoveNonInternalInitScripts() {
+    await this._updateInitScripts();
   }
 
-  async doExposeBinding(binding: PageBinding) {
-    await this._browser.session.send('Browser.addBinding', { browserContextId: this._browserContextId, name: binding.name, script: binding.source });
-  }
-
-  async doRemoveExposedBindings() {
-    // TODO: implement me.
-    // This is not a critical problem, what ends up happening is
-    // an old binding will be restored upon page reload and will point nowhere.
+  private async _updateInitScripts() {
+    const bindingScripts = [...this._pageBindings.values()].map(binding => binding.initScript.source);
+    const initScripts = this.initScripts.map(script => script.source);
+    await this._browser.session.send('Browser.setInitScripts', { browserContextId: this._browserContextId, scripts: [...bindingScripts, ...initScripts].map(script => ({ script })) });
   }
 
   async doUpdateRequestInterception(): Promise<void> {
@@ -434,4 +436,3 @@ function toJugglerProxyOptions(proxy: types.ProxySettings) {
 // Prefs for quick fixes that didn't make it to the build.
 // Should all be moved to `playwright.cfg`.
 const kBandaidFirefoxUserPrefs = {};
-

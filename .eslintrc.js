@@ -6,8 +6,13 @@ module.exports = {
       sourceType: "module",
     },
     extends: [
+      "plugin:react/recommended",
       "plugin:react-hooks/recommended"
     ],
+
+    settings: {
+        react: { version: "18" }
+    },
 
     /**
      * ESLint rules
@@ -30,6 +35,7 @@ module.exports = {
             "avoidEscape": true,
             "allowTemplateLiterals": true
         }],
+        "jsx-quotes": [2, "prefer-single"],
         "no-extra-semi": 2,
         "@typescript-eslint/semi": [2],
         "comma-style": [2, "last"],
@@ -109,7 +115,7 @@ module.exports = {
         "@typescript-eslint/type-annotation-spacing": 2,
 
         // file whitespace
-        "no-multiple-empty-lines": [2, {"max": 2}],
+        "no-multiple-empty-lines": [2, {"max": 2, "maxEOF": 0}],
         "no-mixed-spaces-and-tabs": 2,
         "no-trailing-spaces": 2,
         "linebreak-style": [ process.platform === "win32" ? 0 : 2, "unix" ],
@@ -117,11 +123,15 @@ module.exports = {
         "key-spacing": [2, {
             "beforeColon": false
         }],
+        "eol-last": 2,
 
         // copyright
         "notice/notice": [2, {
             "mustMatch": "Copyright",
             "templateFile": require("path").join(__dirname, "utils", "copyright.js"),
         }],
+
+        // react
+        "react/react-in-jsx-scope": 0
     }
 };

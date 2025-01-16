@@ -24,7 +24,6 @@ import { getPackageJsonPath, mergeObjects } from '../util';
 import type { Matcher } from '../util';
 import type { ConfigCLIOverrides } from './ipc';
 import type { FullConfig, FullProject } from '../../types/testReporter';
-import { setTransformConfig } from '../transform/transform';
 
 export type ConfigLocation = {
   resolvedConfigFile?: string;
@@ -46,15 +45,22 @@ export class FullConfigInternal {
   readonly webServers: NonNullable<FullConfig['webServer']>[];
   readonly plugins: TestRunnerPluginRegistration[];
   readonly projects: FullProjectInternal[] = [];
+  readonly singleTSConfigPath?: string;
   cliArgs: string[] = [];
   cliGrep: string | undefined;
   cliGrepInvert: string | undefined;
+  cliOnlyChanged: string | undefined;
   cliProjectFilter?: string[];
   cliListOnly = false;
   cliPassWithNoTests?: boolean;
   cliFailOnFlakyTests?: boolean;
+  cliLastFailed?: boolean;
   testIdMatcher?: Matcher;
+  lastFailedTestIdMatcher?: Matcher;
   defineConfigWasUsed = false;
+
+  globalSetups: string[] = [];
+  globalTeardowns: string[] = [];
 
   constructor(location: ConfigLocation, userConfig: Config, configCLIOverrides: ConfigCLIOverrides) {
     if (configCLIOverrides.projects && userConfig.projects)
@@ -68,18 +74,22 @@ export class FullConfigInternal {
     this.configCLIOverrides = configCLIOverrides;
     const privateConfiguration = (userConfig as any)['@playwright/test'];
     this.plugins = (privateConfiguration?.plugins || []).map((p: any) => ({ factory: p }));
+    this.singleTSConfigPath = pathResolve(configDir, userConfig.tsconfig);
+
+    this.globalSetups = (Array.isArray(userConfig.globalSetup) ? userConfig.globalSetup : [userConfig.globalSetup]).map(s => resolveScript(s, configDir)).filter(script => script !== undefined);
+    this.globalTeardowns = (Array.isArray(userConfig.globalTeardown) ? userConfig.globalTeardown : [userConfig.globalTeardown]).map(s => resolveScript(s, configDir)).filter(script => script !== undefined);
 
     this.config = {
       configFile: resolvedConfigFile,
       rootDir: pathResolve(configDir, userConfig.testDir) || configDir,
       forbidOnly: takeFirst(configCLIOverrides.forbidOnly, userConfig.forbidOnly, false),
       fullyParallel: takeFirst(configCLIOverrides.fullyParallel, userConfig.fullyParallel, false),
-      globalSetup: takeFirst(resolveScript(userConfig.globalSetup, configDir), null),
-      globalTeardown: takeFirst(resolveScript(userConfig.globalTeardown, configDir), null),
+      globalSetup: this.globalSetups[0] ?? null,
+      globalTeardown: this.globalTeardowns[0] ?? null,
       globalTimeout: takeFirst(configCLIOverrides.globalTimeout, userConfig.globalTimeout, 0),
       grep: takeFirst(userConfig.grep, defaultGrep),
       grepInvert: takeFirst(userConfig.grepInvert, null),
-      maxFailures: takeFirst(configCLIOverrides.maxFailures, userConfig.maxFailures, 0),
+      maxFailures: takeFirst(configCLIOverrides.debug ? 1 : undefined, configCLIOverrides.maxFailures, userConfig.maxFailures, 0),
       metadata: takeFirst(userConfig.metadata, {}),
       preserveOutput: takeFirst(userConfig.preserveOutput, 'always'),
       reporter: takeFirst(configCLIOverrides.reporter, resolveReporters(userConfig.reporter, configDir), [[defaultReporter]]),
@@ -88,6 +98,7 @@ export class FullConfigInternal {
       projects: [],
       shard: takeFirst(configCLIOverrides.shard, userConfig.shard, null),
       updateSnapshots: takeFirst(configCLIOverrides.updateSnapshots, userConfig.updateSnapshots, 'missing'),
+      updateSourceMethod: takeFirst(configCLIOverrides.updateSourceMethod, userConfig.updateSourceMethod, 'patch'),
       version: require('../../package.json').version,
       workers: 0,
       webServer: null,
@@ -99,7 +110,7 @@ export class FullConfigInternal {
 
     (this.config as any)[configInternalSymbol] = this;
 
-    const workers = takeFirst(configCLIOverrides.workers, userConfig.workers, '50%');
+    const workers = takeFirst(configCLIOverrides.debug ? 1 : undefined, configCLIOverrides.workers, userConfig.workers, '50%');
     if (typeof workers === 'string') {
       if (workers.endsWith('%')) {
         const cpus = os.cpus().length;
@@ -127,10 +138,6 @@ export class FullConfigInternal {
     this.projects = projectConfigs.map(p => new FullProjectInternal(configDir, userConfig, this, p, this.configCLIOverrides, packageJsonDir));
     resolveProjectDependencies(this.projects);
     this._assignUniqueProjectIds(this.projects);
-    setTransformConfig({
-      babelPlugins: privateConfiguration?.babelPlugins || [],
-      external: userConfig.build?.external || [],
-    });
     this.config.projects = this.projects.map(p => p.project);
   }
 
@@ -183,7 +190,7 @@ export class FullProjectInternal {
       snapshotDir: takeFirst(pathResolve(configDir, projectConfig.snapshotDir), pathResolve(configDir, config.snapshotDir), testDir),
       testIgnore: takeFirst(projectConfig.testIgnore, config.testIgnore, []),
       testMatch: takeFirst(projectConfig.testMatch, config.testMatch, '**/*.@(spec|test).?(c|m)[jt]s?(x)'),
-      timeout: takeFirst(configCLIOverrides.timeout, projectConfig.timeout, config.timeout, defaultTimeout),
+      timeout: takeFirst(configCLIOverrides.debug ? 0 : undefined, configCLIOverrides.timeout, projectConfig.timeout, config.timeout, defaultTimeout),
       use: mergeObjects(config.use, projectConfig.use, configCLIOverrides.use),
       dependencies: projectConfig.dependencies || [],
       teardown: projectConfig.teardown,
@@ -271,7 +278,7 @@ export function toReporters(reporters: BuiltInReporter | ReporterDescription[] |
   return reporters;
 }
 
-export const builtInReporters = ['list', 'line', 'dot', 'json', 'junit', 'null', 'github', 'html', 'blob', 'markdown'] as const;
+export const builtInReporters = ['list', 'line', 'dot', 'json', 'junit', 'null', 'github', 'html', 'blob'] as const;
 export type BuiltInReporter = typeof builtInReporters[number];
 
 export type ContextReuseMode = 'none' | 'when-possible';

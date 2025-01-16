@@ -19,48 +19,55 @@ import { AsyncLocalStorage } from 'async_hooks';
 export type ZoneType = 'apiZone' | 'expectZone' | 'stepZone';
 
 class ZoneManager {
-  private readonly _asyncLocalStorage = new AsyncLocalStorage<Zone<unknown>|undefined>();
+  private readonly _asyncLocalStorage = new AsyncLocalStorage<Zone | undefined>();
+  private readonly _emptyZone = Zone.createEmpty(this._asyncLocalStorage);
 
   run<T, R>(type: ZoneType, data: T, func: () => R): R {
-    const previous = this._asyncLocalStorage.getStore();
-    const zone = new Zone(previous, type, data);
-    return this._asyncLocalStorage.run(zone, func);
+    return this.current().with(type, data).run(func);
   }
 
   zoneData<T>(type: ZoneType): T | undefined {
-    for (let zone = this._asyncLocalStorage.getStore(); zone; zone = zone.previous) {
-      if (zone.type === type)
-        return zone.data as T;
-    }
-    return undefined;
+    return this.current().data(type);
   }
 
-  exitZones<R>(func: () => R): R {
-    return this._asyncLocalStorage.run(undefined, func);
+  current(): Zone {
+    return this._asyncLocalStorage.getStore() ?? this._emptyZone;
   }
 
-  printZones() {
-    const zones = [];
-    for (let zone = this._asyncLocalStorage.getStore(); zone; zone = zone.previous) {
-      let str = zone.type;
-      if (zone.type === 'apiZone')
-        str += `(${(zone.data as any).apiName})`;
-      zones.push(str);
-      
-    }
-    console.log('zones: ', zones.join(' -> '));
+  empty(): Zone {
+    return this._emptyZone;
   }
 }
 
-class Zone<T> {
-  readonly type: ZoneType;
-  readonly data: T;
-  readonly previous: Zone<unknown> | undefined;
+export class Zone {
+  private readonly _asyncLocalStorage: AsyncLocalStorage<Zone | undefined>;
+  private readonly _data: ReadonlyMap<ZoneType, unknown>;
 
-  constructor(previous: Zone<unknown> | undefined, type: ZoneType, data: T) {
-    this.type = type;
-    this.data = data;
-    this.previous = previous;
+  static createEmpty(asyncLocalStorage: AsyncLocalStorage<Zone | undefined>) {
+    return new Zone(asyncLocalStorage, new Map());
+  }
+
+  private constructor(asyncLocalStorage: AsyncLocalStorage<Zone | undefined>, store: Map<ZoneType, unknown>) {
+    this._asyncLocalStorage = asyncLocalStorage;
+    this._data = store;
+  }
+
+  with(type: ZoneType, data: unknown): Zone {
+    return new Zone(this._asyncLocalStorage, new Map(this._data).set(type, data));
+  }
+
+  without(type?: ZoneType): Zone {
+    const data = type ? new Map(this._data) : new Map();
+    data.delete(type);
+    return new Zone(this._asyncLocalStorage, data);
+  }
+
+  run<R>(func: () => R): R {
+    return this._asyncLocalStorage.run(this, func);
+  }
+
+  data<T>(type: ZoneType): T | undefined {
+    return this._data.get(type) as T | undefined;
   }
 }
 

@@ -21,10 +21,10 @@ import fs from 'fs';
 import path from 'path';
 import { ManualPromise, calculateSha1, monotonicTime, createGuid, SerializedFS } from 'playwright-core/lib/utils';
 import { yauzl, yazl } from 'playwright-core/lib/zipBundle';
-import type { TestInfo, TestInfoError } from '../../types/test';
 import { filteredStackTrace } from '../util';
-import type { TraceMode, PlaywrightWorkerOptions } from '../../types/test';
+import type { TestInfo, TraceMode, PlaywrightWorkerOptions } from '../../types/test';
 import type { TestInfoImpl } from './testInfo';
+import type { TestInfoErrorImpl } from '../common/ipc';
 
 export type Attachment = TestInfo['attachments'][0];
 export const testTraceEntryName = 'test.trace';
@@ -219,14 +219,21 @@ export class TestTracing {
     this._testInfo.attachments.push({ name: 'trace', path: tracePath, contentType: 'application/zip' });
   }
 
-  appendForError(error: TestInfoError) {
+  appendForError(error: TestInfoErrorImpl) {
     const rawStack = error.stack?.split('\n') || [];
     const stack = rawStack ? filteredStackTrace(rawStack) : [];
     this._appendTraceEvent({
       type: 'error',
-      message: error.message || String(error.value),
+      message: this._formatError(error),
       stack,
     });
+  }
+
+  _formatError(error: TestInfoErrorImpl) {
+    const parts: string[] = [error.message || String(error.value)];
+    if (error.cause)
+      parts.push('[cause]: ' + this._formatError(error.cause));
+    return parts.join('\n');
   }
 
   appendStdioToTrace(type: 'stdout' | 'stderr', chunk: string | Buffer) {
@@ -302,6 +309,7 @@ function generatePreview(value: any, visited = new Set<any>()): string {
 }
 
 async function mergeTraceFiles(fileName: string, temporaryTraceFiles: string[]) {
+  temporaryTraceFiles = temporaryTraceFiles.filter(file => fs.existsSync(file));
   if (temporaryTraceFiles.length === 1) {
     await fs.promises.rename(temporaryTraceFiles[0], fileName);
     return;

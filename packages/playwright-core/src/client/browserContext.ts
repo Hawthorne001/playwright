@@ -28,9 +28,8 @@ import { Worker } from './worker';
 import { Events } from './events';
 import { TimeoutSettings } from '../common/timeoutSettings';
 import { Waiter } from './waiter';
-import type { URLMatch, Headers, WaitForEventOptions, BrowserContextOptions, StorageState, LaunchOptions } from './types';
-import { headersObjectToArray, isRegExp, isString, urlMatchesEqual } from '../utils';
-import { mkdirIfNeeded } from '../utils/fileUtils';
+import type { Headers, WaitForEventOptions, BrowserContextOptions, StorageState, LaunchOptions } from './types';
+import { type URLMatch, headersObjectToArray, isRegExp, isString, urlMatchesEqual, mkdirIfNeeded } from '../utils';
 import type * as api from '../../types/types';
 import type * as structs from '../../types/structs';
 import { CDPSession } from './cdpSession';
@@ -49,6 +48,7 @@ import { Clock } from './clock';
 export class BrowserContext extends ChannelOwner<channels.BrowserContextChannel> implements api.BrowserContext {
   _pages = new Set<Page>();
   _routes: network.RouteHandler[] = [];
+  _webSocketRoutes: network.WebSocketRouteHandler[] = [];
   readonly _browser: Browser | null = null;
   _browserType: BrowserType | undefined;
   readonly _bindings = new Map<string, (source: structs.BindingSource, ...args: any[]) => any>();
@@ -91,6 +91,7 @@ export class BrowserContext extends ChannelOwner<channels.BrowserContextChannel>
     this._channel.on('close', () => this._onClose());
     this._channel.on('page', ({ page }) => this._onPage(Page.from(page)));
     this._channel.on('route', ({ route }) => this._onRoute(network.Route.from(route)));
+    this._channel.on('webSocketRoute', ({ webSocketRoute }) => this._onWebSocketRoute(network.WebSocketRoute.from(webSocketRoute)));
     this._channel.on('backgroundPage', ({ page }) => {
       const backgroundPage = Page.from(page);
       this._backgroundPages.add(backgroundPage);
@@ -219,7 +220,15 @@ export class BrowserContext extends ChannelOwner<channels.BrowserContextChannel>
     }
     // If the page is closed or unrouteAll() was called without waiting and interception disabled,
     // the method will throw an error - silence it.
-    await route._innerContinue(true).catch(() => {});
+    await route._innerContinue(true /* isFallback */).catch(() => {});
+  }
+
+  async _onWebSocketRoute(webSocketRoute: network.WebSocketRoute) {
+    const routeHandler = this._webSocketRoutes.find(route => route.matches(webSocketRoute.url()));
+    if (routeHandler)
+      await routeHandler.handle(webSocketRoute);
+    else
+      webSocketRoute.connectToServer();
   }
 
   async _onBinding(bindingCall: BindingCall) {
@@ -329,6 +338,11 @@ export class BrowserContext extends ChannelOwner<channels.BrowserContextChannel>
     await this._updateInterceptionPatterns();
   }
 
+  async routeWebSocket(url: URLMatch, handler: network.WebSocketRouteHandlerCallback): Promise<void> {
+    this._webSocketRoutes.unshift(new network.WebSocketRouteHandler(this._options.baseURL, url, handler));
+    await this._updateWebSocketInterceptionPatterns();
+  }
+
   async _recordIntoHAR(har: string, page: Page | null, options: { url?: string | RegExp, notFound?: 'abort' | 'fallback', update?: boolean, updateContent?: 'attach' | 'embed', updateMode?: 'minimal' | 'full'} = {}): Promise<void> {
     const { harId } = await this._channel.harStart({
       page: page?._channel,
@@ -386,6 +400,11 @@ export class BrowserContext extends ChannelOwner<channels.BrowserContextChannel>
   private async _updateInterceptionPatterns() {
     const patterns = network.RouteHandler.prepareInterceptionPatterns(this._routes);
     await this._channel.setNetworkInterceptionPatterns({ patterns });
+  }
+
+  private async _updateWebSocketInterceptionPatterns() {
+    const patterns = network.WebSocketRouteHandler.prepareInterceptionPatterns(this._webSocketRoutes);
+    await this._channel.setWebSocketInterceptionPatterns({ patterns });
   }
 
   _effectiveCloseReason(): string | undefined {
@@ -473,18 +492,8 @@ export class BrowserContext extends ChannelOwner<channels.BrowserContextChannel>
     await this._closedPromise;
   }
 
-  async _enableRecorder(params: {
-      language: string,
-      launchOptions?: LaunchOptions,
-      contextOptions?: BrowserContextOptions,
-      device?: string,
-      saveStorage?: string,
-      mode?: 'recording' | 'inspecting',
-      testIdAttributeName?: string,
-      outputFile?: string,
-      handleSIGINT?: boolean,
-  }) {
-    await this._channel.recorderSupplementEnable(params);
+  async _enableRecorder(params: channels.BrowserContextEnableRecorderParams) {
+    await this._channel.enableRecorder(params);
   }
 }
 
@@ -529,6 +538,7 @@ export async function prepareBrowserContextParams(options: BrowserContextOptions
     reducedMotion: options.reducedMotion === null ? 'no-override' : options.reducedMotion,
     forcedColors: options.forcedColors === null ? 'no-override' : options.forcedColors,
     acceptDownloads: toAcceptDownloadsProtocol(options.acceptDownloads),
+    clientCertificates: await toClientCertificatesProtocol(options.clientCertificates),
   };
   if (!contextParams.recordVideo && options.videosPath) {
     contextParams.recordVideo = {
@@ -547,4 +557,24 @@ function toAcceptDownloadsProtocol(acceptDownloads?: boolean) {
   if (acceptDownloads)
     return 'accept';
   return 'deny';
+}
+
+export async function toClientCertificatesProtocol(certs?: BrowserContextOptions['clientCertificates']): Promise<channels.PlaywrightNewRequestParams['clientCertificates']> {
+  if (!certs)
+    return undefined;
+
+  const bufferizeContent = async (value?: Buffer, path?: string): Promise<Buffer | undefined> => {
+    if (value)
+      return value;
+    if (path)
+      return await fs.promises.readFile(path);
+  };
+
+  return await Promise.all(certs.map(async cert => ({
+    origin: cert.origin,
+    cert: await bufferizeContent(cert.cert, cert.certPath),
+    key: await bufferizeContent(cert.key, cert.keyPath),
+    pfx: await bufferizeContent(cert.pfx, cert.pfxPath),
+    passphrase: cert.passphrase,
+  })));
 }

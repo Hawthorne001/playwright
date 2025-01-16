@@ -18,7 +18,7 @@ import type { Language } from '@isomorphic/locatorGenerators';
 import type { ResourceSnapshot } from '@trace/snapshot';
 import type * as trace from '@trace/trace';
 import type { ActionTraceEvent } from '@trace/trace';
-import type { ContextEntry, PageEntry } from '../entries';
+import type { ActionEntry, ContextEntry, PageEntry } from '../types/entries';
 import type { StackFrame } from '@protocol/channels';
 
 const contextSymbol = Symbol('context');
@@ -29,7 +29,8 @@ const eventsSymbol = Symbol('events');
 export type SourceLocation = {
   file: string;
   line: number;
-  source: SourceModel;
+  column: number;
+  source?: SourceModel;
 };
 
 export type SourceModel = {
@@ -37,9 +38,8 @@ export type SourceModel = {
   content: string | undefined;
 };
 
-export type ActionTraceEventInContext = ActionTraceEvent & {
+export type ActionTraceEventInContext = ActionEntry & {
   context: ContextEntry;
-  log: { time: number, message: string }[];
 };
 
 export type ActionTreeItem = {
@@ -183,8 +183,8 @@ function mergeActionsAndUpdateTiming(contexts: ContextEntry[]) {
     if (traceFileToContexts.size > 1)
       makeCallIdsUniqueAcrossTraceFiles(contexts, ++traceFileId);
     // Align action times across runner and library contexts within each trace file.
-    const map = mergeActionsAndUpdateTimingSameTrace(contexts);
-    result.push(...map.values());
+    const actions = mergeActionsAndUpdateTimingSameTrace(contexts);
+    result.push(...actions);
   }
   result.sort((a1, a2) => {
     if (a2.parentId === a1.callId)
@@ -211,11 +211,18 @@ function makeCallIdsUniqueAcrossTraceFiles(contexts: ContextEntry[], traceFileId
   }
 }
 
-function mergeActionsAndUpdateTimingSameTrace(contexts: ContextEntry[]) {
+function mergeActionsAndUpdateTimingSameTrace(contexts: ContextEntry[]): ActionTraceEventInContext[] {
   const map = new Map<string, ActionTraceEventInContext>();
 
   const libraryContexts = contexts.filter(context => context.origin === 'library');
   const testRunnerContexts = contexts.filter(context => context.origin === 'testRunner');
+
+  // With library-only or test-runner-only traces there is nothing to match.
+  if (!testRunnerContexts.length || !libraryContexts.length) {
+    return contexts.map(context => {
+      return context.actions.map(action => ({ ...action, context }));
+    }).flat();
+  }
 
   // Library actions are replaced with corresponding test runner steps. Matching with
   // the test runner steps enables us to find parent steps.
@@ -264,7 +271,7 @@ function mergeActionsAndUpdateTimingSameTrace(contexts: ContextEntry[]) {
       map.set(key, { ...action, context });
     }
   }
-  return map;
+  return [...map.values()];
 }
 
 function adjustMonotonicTime(contexts: ContextEntry[], monotonicTimeDelta: number) {
@@ -285,6 +292,10 @@ function adjustMonotonicTime(contexts: ContextEntry[], monotonicTimeDelta: numbe
       for (const frame of page.screencastFrames)
         frame.timestamp += monotonicTimeDelta;
     }
+    for (const resource of context.resources) {
+      if (resource._monotonicTime)
+        resource._monotonicTime += monotonicTimeDelta;
+    }
   }
 }
 
@@ -298,7 +309,7 @@ function monotonicTimeDeltaBetweenLibraryAndRunner(nonPrimaryContexts: ContextEn
     for (const action of context.actions) {
       if (!action.startTime)
         continue;
-      const key = matchByStepId ? action.stepId! : `${action.apiName}@${(action as any).wallTime}`;
+      const key = matchByStepId ? action.callId! : `${action.apiName}@${(action as any).wallTime}`;
       const libraryAction = libraryActions.get(key);
       if (libraryAction)
         return action.startTime - libraryAction.startTime;
@@ -326,10 +337,6 @@ export function buildActionTree(actions: ActionTraceEventInContext[]): { rootIte
     item.parent = parent;
   }
   return { rootItem, itemMap };
-}
-
-export function idForAction(action: ActionTraceEvent) {
-  return `${action.pageId || 'none'}:${action.callId}`;
 }
 
 export function context(action: ActionTraceEvent | trace.EventTraceEvent | ResourceSnapshot): ContextEntry {
@@ -396,4 +403,31 @@ function collectSources(actions: trace.ActionTraceEvent[], errorDescriptors: Err
     });
   }
   return result;
+}
+
+const kRouteMethods = new Set([
+  'page.route',
+  'page.routefromhar',
+  'page.unroute',
+  'page.unrouteall',
+  'browsercontext.route',
+  'browsercontext.routefromhar',
+  'browsercontext.unroute',
+  'browsercontext.unrouteall',
+]);
+{
+  // .NET adds async suffix.
+  for (const method of [...kRouteMethods])
+    kRouteMethods.add(method + 'async');
+  // Python methods which contain underscores.
+  for (const method of [
+    'page.route_from_har',
+    'page.unroute_all',
+    'context.route_from_har',
+    'context.unroute_all',
+  ])
+    kRouteMethods.add(method);
+}
+export function isRouteAction(action: ActionTraceEventInContext) {
+  return action.class === 'Route' || kRouteMethods.has(action.apiName.toLowerCase());
 }

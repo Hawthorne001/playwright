@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+import { attachFrame } from 'tests/config/utils';
 import { browserTest as it, expect } from '../config/browserTest';
 import fs from 'fs';
 
@@ -203,13 +204,13 @@ it('should handle missing file', async ({ contextFactory }, testInfo) => {
   expect(error.message).toContain(`Error reading storage state from ${file}:\nENOENT`);
 });
 
-it('should handle malformed file', async ({ contextFactory }, testInfo) => {
+it('should handle malformed file', async ({ contextFactory, nodeVersion }, testInfo) => {
   const file = testInfo.outputPath('state.json');
   fs.writeFileSync(file, 'not-json', 'utf-8');
   const error = await contextFactory({
     storageState: file,
   }).catch(e => e);
-  if (+process.versions.node.split('.')[0] > 18)
+  if (nodeVersion.major > 18)
     expect(error.message).toContain(`Error reading storage state from ${file}:\nUnexpected token 'o', \"not-json\" is not valid JSON`);
   else
     expect(error.message).toContain(`Error reading storage state from ${file}:\nUnexpected token o in JSON at position 1`);
@@ -223,9 +224,9 @@ it('should serialize storageState with lone surrogates', async ({ page, context,
   expect(storageState.origins[0].localStorage[0].value).toBe(String.fromCharCode(55934));
 });
 
-it('should work when service worker is intefering', async ({ page, context, server, isAndroid, isElectron }) => {
+it('should work when service worker is intefering', async ({ page, context, server, isAndroid, isElectron, electronMajorVersion }) => {
   it.skip(isAndroid);
-  it.skip(isElectron);
+  it.skip(isElectron && electronMajorVersion < 30, 'error: Browser context management is not supported.');
 
   server.setRoute('/', (req, res) => {
     res.writeHead(200, { 'content-type': 'text/html' });
@@ -274,4 +275,44 @@ it('should work when service worker is intefering', async ({ page, context, serv
 
   const storageState = await context.storageState();
   expect(storageState.origins[0].localStorage[0]).toEqual({ name: 'foo', value: 'bar' });
+});
+
+it('should set local storage in third-party context', async ({ contextFactory, server }) => {
+  const context = await contextFactory({
+    storageState: {
+      cookies: [],
+      origins: [
+        {
+          origin: server.CROSS_PROCESS_PREFIX,
+          localStorage: [{
+            name: 'name1',
+            value: 'value1'
+          }]
+        },
+      ]
+    }
+  });
+  const page = await context.newPage();
+  await page.goto(server.EMPTY_PAGE);
+  const frame = await attachFrame(page, 'frame1', server.CROSS_PROCESS_PREFIX + '/empty.html');
+
+  const localStorage = await frame.evaluate('window.localStorage');
+  expect(localStorage).toEqual({ name1: 'value1' });
+  await context.close();
+});
+
+it('should roundtrip local storage in third-party context', async ({ page, contextFactory, server }) => {
+  await page.goto(server.EMPTY_PAGE);
+  const frame = await attachFrame(page, 'frame1', server.CROSS_PROCESS_PREFIX + '/empty.html');
+  await frame.evaluate(() => window.localStorage.setItem('name1', 'value1'));
+  const storageState = await page.context().storageState();
+
+  const context2 = await contextFactory({ storageState });
+  const page2 = await context2.newPage();
+  await page2.goto(server.EMPTY_PAGE);
+  const frame2 = await attachFrame(page2, 'frame1', server.CROSS_PROCESS_PREFIX + '/empty.html');
+
+  const localStorage = await frame2.evaluate('window.localStorage');
+  expect(localStorage).toEqual({ name1: 'value1' });
+  await context2.close();
 });

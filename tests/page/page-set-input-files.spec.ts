@@ -16,11 +16,10 @@
  */
 
 import { test as it, expect } from './pageTest';
-import { attachFrame, chromiumVersionLessThan } from '../config/utils';
+import { attachFrame } from '../config/utils';
 
 import path from 'path';
 import fs from 'fs';
-import os from 'os';
 import formidable from 'formidable';
 
 it('should upload the file', async ({ page, server, asset }) => {
@@ -37,9 +36,9 @@ it('should upload the file', async ({ page, server, asset }) => {
   }, input)).toBe('contents of the file');
 });
 
-it('should upload a folder', async ({ page, server, browserName, headless, browserVersion, isAndroid }) => {
+it('should upload a folder', async ({ page, server, browserName, headless, browserMajorVersion, isAndroid, macVersion, isMac }) => {
   it.skip(isAndroid);
-  it.skip(os.platform() === 'darwin' && parseInt(os.release().split('.')[0], 10) <= 21, 'WebKit on macOS-12 is frozen');
+  it.skip(browserName === 'webkit' && isMac && macVersion <= 12, 'WebKit on macOS-12 is frozen');
 
   await page.goto(server.PREFIX + '/input/folderupload.html');
   const input = await page.$('input');
@@ -53,8 +52,8 @@ it('should upload a folder', async ({ page, server, browserName, headless, brows
   }
   await input.setInputFiles(dir);
   expect(new Set(await page.evaluate(e => [...e.files].map(f => f.webkitRelativePath), input))).toEqual(new Set([
-    // https://issues.chromium.org/issues/345393164
-    ...((browserName === 'chromium' && headless && !process.env.PLAYWRIGHT_CHROMIUM_USE_HEADLESS_NEW && chromiumVersionLessThan(browserVersion, '127.0.6533.0')) ? [] : ['file-upload-test/sub-dir/really.txt']),
+    // Note: this did not work before Chrome 127, see https://issues.chromium.org/issues/345393164.
+    'file-upload-test/sub-dir/really.txt',
     'file-upload-test/file1.txt',
     'file-upload-test/file2',
   ]));
@@ -70,9 +69,9 @@ it('should upload a folder', async ({ page, server, browserName, headless, brows
   }
 });
 
-it('should upload a folder and throw for multiple directories', async ({ page, server, isAndroid }) => {
+it('should upload a folder and throw for multiple directories', async ({ page, server, isAndroid, browserName, macVersion, isMac }) => {
   it.skip(isAndroid);
-  it.skip(os.platform() === 'darwin' && parseInt(os.release().split('.')[0], 10) <= 21, 'WebKit on macOS-12 is frozen');
+  it.skip(browserName === 'webkit' && isMac && macVersion <= 12, 'WebKit on macOS-12 is frozen');
 
   await page.goto(server.PREFIX + '/input/folderupload.html');
   const input = await page.$('input');
@@ -89,9 +88,9 @@ it('should upload a folder and throw for multiple directories', async ({ page, s
   ])).rejects.toThrow('Multiple directories are not supported');
 });
 
-it('should throw if a directory and files are passed', async ({ page, server, isAndroid }) => {
+it('should throw if a directory and files are passed', async ({ page, server, isAndroid, browserName, macVersion, isMac }) => {
   it.skip(isAndroid);
-  it.skip(os.platform() === 'darwin' && parseInt(os.release().split('.')[0], 10) <= 21, 'WebKit on macOS-12 is frozen');
+  it.skip(browserName === 'webkit' && isMac && macVersion <= 12, 'WebKit on macOS-12 is frozen');
 
   await page.goto(server.PREFIX + '/input/folderupload.html');
   const input = await page.$('input');
@@ -106,9 +105,9 @@ it('should throw if a directory and files are passed', async ({ page, server, is
   ])).rejects.toThrow('File paths must be all files or a single directory');
 });
 
-it('should throw when uploading a folder in a normal file upload input', async ({ page, server, isAndroid }) => {
+it('should throw when uploading a folder in a normal file upload input', async ({ page, server, isAndroid, browserName, macVersion, isMac }) => {
   it.skip(isAndroid);
-  it.skip(os.platform() === 'darwin' && parseInt(os.release().split('.')[0], 10) <= 21, 'WebKit on macOS-12 is frozen');
+  it.skip(browserName === 'webkit' && isMac && macVersion <= 12, 'WebKit on macOS-12 is frozen');
 
   await page.goto(server.PREFIX + '/input/fileupload.html');
   const input = await page.$('input');
@@ -118,6 +117,15 @@ it('should throw when uploading a folder in a normal file upload input', async (
     await fs.promises.writeFile(path.join(dir, 'file1.txt'), 'file1 content');
   }
   await expect(input.setInputFiles(dir)).rejects.toThrow('File input does not support directories, pass individual files instead');
+});
+
+it('should throw when uploading a file in a directory upload input', async ({ page, server, isAndroid, asset, browserName, macVersion, isMac }) => {
+  it.skip(isAndroid);
+  it.skip(browserName === 'webkit' && isMac && macVersion <= 12, 'WebKit on macOS-12 is frozen');
+
+  await page.goto(server.PREFIX + '/input/folderupload.html');
+  const input = await page.$('input');
+  await expect(input.setInputFiles(asset('file to upload.txt'))).rejects.toThrow('[webkitdirectory] input requires passing a path to a directory');
 });
 
 it('should upload a file after popup', async ({ page, server, asset }) => {
@@ -136,8 +144,7 @@ it('should upload a file after popup', async ({ page, server, asset }) => {
   expect(await page.evaluate(e => e.files[0].name, input)).toBe('file-to-upload.txt');
 });
 
-it('should upload large file', async ({ page, server, browserName, isMac, isAndroid, isWebView2, mode }, testInfo) => {
-  it.skip(browserName === 'webkit' && isMac && parseInt(os.release(), 10) < 20, 'WebKit for macOS 10.15 is frozen and does not have corresponding protocol features.');
+it('should upload large file', async ({ page, server, isAndroid, isWebView2, mode }, testInfo) => {
   it.skip(isAndroid);
   it.skip(isWebView2);
   it.skip(mode.startsWith('service'));
@@ -195,8 +202,7 @@ it('should throw an error if the file does not exist', async ({ page, server, as
   expect(error.message).toContain('i actually do not exist.txt');
 });
 
-it('should upload multiple large files', async ({ page, server, browserName, isMac, isAndroid, isWebView2, mode }, testInfo) => {
-  it.skip(browserName === 'webkit' && isMac && parseInt(os.release(), 10) < 20, 'WebKit for macOS 10.15 is frozen and does not have corresponding protocol features.');
+it('should upload multiple large files', async ({ page, server, isAndroid, isWebView2, mode }, testInfo) => {
   it.skip(isAndroid);
   it.skip(isWebView2);
   it.skip(mode.startsWith('service'));
@@ -236,8 +242,7 @@ it('should upload multiple large files', async ({ page, server, browserName, isM
   await Promise.all(uploadFiles.map(path => fs.promises.unlink(path)));
 });
 
-it('should upload large file with relative path', async ({ page, server, browserName, isMac, isAndroid, isWebView2, mode }, testInfo) => {
-  it.skip(browserName === 'webkit' && isMac && parseInt(os.release(), 10) < 20, 'WebKit for macOS 10.15 is frozen and does not have corresponding protocol features.');
+it('should upload large file with relative path', async ({ page, server, isAndroid, isWebView2, mode }, testInfo) => {
   it.skip(isAndroid);
   it.skip(isWebView2);
   it.skip(mode.startsWith('service'));
@@ -341,8 +346,7 @@ it('should emit event via prepend', async ({ page, server }) => {
   expect(chooser).toBeTruthy();
 });
 
-it('should emit event for iframe', async ({ page, server, browserName }) => {
-  it.skip(browserName === 'firefox');
+it('should emit event for iframe', async ({ page, server }) => {
   const frame = await attachFrame(page, 'frame1', server.EMPTY_PAGE);
   await frame.setContent(`<input type=file>`);
   const [chooser] = await Promise.all([

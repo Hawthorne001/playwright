@@ -19,6 +19,7 @@ import { PNG } from 'playwright-core/lib/utilsBundle';
 import { expect, playwrightTest as it } from '../config/browserTest';
 
 it.use({ headless: false });
+it.skip(({ channel }) => channel === 'chromium-headless-shell' || channel === 'chromium-tip-of-tree-headless-shell', 'shell is never headed');
 
 it('should have default url when launching browser @smoke', async ({ launchPersistent }) => {
   const { context } = await launchPersistent();
@@ -156,7 +157,7 @@ it('should(not) block third party cookies', async ({ page, server, allowsThirdPa
 
 it('should not block third party SameSite=None cookies', async ({ httpsServer, browserName, browser }) => {
   it.skip(browserName === 'webkit', 'No third party cookies in WebKit');
-  it.skip(!!process.env.PW_FREEZE_TIME);
+  it.skip(process.env.PW_CLOCK === 'frozen');
   const page = await browser.newPage({
     ignoreHTTPSErrors: true,
   });
@@ -192,7 +193,7 @@ it('should not block third party SameSite=None cookies', async ({ httpsServer, b
 });
 
 it('should not override viewport size when passed null', async function({ browserName, server, browser }) {
-  it.fixme(browserName === 'webkit', 'Our WebKit embedder does not respect window features');
+  it.skip(browserName === 'webkit', 'Our WebKit embedder does not respect window features');
 
   const context = await browser.newContext({ viewport: null });
   const page = await context.newPage();
@@ -230,8 +231,6 @@ it('Page.bringToFront should work', async ({ browser }) => {
 });
 
 it('should click in OOPIF', async ({ browserName, launchPersistent, server }) => {
-  it.fixme(browserName === 'chromium', 'Click is offset by the infobar height');
-
   server.setRoute('/empty.html', (req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/html' });
     res.end(`<iframe src="${server.CROSS_PROCESS_PREFIX}/iframe.html"></iframe>`);
@@ -250,8 +249,8 @@ it('should click in OOPIF', async ({ browserName, launchPersistent, server }) =>
   expect(consoleLog).toContain('ok');
 });
 
-it('should click bottom row w/ infobar in OOPIF', async ({ browserName, launchPersistent, server }) => {
-  it.fixme(browserName === 'chromium', 'Click is offset by the infobar height');
+it('should click bottom row w/ infobar in OOPIF', async ({ browserName, launchPersistent, server, isWindows }) => {
+  it.fixme(browserName === 'chromium' && isWindows, 'Click is offset by the infobar height');
 
   server.setRoute('/empty.html', (req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/html' });

@@ -122,22 +122,67 @@ it('should add session cookies to request', async ({ context, server }) => {
 });
 
 for (const method of ['fetch', 'delete', 'get', 'head', 'patch', 'post', 'put'] as const) {
-  it(`${method} should support queryParams`, async ({ context, server }) => {
+  it(`${method} should support params passed as object`, async ({ context, server }) => {
     const url = new URL(server.EMPTY_PAGE);
-    url.searchParams.set('p1', 'v1');
+    url.searchParams.set('param1', 'value1');
     url.searchParams.set('парам2', 'знач2');
-    const [request] = await Promise.all([
+
+    const [request, response] = await Promise.all([
       server.waitForRequest(url.pathname + url.search),
-      context.request[method](server.EMPTY_PAGE + '?p1=foo', {
+      context.request[method](server.EMPTY_PAGE, {
         params: {
-          'p1': 'v1',
+          'param1': 'value1',
           'парам2': 'знач2',
         }
       }),
     ]);
-    const params = new URLSearchParams(request.url!.substr(request.url!.indexOf('?')));
-    expect(params.get('p1')).toEqual('v1');
-    expect(params.get('парам2')).toEqual('знач2');
+
+    const requestParams = new URLSearchParams(request.url.slice(request.url.indexOf('?')));
+    expect(requestParams.get('param1')).toEqual('value1');
+    expect(requestParams.get('парам2')).toBe('знач2');
+
+    const responseParams = new URL(response.url()).searchParams;
+    expect(responseParams.get('param1')).toEqual('value1');
+    expect(responseParams.get('парам2')).toBe('знач2');
+  });
+
+  it(`${method} should support params passed as URLSearchParams`, async ({ context, server }) => {
+    const url = new URL(server.EMPTY_PAGE);
+    const searchParams = new URLSearchParams();
+    searchParams.append('param1', 'value1');
+    searchParams.append('param1', 'value2');
+    searchParams.set('парам2', 'знач2');
+
+    const [request, response] = await Promise.all([
+      server.waitForRequest(url.pathname + '?' + searchParams),
+      context.request[method](server.EMPTY_PAGE, { params: searchParams }),
+    ]);
+
+    const requestParams = new URLSearchParams(request.url.slice(request.url.indexOf('?')));
+    expect(requestParams.getAll('param1')).toEqual(['value1', 'value2']);
+    expect(requestParams.get('парам2')).toBe('знач2');
+
+    const responseParams = new URL(response.url()).searchParams;
+    expect(responseParams.getAll('param1')).toEqual(['value1', 'value2']);
+    expect(responseParams.get('парам2')).toBe('знач2');
+  });
+
+  it(`${method} should support params passed as string`, async ({ context, server }) => {
+    const url = new URL(server.EMPTY_PAGE);
+    const params = '?param1=value1&param1=value2&парам2=знач2';
+
+    const [request, response] = await Promise.all([
+      server.waitForRequest(url.pathname + encodeURI(params)),
+      context.request[method](server.EMPTY_PAGE, { params }),
+    ]);
+
+    const requestParams = new URLSearchParams(request.url.slice(request.url.indexOf('?')));
+    expect(requestParams.getAll('param1')).toEqual(['value1', 'value2']);
+    expect(requestParams.get('парам2')).toBe('знач2');
+
+    const responseParams = new URL(response.url()).searchParams;
+    expect(responseParams.getAll('param1')).toEqual(['value1', 'value2']);
+    expect(responseParams.get('парам2')).toBe('знач2');
   });
 
   it(`${method} should support failOnStatusCode`, async ({ context, server }) => {
@@ -145,6 +190,8 @@ for (const method of ['fetch', 'delete', 'get', 'head', 'patch', 'post', 'put'] 
       failOnStatusCode: true
     }).catch(e => e);
     expect(error.message).toContain('404 Not Found');
+    if (method !== 'head')
+      expect(error.message).toContain('Response text:\nFile not found:');
   });
 
   it(`${method}should support ignoreHTTPSErrors option`, async ({ context, httpsServer }) => {
@@ -435,7 +482,7 @@ it('should return error with wrong credentials', async ({ context, server }) => 
   expect(response2.status()).toBe(401);
 });
 
-it('should support HTTPCredentials.sendImmediately for newContext', async ({ contextFactory, server }) => {
+it('should support HTTPCredentials.send for newContext', async ({ contextFactory, server }) => {
   it.info().annotations.push({ type: 'issue', description: 'https://github.com/microsoft/playwright/issues/30534' });
   const context = await contextFactory({
     httpCredentials: { username: 'user', password: 'pass', origin: server.PREFIX.toUpperCase(), send: 'always' }
@@ -459,7 +506,7 @@ it('should support HTTPCredentials.sendImmediately for newContext', async ({ con
   }
 });
 
-it('should support HTTPCredentials.sendImmediately for browser.newPage', async ({ contextFactory, server, browser }) => {
+it('should support HTTPCredentials.send for browser.newPage', async ({ contextFactory, server, browser }) => {
   it.info().annotations.push({ type: 'issue', description: 'https://github.com/microsoft/playwright/issues/30534' });
   const page = await browser.newPage({
     httpCredentials: { username: 'user', password: 'pass', origin: server.PREFIX.toUpperCase(), send: 'always' }
@@ -833,9 +880,9 @@ it('should respect timeout after redirects', async function({ context, server })
   expect(error.message).toContain(`Request timed out after 100ms`);
 });
 
-it('should not hang on a brotli encoded Range request', async ({ context, server }) => {
+it('should not hang on a brotli encoded Range request', async ({ context, server, nodeVersion }) => {
   it.info().annotations.push({ type: 'issue', description: 'https://github.com/microsoft/playwright/issues/18190' });
-  it.skip(+process.versions.node.split('.')[0] < 18);
+  it.skip(nodeVersion.major < 18);
 
   const encodedRequestPayload = zlib.brotliCompressSync(Buffer.from('A'));
   server.setRoute('/brotli', (req, res) => {
@@ -853,7 +900,7 @@ it('should not hang on a brotli encoded Range request', async ({ context, server
     headers: {
       range: 'bytes=0-2',
     },
-  })).rejects.toThrow(/(failed to decompress 'br' encoding: Error: unexpected end of file|Parse Error: Data after \`Connection: close\`)/);
+  })).rejects.toThrow(/Parse Error: Expected HTTP/);
 });
 
 it('should dispose', async function({ context, server }) {
@@ -911,6 +958,22 @@ it('should support application/x-www-form-urlencoded', async function({ context,
   expect(params.get('firstName')).toBe('John');
   expect(params.get('lastName')).toBe('Doe');
   expect(params.get('file')).toBe('f.js');
+});
+
+it('should support application/x-www-form-urlencoded with param lists', async function({ context, page, server }) {
+  const form = new FormData();
+  form.append('foo', '1');
+  form.append('foo', '2');
+  const [req] = await Promise.all([
+    server.waitForRequest('/empty.html'),
+    context.request.post(server.EMPTY_PAGE, { form })
+  ]);
+  expect(req.method).toBe('POST');
+  expect(req.headers['content-type']).toBe('application/x-www-form-urlencoded');
+  const body = (await req.postBody).toString('utf8');
+  const params = new URLSearchParams(body);
+  expect(req.headers['content-length']).toBe(String(params.toString().length));
+  expect(params.getAll('foo')).toEqual(['1', '2']);
 });
 
 it('should encode to application/json by default', async function({ context, page, server }) {
@@ -1031,10 +1094,9 @@ it('should support multipart/form-data and keep the order', async function({ con
   expect(response.status()).toBe(200);
 });
 
-it('should support repeating names in multipart/form-data', async function({ context, server }) {
+it('should support repeating names in multipart/form-data', async function({ context, server, nodeVersion }) {
   it.info().annotations.push({ type: 'issue', description: 'https://github.com/microsoft/playwright/issues/28070' });
-  const nodeVersion = +process.versions.node.split('.')[0];
-  it.skip(nodeVersion < 20, 'File is not available in Node.js < 20. FormData is not available in Node.js < 18');
+  it.skip(nodeVersion.major < 20, 'File is not available in Node.js < 20. FormData is not available in Node.js < 18');
   const postBodyPromise = new Promise<string>(resolve => {
     server.setRoute('/empty.html', async (req, res) => {
       resolve((await req.postBody).toString('utf-8'));
@@ -1286,4 +1348,22 @@ it('should not work after dispose', async ({ context, server }) => {
 it('should not work after context dispose', async ({ context, server }) => {
   await context.close({ reason: 'Test ended.' });
   expect(await context.request.get(server.EMPTY_PAGE).catch(e => e.message)).toContain('Test ended.');
+});
+
+it('should retry on ECONNRESET', {
+  annotation: { type: 'issue', description: 'https://github.com/microsoft/playwright/issues/30978' }
+}, async ({ context, server }) => {
+  let requestCount = 0;
+  server.setRoute('/test', (req, res) => {
+    if (requestCount++ < 3) {
+      req.socket.destroy();
+      return;
+    }
+    res.writeHead(200, { 'content-type': 'text/plain' });
+    res.end('Hello!');
+  });
+  const response = await context.request.get(server.PREFIX + '/test', { maxRetries: 3 });
+  expect(response.status()).toBe(200);
+  expect(await response.text()).toBe('Hello!');
+  expect(requestCount).toBe(4);
 });

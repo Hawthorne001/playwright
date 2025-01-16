@@ -16,7 +16,6 @@
  */
 
 import { test as it, expect } from './pageTest';
-import os from 'os';
 
 it('should press @smoke', async ({ page }) => {
   await page.setContent(`<input type='text' />`);
@@ -43,9 +42,8 @@ it('should scroll into view', async ({ page, server, isAndroid }) => {
   }
 });
 
-it('should scroll zero-sized element into view', async ({ page, isAndroid, isElectron, isWebView2, browserName, isMac }) => {
-  it.fixme(isAndroid || isElectron || isWebView2);
-  it.skip(browserName === 'webkit' && isMac && parseInt(os.release(), 10) < 20, 'WebKit for macOS 10.15 is frozen.');
+it('should scroll zero-sized element into view', async ({ page, isAndroid, isElectron }) => {
+  it.fixme(isAndroid || isElectron);
 
   await page.setContent(`
     <style>
@@ -112,7 +110,6 @@ it('should take screenshot', async ({ page, server, browserName, headless, isAnd
 });
 
 it('should return bounding box', async ({ page, server, browserName, headless, isAndroid, isLinux }) => {
-  it.fixme(browserName === 'firefox' && !headless && !isLinux);
   it.skip(isAndroid);
 
   await page.setViewportSize({ width: 500, height: 500 });
@@ -176,4 +173,3 @@ it('Locator.locator() and FrameLocator.locator() should accept locator', async (
   expect(await divLocator.locator('input').inputValue()).toBe('outer');
   expect(await page.frameLocator('iframe').locator(divLocator).locator('input').inputValue()).toBe('inner');
 });
-

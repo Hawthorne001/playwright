@@ -30,9 +30,10 @@ import { applyRepeatEachIndex, bindFileSuiteToProject, filterByFocusedLine, filt
 import { createTestGroups, filterForShard, type TestGroup } from './testGroups';
 import { dependenciesForTestFile } from '../transform/compilationCache';
 import { sourceMapSupport } from '../utilsBundle';
-import type { RawSourceMap } from 'source-map';
+import type { RawSourceMap } from '../utilsBundle';
 
-export async function collectProjectsAndTestFiles(testRun: TestRun, doNotRunTestsOutsideProjectFilter: boolean, additionalFileMatcher?: Matcher) {
+
+export async function collectProjectsAndTestFiles(testRun: TestRun, doNotRunTestsOutsideProjectFilter: boolean) {
   const config = testRun.config;
   const fsCache = new Map();
   const sourceMapCache = new Map();
@@ -51,8 +52,6 @@ export async function collectProjectsAndTestFiles(testRun: TestRun, doNotRunTest
   for (const [project, files] of allFilesForProject) {
     const matchedFiles = files.filter(file => {
       const hasMatchingSources = sourceMapSources(file, sourceMapCache).some(source => {
-        if (additionalFileMatcher && !additionalFileMatcher(source))
-          return false;
         if (cliFileMatcher && !cliFileMatcher(source))
           return false;
         return true;
@@ -118,7 +117,7 @@ export async function loadFileSuites(testRun: TestRun, mode: 'out-of-process' | 
   }
 }
 
-export async function createRootSuite(testRun: TestRun, errors: TestError[], shouldFilterOnly: boolean): Promise<Suite> {
+export async function createRootSuite(testRun: TestRun, errors: TestError[], shouldFilterOnly: boolean, additionalFileMatcher?: Matcher): Promise<Suite> {
   const config = testRun.config;
   // Create root suite, where each child will be a project suite with cloned file suites inside it.
   const rootSuite = new Suite('', 'root');
@@ -137,7 +136,8 @@ export async function createRootSuite(testRun: TestRun, errors: TestError[], sho
     for (const [project, fileSuites] of testRun.projectSuites) {
       const projectSuite = createProjectSuite(project, fileSuites);
       projectSuites.set(project, projectSuite);
-      const filteredProjectSuite = filterProjectSuite(projectSuite, { cliFileFilters, cliTitleMatcher, testIdMatcher: config.testIdMatcher });
+
+      const filteredProjectSuite = filterProjectSuite(projectSuite, { cliFileFilters, cliTitleMatcher, testIdMatcher: config.testIdMatcher, additionalFileMatcher });
       filteredProjectSuites.set(project, filteredProjectSuite);
     }
   }
@@ -176,8 +176,11 @@ export async function createRootSuite(testRun: TestRun, errors: TestError[], sho
   if (config.config.shard) {
     // Create test groups for top-level projects.
     const testGroups: TestGroup[] = [];
-    for (const projectSuite of rootSuite.suites)
-      testGroups.push(...createTestGroups(projectSuite, config.config.workers));
+    for (const projectSuite of rootSuite.suites) {
+      // Split beforeAll-grouped tests into "config.shard.total" groups when needed.
+      // Later on, we'll re-split them between workers by using "config.workers" instead.
+      testGroups.push(...createTestGroups(projectSuite, config.config.shard.total));
+    }
 
     // Shard test groups.
     const testGroupsInThisShard = filterForShard(config.config.shard, testGroups);
@@ -191,6 +194,10 @@ export async function createRootSuite(testRun: TestRun, errors: TestError[], sho
     filterTestsRemoveEmptySuites(rootSuite, test => testsInThisShard.has(test));
   }
 
+  // Explicitly apply --last-failed filter after sharding.
+  if (config.lastFailedTestIdMatcher)
+    filterByTestIds(rootSuite, config.lastFailedTestIdMatcher);
+
   // Now prepend dependency projects without filtration.
   {
     // Filtering 'only' and sharding might have reduced the number of top-level projects.
@@ -198,8 +205,8 @@ export async function createRootSuite(testRun: TestRun, errors: TestError[], sho
     const projectClosure = new Map(buildProjectsClosure(rootSuite.suites.map(suite => suite._fullProject!)));
 
     // Clone file suites for dependency projects.
-    for (const project of projectClosure.keys()) {
-      if (projectClosure.get(project) === 'dependency')
+    for (const [project, level] of projectClosure.entries()) {
+      if (level === 'dependency')
         rootSuite._prependSuite(buildProjectSuite(project, projectSuites.get(project)!));
     }
   }
@@ -223,9 +230,9 @@ function createProjectSuite(project: FullProjectInternal, fileSuites: Suite[]): 
   return projectSuite;
 }
 
-function filterProjectSuite(projectSuite: Suite, options: { cliFileFilters: TestFileFilter[], cliTitleMatcher?: Matcher, testIdMatcher?: Matcher }): Suite {
+function filterProjectSuite(projectSuite: Suite, options: { cliFileFilters: TestFileFilter[], cliTitleMatcher?: Matcher, testIdMatcher?: Matcher, additionalFileMatcher?: Matcher }): Suite {
   // Fast path.
-  if (!options.cliFileFilters.length && !options.cliTitleMatcher && !options.testIdMatcher)
+  if (!options.cliFileFilters.length && !options.cliTitleMatcher && !options.testIdMatcher && !options.additionalFileMatcher)
     return projectSuite;
 
   const result = projectSuite._deepClone();
@@ -235,6 +242,8 @@ function filterProjectSuite(projectSuite: Suite, options: { cliFileFilters: Test
     filterByTestIds(result, options.testIdMatcher);
   filterTestsRemoveEmptySuites(result, (test: TestCase) => {
     if (options.cliTitleMatcher && !options.cliTitleMatcher(test._grepTitle()))
+      return false;
+    if (options.additionalFileMatcher && !options.additionalFileMatcher(test.location.file))
       return false;
     return true;
   });

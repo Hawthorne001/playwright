@@ -94,9 +94,9 @@ class LintingService {
   }
 
   /**
-   * @param {string} command 
+   * @param {string} command
    * @param {string[]} args
-   * @param {CodeSnippet[]} snippets 
+   * @param {CodeSnippet[]} snippets
    * @param {string} cwd
    * @returns {Promise<LintResult[]>}
    */
@@ -118,7 +118,7 @@ class LintingService {
   }
 
   /**
-   * @param {CodeSnippet[]} snippets 
+   * @param {CodeSnippet[]} snippets
    * @returns {Promise<LintResult[]>}
    */
   async lint(snippets) {
@@ -139,6 +139,7 @@ class JSLintingService extends LintingService {
     this.eslint = new ESLint({
       overrideConfigFile: path.join(PROJECT_DIR, '.eslintrc.js'),
       useEslintrc: false,
+      // @ts-ignore
       overrideConfig: {
         plugins: ['react'],
         settings: {
@@ -151,6 +152,8 @@ class JSLintingService extends LintingService {
           'notice/notice': 'off',
           '@typescript-eslint/no-unused-vars': 'off',
           'max-len': ['error', { code: 100 }],
+          'react/react-in-jsx-scope': 'off',
+          'eol-last': 'off',
         },
       }
     });
@@ -208,6 +211,16 @@ class CSharpLintingService extends LintingService {
   }
 }
 
+class JavaLintingService extends LintingService {
+  supports(codeLang) {
+    return codeLang === 'java';
+  }
+
+  async lint(snippets) {
+    return await this.spawnAsync('java', ['-jar', path.join(__dirname, 'java', 'target', 'java-syntax-checker-1.0-SNAPSHOT.jar')], snippets, path.join(__dirname, 'java'))
+  }
+}
+
 class LintingServiceFactory {
   constructor() {
     /** @type {LintingService[]} */
@@ -218,6 +231,7 @@ class LintingServiceFactory {
       this.services.push(
         new PythonLintingService(),
         new CSharpLintingService(),
+        new JavaLintingService(),
       );
     }
     this._metrics = {};
@@ -290,8 +304,8 @@ class LintingServiceFactory {
   }
 
   /**
-   * @param {string} language 
-   * @param {LintResult} result 
+   * @param {string} language
+   * @param {LintResult} result
    */
   _collectMetrics(language, result) {
     if (!this._metrics[language])

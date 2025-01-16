@@ -43,6 +43,11 @@ export function useMeasure<T extends Element>() {
     const target = ref.current;
     if (!target)
       return;
+
+    const bounds = target.getBoundingClientRect();
+
+    setMeasure(new DOMRect(0, 0, bounds.width, bounds.height));
+
     const resizeObserver = new ResizeObserver((entries: any) => {
       const entry = entries[entries.length - 1];
       if (entry && entry.contentRect)
@@ -140,25 +145,43 @@ export function copy(text: string) {
 }
 
 export function useSetting<S>(name: string | undefined, defaultValue: S): [S, React.Dispatch<React.SetStateAction<S>>] {
-  const value = name ? settings.getObject(name, defaultValue) : defaultValue;
-  const [state, setState] = React.useState<S>(value);
-  const setStateWrapper = (value: React.SetStateAction<S>) => {
+  if (name)
+    defaultValue = settings.getObject(name, defaultValue);
+  const [value, setValue] = React.useState<S>(defaultValue);
+  const setValueWrapper = React.useCallback((value: React.SetStateAction<S>) => {
     if (name)
       settings.setObject(name, value);
-    setState(value);
-  };
-  return [state, setStateWrapper];
+    else
+      setValue(value);
+  }, [name, setValue]);
+
+  React.useEffect(() => {
+    if (name) {
+      const onStoreChange = () => setValue(settings.getObject(name, defaultValue));
+      settings.onChangeEmitter.addEventListener(name, onStoreChange);
+      return () => settings.onChangeEmitter.removeEventListener(name, onStoreChange);
+    }
+  }, [defaultValue, name]);
+  return [value, setValueWrapper];
+}
+
+declare global {
+  interface Window {
+    saveSettings?(): void;
+  }
 }
 
 export class Settings {
+  onChangeEmitter = new EventTarget();
+
   getString(name: string, defaultValue: string): string {
     return localStorage[name] || defaultValue;
   }
 
   setString(name: string, value: string) {
     localStorage[name] = value;
-    if ((window as any).saveSettings)
-      (window as any).saveSettings();
+    this.onChangeEmitter.dispatchEvent(new Event(name));
+    window.saveSettings?.();
   }
 
   getObject<T>(name: string, defaultValue: T): T {
@@ -173,9 +196,31 @@ export class Settings {
 
   setObject<T>(name: string, value: T) {
     localStorage[name] = JSON.stringify(value);
-    if ((window as any).saveSettings)
-      (window as any).saveSettings();
+    this.onChangeEmitter.dispatchEvent(new Event(name));
+    window.saveSettings?.();
   }
 }
 
 export const settings = new Settings();
+
+// inspired by https://www.npmjs.com/package/clsx
+export function clsx(...classes: (string | undefined | false)[]) {
+  return classes.filter(Boolean).join(' ');
+}
+
+export async function sha1(str: string): Promise<string> {
+  const buffer = new TextEncoder().encode(str);
+  return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-1', buffer))).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+export function scrollIntoViewIfNeeded(element: Element | undefined) {
+  if (!element)
+    return;
+  if ((element as any)?.scrollIntoViewIfNeeded)
+    (element as any).scrollIntoViewIfNeeded(false);
+  else
+    element?.scrollIntoView();
+}
+
+const kControlCodesRe = '\\u0000-\\u0020\\u007f-\\u009f';
+export const kWebLinkRe = new RegExp('(?:[a-zA-Z][a-zA-Z0-9+.-]{2,}:\\/\\/|www\\.)[^\\s' + kControlCodesRe + '"]{2,}[^\\s' + kControlCodesRe + '"\')}\\],:;.!?]', 'ug');

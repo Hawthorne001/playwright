@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-import os from 'os';
 import type { Route } from 'playwright-core';
 import { test as it, expect } from './pageTest';
 
@@ -152,9 +151,9 @@ it('should contain referer header', async ({ page, server }) => {
   expect(requests[1].headers().referer).toContain('/one-style.html');
 });
 
-it('should properly return navigation response when URL has cookies', async ({ page, server, isElectron, isAndroid }) => {
+it('should properly return navigation response when URL has cookies', async ({ page, server, isAndroid, isElectron, electronMajorVersion }) => {
   it.skip(isAndroid, 'No isolated context');
-  it.fixme(isElectron, 'error: Browser context management is not supported.');
+  it.skip(isElectron && electronMajorVersion < 30, 'error: Browser context management is not supported.');
 
   // Setup cookie.
   await page.goto(server.EMPTY_PAGE);
@@ -168,7 +167,7 @@ it('should properly return navigation response when URL has cookies', async ({ p
 
 it('should override cookie header', async ({ page, server, browserName }) => {
   it.info().annotations.push({ type: 'issue', description: 'https://github.com/microsoft/playwright/issues/16773' });
-  it.fail(browserName !== 'firefox');
+  it.fail(browserName !== 'firefox' && !browserName.includes('bidi'));
 
   await page.goto(server.EMPTY_PAGE);
   await page.evaluate(() => document.cookie = 'original=value');
@@ -300,15 +299,14 @@ it('should be abortable', async ({ page, server }) => {
   expect(failed).toBe(true);
 });
 
-it('should be abortable with custom error codes', async ({ page, server, browserName, isMac }) => {
+it('should be abortable with custom error codes', async ({ page, server, browserName, isMac, macVersion }) => {
   await page.route('**/*', route => route.abort('internetdisconnected'));
   let failedRequest = null;
   page.on('requestfailed', request => failedRequest = request);
   await page.goto(server.EMPTY_PAGE).catch(e => {});
   expect(failedRequest).toBeTruthy();
-  const isFrozenWebKit = isMac && parseInt(os.release(), 10) < 20;
   if (browserName === 'webkit')
-    expect(failedRequest.failure().errorText).toBe(isFrozenWebKit ? 'Request intercepted' : 'Blocked by Web Inspector');
+    expect(failedRequest.failure().errorText).toBe(isMac && macVersion < 11 ? 'Request intercepted' : 'Blocked by Web Inspector');
   else if (browserName === 'firefox')
     expect(failedRequest.failure().errorText).toBe('NS_ERROR_OFFLINE');
   else
@@ -345,14 +343,13 @@ it('should send referer', async ({ page, server }) => {
   expect(request.headers['referer']).toBe('http://google.com/');
 });
 
-it('should fail navigation when aborting main resource', async ({ page, server, browserName, isMac }) => {
+it('should fail navigation when aborting main resource', async ({ page, server, browserName, isMac, macVersion }) => {
   await page.route('**/*', route => route.abort());
   let error = null;
   await page.goto(server.EMPTY_PAGE).catch(e => error = e);
   expect(error).toBeTruthy();
-  const isFrozenWebKit = isMac && parseInt(os.release(), 10) < 20;
   if (browserName === 'webkit')
-    expect(error.message).toContain(isFrozenWebKit ? 'Request intercepted' : 'Blocked by Web Inspector');
+    expect(error.message).toContain(isMac && macVersion < 11 ? 'Request intercepted' : 'Blocked by Web Inspector');
   else if (browserName === 'firefox')
     expect(error.message).toContain('NS_ERROR_FAILURE');
   else
@@ -512,7 +509,7 @@ it('should work with badly encoded server', async ({ page, server }) => {
   expect(response.status()).toBe(200);
 });
 
-it('should work with encoded server - 2', async ({ page, server, browserName, browserMajorVersion }) => {
+it('should work with encoded server - 2', async ({ page, server, browserName }) => {
   // The requestWillBeSent will report URL as-is, whereas interception will
   // report encoded URL for stylesheet. @see crbug.com/759388
   const requests = [];
@@ -522,7 +519,7 @@ it('should work with encoded server - 2', async ({ page, server, browserName, br
   });
   const response = await page.goto(`data:text/html,<link rel="stylesheet" href="${server.PREFIX}/fonts?helvetica|arial"/>`);
   expect(response).toBe(null);
-  if (browserName === 'firefox' && browserMajorVersion >= 97)
+  if (browserName === 'firefox')
     expect(requests.length).toBe(2); // Firefox DevTools report to navigations in this case as well.
   else
     expect(requests.length).toBe(1);

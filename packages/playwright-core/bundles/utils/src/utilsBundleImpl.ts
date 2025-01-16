@@ -20,6 +20,12 @@ export const colors = colorsLibrary;
 import debugLibrary from 'debug';
 export const debug = debugLibrary;
 
+import * as diffLibrary from 'diff';
+export const diff = diffLibrary;
+
+import dotenvLibrary from 'dotenv';
+export const dotenv = dotenvLibrary;
+
 export { getProxyForUrl } from 'proxy-from-env';
 
 export { HttpsProxyAgent } from 'https-proxy-agent';
@@ -50,6 +56,9 @@ export { SocksProxyAgent } from 'socks-proxy-agent';
 
 import StackUtilsLibrary from 'stack-utils';
 export const StackUtils = StackUtilsLibrary;
+
+import yamlLibrary from 'yaml';
+export const yaml = yamlLibrary;
 
 // @ts-ignore
 import wsLibrary, { WebSocketServer, Receiver, Sender } from 'ws';

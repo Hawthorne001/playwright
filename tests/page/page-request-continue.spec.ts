@@ -17,6 +17,7 @@
 
 import { test as it, expect } from './pageTest';
 import type { Route } from 'playwright-core';
+import type * as http from 'http';
 
 it('should work', async ({ page, server }) => {
   await page.route('**/*', route => route.continue());
@@ -393,9 +394,12 @@ it('should continue preload link requests', async ({ page, server, browserName }
   expect(color).toBe('rgb(255, 192, 203)');
 });
 
-it('continue should propagate headers to redirects', async ({ page, server, browserName }) => {
-  it.info().annotations.push({ type: 'issue', description: 'https://github.com/microsoft/playwright/issues/28758' });
-  it.fixme(browserName === 'firefox');
+it('continue should propagate headers to redirects', {
+  annotation: [
+    { type: 'issue', description: 'https://github.com/microsoft/playwright/issues/28758' },
+    { type: 'issue', description: 'https://github.com/microsoft/playwright/issues/32045' },
+  ]
+}, async ({ page, server }) => {
   await server.setRedirect('/redirect', '/empty.html');
   await page.route('**/redirect', route => {
     void route.continue({
@@ -412,9 +416,35 @@ it('continue should propagate headers to redirects', async ({ page, server, brow
   expect(serverRequest.headers['custom']).toBe('value');
 });
 
-it('continue should delete headers on redirects', async ({ page, server, browserName }) => {
-  it.info().annotations.push({ type: 'issue', description: 'https://github.com/microsoft/playwright/issues/13106' });
-  it.fixme(browserName === 'firefox');
+it('redirected requests should report overridden headers', {
+  annotation: [
+    { type: 'issue', description: 'https://github.com/microsoft/playwright/issues/31351' },
+    { type: 'issue', description: 'https://github.com/microsoft/playwright/issues/32045' },
+  ]
+}, async ({ page, server }) => {
+  await server.setRedirect('/redirect', '/empty.html');
+  await page.route('**/redirect', route => {
+    const headers = route.request().headers();
+    headers['custom'] = 'value';
+    void route.fallback({ headers });
+  });
+
+  const [serverRequest, response] = await Promise.all([
+    server.waitForRequest('/empty.html'),
+    page.goto(server.PREFIX + '/redirect')
+  ]);
+  expect(serverRequest.headers['custom']).toBe('value');
+  expect(response.request().url()).toBe(server.EMPTY_PAGE);
+  expect(response.request().headers()['custom']).toBe('value');
+  expect((await response.request().allHeaders())['custom']).toBe('value');
+});
+
+it('continue should delete headers on redirects', {
+  annotation: [
+    { type: 'issue', description: 'https://github.com/microsoft/playwright/issues/13106' },
+    { type: 'issue', description: 'https://github.com/microsoft/playwright/issues/32045' },
+  ]
+}, async ({ page, server }) => {
   await page.goto(server.PREFIX + '/empty.html');
   server.setRoute('/something', (request, response) => {
     response.writeHead(200, { 'Access-Control-Allow-Origin': '*' });
@@ -442,6 +472,198 @@ it('continue should delete headers on redirects', async ({ page, server, browser
   ]);
   expect(text).toBe('done');
   expect(serverRequest.headers.foo).toBeFalsy();
+});
+
+it('propagate headers same origin redirect', {
+  annotation: [
+    { type: 'issue', description: 'https://github.com/microsoft/playwright/issues/13106' },
+    { type: 'issue', description: 'https://github.com/microsoft/playwright/issues/32045' },
+  ]
+}, async ({ page, server }) => {
+  await page.goto(server.PREFIX + '/empty.html');
+  let resolve;
+  const serverRequestPromise = new Promise<http.IncomingMessage>(f => resolve = f);
+  server.setRoute('/something', (request, response) => {
+    if (request.method === 'OPTIONS') {
+      response.writeHead(204, {
+        'Access-Control-Allow-Origin': server.PREFIX,
+        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, DELETE',
+        'Access-Control-Allow-Headers': 'authorization,custom',
+      });
+      response.end();
+      return;
+    }
+    resolve(request);
+    response.writeHead(200, { });
+    response.end('done');
+  });
+  await server.setRedirect('/redirect', '/something');
+  const text = await page.evaluate(async url => {
+    const data = await fetch(url, {
+      headers: {
+        authorization: 'credentials',
+        custom: 'foo'
+      },
+      credentials: 'include',
+    });
+    return data.text();
+  }, server.PREFIX + '/redirect');
+  expect(text).toBe('done');
+  const serverRequest = await serverRequestPromise;
+  expect.soft(serverRequest.headers['authorization']).toBe('credentials');
+  expect.soft(serverRequest.headers['custom']).toBe('foo');
+});
+
+it('propagate headers cross origin', {
+  annotation: [
+    { type: 'issue', description: 'https://github.com/microsoft/playwright/issues/13106' },
+    { type: 'issue', description: 'https://github.com/microsoft/playwright/issues/32045' },
+  ]
+}, async ({ page, server }) => {
+  await page.goto(server.PREFIX + '/empty.html');
+  let resolve;
+  const serverRequestPromise = new Promise<http.IncomingMessage>(f => resolve = f);
+  server.setRoute('/something', (request, response) => {
+    if (request.method === 'OPTIONS') {
+      response.writeHead(204, {
+        'Access-Control-Allow-Origin': server.PREFIX,
+        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, DELETE',
+        'Access-Control-Allow-Headers': 'authorization,custom',
+      });
+      response.end();
+      return;
+    }
+    resolve(request);
+    response.writeHead(200, {
+      'Access-Control-Allow-Origin': server.PREFIX,
+      'Access-Control-Allow-Credentials': 'true',
+    });
+    response.end('done');
+  });
+  const text = await page.evaluate(async url => {
+    const data = await fetch(url, {
+      headers: {
+        authorization: 'credentials',
+        custom: 'foo'
+      },
+      credentials: 'include',
+    });
+    return data.text();
+  }, server.CROSS_PROCESS_PREFIX + '/something');
+  expect(text).toBe('done');
+  const serverRequest = await serverRequestPromise;
+  expect.soft(serverRequest.headers['authorization']).toBe('credentials');
+  expect.soft(serverRequest.headers['custom']).toBe('foo');
+});
+
+it('propagate headers cross origin redirect', {
+  annotation: [
+    { type: 'issue', description: 'https://github.com/microsoft/playwright/issues/13106' },
+    { type: 'issue', description: 'https://github.com/microsoft/playwright/issues/32045' },
+  ]
+}, async ({ page, server, isAndroid }) => {
+  it.fixme(isAndroid, 'receives authorization:credentials header');
+
+  await page.goto(server.PREFIX + '/empty.html');
+  let resolve;
+  const serverRequestPromise = new Promise<http.IncomingMessage>(f => resolve = f);
+  server.setRoute('/something', (request, response) => {
+    if (request.method === 'OPTIONS') {
+      response.writeHead(204, {
+        'Access-Control-Allow-Origin': server.PREFIX,
+        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, DELETE',
+        'Access-Control-Allow-Headers': 'authorization,custom',
+      });
+      response.end();
+      return;
+    }
+    resolve(request);
+    response.writeHead(200, {
+      'Access-Control-Allow-Origin': server.PREFIX,
+      'Access-Control-Allow-Credentials': 'true',
+    });
+    response.end('done');
+  });
+  server.setRoute('/redirect', (request, response) => {
+    response.writeHead(301, { location: `${server.CROSS_PROCESS_PREFIX}/something` });
+    response.end();
+  });
+  const text = await page.evaluate(async url => {
+    const data = await fetch(url, {
+      headers: {
+        authorization: 'credentials',
+        custom: 'foo'
+      },
+      credentials: 'include',
+    });
+    return data.text();
+  }, server.PREFIX + '/redirect');
+  expect(text).toBe('done');
+  const serverRequest = await serverRequestPromise;
+  // Authorization header not propagated to cross-origin redirect.
+  expect.soft(serverRequest.headers['authorization']).toBeFalsy();
+  expect.soft(serverRequest.headers['custom']).toBe('foo');
+});
+
+it('propagate headers cross origin redirect after interception', {
+  annotation: [
+    { type: 'issue', description: 'https://github.com/microsoft/playwright/issues/13106' },
+    { type: 'issue', description: 'https://github.com/microsoft/playwright/issues/32045' },
+  ]
+}, async ({ page, server, browserName }) => {
+  await page.goto(server.PREFIX + '/empty.html');
+  let resolve;
+  const serverRequestPromise = new Promise<http.IncomingMessage>(f => resolve = f);
+  server.setRoute('/something', (request, response) => {
+    if (request.method === 'OPTIONS') {
+      response.writeHead(204, {
+        'Access-Control-Allow-Origin': server.PREFIX,
+        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, DELETE',
+        'Access-Control-Allow-Headers': 'authorization,custom',
+      });
+      response.end();
+      return;
+    }
+    resolve(request);
+    response.writeHead(200, {
+      'Access-Control-Allow-Origin': server.PREFIX,
+      'Access-Control-Allow-Credentials': 'true',
+    });
+    response.end('done');
+  });
+  server.setRoute('/redirect', (request, response) => {
+    response.writeHead(301, { location: `${server.CROSS_PROCESS_PREFIX}/something` });
+    response.end();
+  });
+  await page.route('**/redirect', async route => {
+    await route.continue({
+      headers: {
+        ...route.request().headers(),
+        authorization: 'credentials',
+        custom: 'foo'
+      }
+    });
+  });
+  const text = await page.evaluate(async url => {
+    const data = await fetch(url, {
+      headers: {
+        authorization: 'none',
+      },
+      credentials: 'include',
+    });
+    return data.text();
+  }, server.PREFIX + '/redirect');
+  expect(text).toBe('done');
+  const serverRequest = await serverRequestPromise;
+  if (browserName === 'webkit')
+    expect.soft(serverRequest.headers['authorization']).toBeFalsy();
+  else
+    expect.soft(serverRequest.headers['authorization']).toBe('credentials');
+  expect.soft(serverRequest.headers['custom']).toBe('foo');
 });
 
 it('should intercept css variable with background url', async ({ page, server }) => {

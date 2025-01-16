@@ -36,13 +36,14 @@ type UseOptions<TestArgs, WorkerArgs> = Partial<WorkerArgs> & Partial<TestArgs>;
 /**
  * Playwright Test supports running multiple test projects at the same time. This is useful for running tests in
  * multiple configurations. For example, consider running tests against multiple browsers. This type describes format
- * of a project in the configuration file, to access resolved configuration parameters at run time use {@link
- * FullProject}.
+ * of a project in the configuration file, to access resolved configuration parameters at run time use
+ * [FullProject](https://playwright.dev/docs/api/class-fullproject).
  *
  * `TestProject` encapsulates configuration specific to a single project. Projects are configured in
  * [testConfig.projects](https://playwright.dev/docs/api/class-testconfig#test-config-projects) specified in the
- * [configuration file](https://playwright.dev/docs/test-configuration). Note that all properties of {@link TestProject} are available in
- * the top-level {@link TestConfig}, in which case they are shared between all projects.
+ * [configuration file](https://playwright.dev/docs/test-configuration). Note that all properties of
+ * [TestProject](https://playwright.dev/docs/api/class-testproject) are available in the top-level
+ * [TestConfig](https://playwright.dev/docs/api/class-testconfig), in which case they are shared between all projects.
  *
  * Here is an example configuration that runs every test in Chromium, Firefox and WebKit, both Desktop and Mobile
  * versions.
@@ -89,7 +90,8 @@ interface TestProject<TestArgs = {}, WorkerArgs = {}> {
   /**
    * Options for all tests in this project, for example
    * [testOptions.browserName](https://playwright.dev/docs/api/class-testoptions#test-options-browser-name). Learn more
-   * about [configuration](https://playwright.dev/docs/test-configuration) and see [available options]{@link TestOptions}.
+   * about [configuration](https://playwright.dev/docs/test-configuration) and see
+   * [available options][TestOptions](https://playwright.dev/docs/api/class-testoptions).
    *
    * ```js
    * // playwright.config.ts
@@ -190,25 +192,26 @@ interface TestProject<TestArgs = {}, WorkerArgs = {}> {
       maxDiffPixelRatio?: number;
 
       /**
-       * See `animations` in [page.screenshot([options])](https://playwright.dev/docs/api/class-page#page-screenshot).
-       * Defaults to `"disabled"`.
+       * See [`animations`](https://playwright.dev/docs/api/class-page#page-screenshot-option-animations) in
+       * [page.screenshot([options])](https://playwright.dev/docs/api/class-page#page-screenshot). Defaults to `"disabled"`.
        */
       animations?: "allow"|"disabled";
 
       /**
-       * See `caret` in [page.screenshot([options])](https://playwright.dev/docs/api/class-page#page-screenshot). Defaults
-       * to `"hide"`.
+       * See [`caret`](https://playwright.dev/docs/api/class-page#page-screenshot-option-caret) in
+       * [page.screenshot([options])](https://playwright.dev/docs/api/class-page#page-screenshot). Defaults to `"hide"`.
        */
       caret?: "hide"|"initial";
 
       /**
-       * See `scale` in [page.screenshot([options])](https://playwright.dev/docs/api/class-page#page-screenshot). Defaults
-       * to `"css"`.
+       * See [`scale`](https://playwright.dev/docs/api/class-page#page-screenshot-option-scale) in
+       * [page.screenshot([options])](https://playwright.dev/docs/api/class-page#page-screenshot). Defaults to `"css"`.
        */
       scale?: "css"|"device";
 
       /**
-       * See `style` in [page.screenshot([options])](https://playwright.dev/docs/api/class-page#page-screenshot).
+       * See [`style`](https://playwright.dev/docs/api/class-page#page-screenshot-option-style) in
+       * [page.screenshot([options])](https://playwright.dev/docs/api/class-page#page-screenshot).
        */
       stylePath?: string|Array<string>;
     };
@@ -367,7 +370,7 @@ interface TestProject<TestArgs = {}, WorkerArgs = {}> {
   /**
    * Whether to skip entries from `.gitignore` when searching for test files. By default, if neither
    * [testConfig.testDir](https://playwright.dev/docs/api/class-testconfig#test-config-test-dir) nor
-   * [testProject.testDir](https://playwright.dev/docs/api/class-testproject#test-project-test-dir) are explicitely
+   * [testProject.testDir](https://playwright.dev/docs/api/class-testproject#test-project-test-dir) are explicitly
    * specified, Playwright will ignore any test files matching `.gitignore` entries. This option allows to override that
    * behavior.
    */
@@ -641,8 +644,8 @@ export interface Project<TestArgs = {}, WorkerArgs = {}> extends TestProject<Tes
  * Runtime representation of the test project configuration. It is accessible in the tests via
  * [testInfo.project](https://playwright.dev/docs/api/class-testinfo#test-info-project) and
  * [workerInfo.project](https://playwright.dev/docs/api/class-workerinfo#worker-info-project) and is passed to the
- * test reporters. To see the format of the project in the Playwright configuration file please see {@link
- * TestProject} instead.
+ * test reporters. To see the format of the project in the Playwright configuration file please see
+ * [TestProject](https://playwright.dev/docs/api/class-testproject) instead.
  */
 export interface FullProject<TestArgs = {}, WorkerArgs = {}> {
   /**
@@ -724,13 +727,15 @@ type LiteralUnion<T extends U, U = string> = T | (U & { zz_IGNORE_ME?: never });
 
 /**
  * Playwright Test provides many options to configure how your tests are collected and executed, for example `timeout`
- * or `testDir`. These options are described in the {@link TestConfig} object in the
- * [configuration file](https://playwright.dev/docs/test-configuration). This type describes format of the configuration file, to access
- * resolved configuration parameters at run time use {@link FullConfig}.
+ * or `testDir`. These options are described in the [TestConfig](https://playwright.dev/docs/api/class-testconfig)
+ * object in the [configuration file](https://playwright.dev/docs/test-configuration). This type describes format of the configuration file,
+ * to access resolved configuration parameters at run time use
+ * [FullConfig](https://playwright.dev/docs/api/class-fullconfig).
  *
  * Playwright Test supports running multiple test projects at the same time. Project-specific options should be put to
- * [testConfig.projects](https://playwright.dev/docs/api/class-testconfig#test-config-projects), but top-level {@link
- * TestConfig} can also define base options shared between all projects.
+ * [testConfig.projects](https://playwright.dev/docs/api/class-testconfig#test-config-projects), but top-level
+ * [TestConfig](https://playwright.dev/docs/api/class-testconfig) can also define base options shared between all
+ * projects.
  *
  * ```js
  * // playwright.config.ts
@@ -747,8 +752,8 @@ type LiteralUnion<T extends U, U = string> = T | (U & { zz_IGNORE_ME?: never });
  */
 interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
   /**
-   * Playwright Test supports running multiple test projects at the same time. See {@link TestProject} for more
-   * information.
+   * Playwright Test supports running multiple test projects at the same time. See
+   * [TestProject](https://playwright.dev/docs/api/class-testproject) for more information.
    *
    * **Usage**
    *
@@ -791,7 +796,8 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
   /**
    * Global options for all tests, for example
    * [testOptions.browserName](https://playwright.dev/docs/api/class-testoptions#test-options-browser-name). Learn more
-   * about [configuration](https://playwright.dev/docs/test-configuration) and see [available options]{@link TestOptions}.
+   * about [configuration](https://playwright.dev/docs/test-configuration) and see
+   * [available options][TestOptions](https://playwright.dev/docs/api/class-testoptions).
    *
    * **Usage**
    *
@@ -945,14 +951,14 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
      */
     toHaveScreenshot?: {
       /**
-       * See `animations` in [page.screenshot([options])](https://playwright.dev/docs/api/class-page#page-screenshot).
-       * Defaults to `"disabled"`.
+       * See [`animations`](https://playwright.dev/docs/api/class-page#page-screenshot-option-animations) in
+       * [page.screenshot([options])](https://playwright.dev/docs/api/class-page#page-screenshot). Defaults to `"disabled"`.
        */
       animations?: "allow"|"disabled";
 
       /**
-       * See `caret` in [page.screenshot([options])](https://playwright.dev/docs/api/class-page#page-screenshot). Defaults
-       * to `"hide"`.
+       * See [`caret`](https://playwright.dev/docs/api/class-page#page-screenshot-option-caret) in
+       * [page.screenshot([options])](https://playwright.dev/docs/api/class-page#page-screenshot). Defaults to `"hide"`.
        */
       caret?: "hide"|"initial";
 
@@ -968,13 +974,14 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
       maxDiffPixelRatio?: number;
 
       /**
-       * See `scale` in [page.screenshot([options])](https://playwright.dev/docs/api/class-page#page-screenshot). Defaults
-       * to `"css"`.
+       * See [`scale`](https://playwright.dev/docs/api/class-page#page-screenshot-option-scale) in
+       * [page.screenshot([options])](https://playwright.dev/docs/api/class-page#page-screenshot). Defaults to `"css"`.
        */
       scale?: "css"|"device";
 
       /**
-       * See `style` in [page.screenshot([options])](https://playwright.dev/docs/api/class-page#page-screenshot).
+       * See [`style`](https://playwright.dev/docs/api/class-page#page-screenshot-option-style) in
+       * [page.screenshot([options])](https://playwright.dev/docs/api/class-page#page-screenshot).
        */
       stylePath?: string|Array<string>;
 
@@ -1070,7 +1077,8 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
 
   /**
    * Path to the global setup file. This file will be required and run before all the tests. It must export a single
-   * function that takes a {@link FullConfig} argument.
+   * function that takes a [FullConfig](https://playwright.dev/docs/api/class-fullconfig) argument. Pass an array of
+   * paths to specify multiple global setup files.
    *
    * Learn more about [global setup and teardown](https://playwright.dev/docs/test-global-setup-teardown).
    *
@@ -1086,12 +1094,13 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
    * ```
    *
    */
-  globalSetup?: string;
+  globalSetup?: string|Array<string>;
 
   /**
    * Path to the global teardown file. This file will be required and run after all the tests. It must export a single
    * function. See also
-   * [testConfig.globalSetup](https://playwright.dev/docs/api/class-testconfig#test-config-global-setup).
+   * [testConfig.globalSetup](https://playwright.dev/docs/api/class-testconfig#test-config-global-setup). Pass an array
+   * of paths to specify multiple global teardown files.
    *
    * Learn more about [global setup and teardown](https://playwright.dev/docs/test-global-setup-teardown).
    *
@@ -1107,7 +1116,7 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
    * ```
    *
    */
-  globalTeardown?: string;
+  globalTeardown?: string|Array<string>;
 
   /**
    * Maximum time in milliseconds the whole test suite can run. Zero timeout (default) disables this behavior. Useful on
@@ -1636,12 +1645,32 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
   timeout?: number;
 
   /**
+   * Path to a single `tsconfig` applicable to all imported files. By default, `tsconfig` for each imported file is
+   * looked up separately. Note that `tsconfig` property has no effect while the configuration file or any of its
+   * dependencies are loaded. Ignored when `--tsconfig` command line option is specified.
+   *
+   * **Usage**
+   *
+   * ```js
+   * // playwright.config.ts
+   * import { defineConfig } from '@playwright/test';
+   *
+   * export default defineConfig({
+   *   tsconfig: './tsconfig.test.json',
+   * });
+   * ```
+   *
+   */
+  tsconfig?: string;
+
+  /**
    * Whether to update expected snapshots with the actual results produced by the test run. Defaults to `'missing'`.
-   * - `'all'` - All tests that are executed will update snapshots that did not match. Matching snapshots will not be
-   *   updated.
-   * - `'none'` - No snapshots are updated.
+   * - `'all'` - All tests that are executed will update snapshots.
+   * - `'changed'` - All tests that are executed will update snapshots that did not match. Matching snapshots will not
+   *   be updated.
    * - `'missing'` - Missing snapshots are created, for example when authoring a new test and running it for the first
    *   time. This is the default.
+   * - `'none'` - No snapshots are updated.
    *
    * Learn more about [snapshots](https://playwright.dev/docs/test-snapshots).
    *
@@ -1657,7 +1686,16 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
    * ```
    *
    */
-  updateSnapshots?: "all"|"none"|"missing";
+  updateSnapshots?: "all"|"changed"|"missing"|"none";
+
+  /**
+   * Defines how to update snapshots in the source code.
+   * - `'patch'` - Create a unified diff file that can be used to update the source code later. This is the default.
+   * - `'3way'` - Generate merge conflict markers in source code. This allows user to manually pick relevant changes,
+   *   as if they are resolving a merge conflict in the IDE.
+   * - `'overwrite'` - Overwrite the source code with the new snapshot values.
+   */
+  updateSourceMethod?: "overwrite"|"3way"|"patch";
 
   /**
    * The maximum number of concurrent worker processes to use for parallelizing tests. Can also be set as percentage of
@@ -1692,7 +1730,8 @@ export type Metadata = { [key: string]: any };
 /**
  * Resolved configuration which is accessible via
  * [testInfo.config](https://playwright.dev/docs/api/class-testinfo#test-info-config) and is passed to the test
- * reporters. To see the format of Playwright configuration file, please see {@link TestConfig} instead.
+ * reporters. To see the format of Playwright configuration file, please see
+ * [TestConfig](https://playwright.dev/docs/api/class-testconfig) instead.
  */
 export interface FullConfig<TestArgs = {}, WorkerArgs = {}> {
   /**
@@ -1805,7 +1844,13 @@ export interface FullConfig<TestArgs = {}, WorkerArgs = {}> {
   /**
    * See [testConfig.updateSnapshots](https://playwright.dev/docs/api/class-testconfig#test-config-update-snapshots).
    */
-  updateSnapshots: "all"|"none"|"missing";
+  updateSnapshots: "all"|"changed"|"missing"|"none";
+
+  /**
+   * See
+   * [testConfig.updateSourceMethod](https://playwright.dev/docs/api/class-testconfig#test-config-update-source-method).
+   */
+  updateSourceMethod: "overwrite"|"3way"|"patch";
 
   /**
    * Playwright version.
@@ -1820,7 +1865,7 @@ export interface FullConfig<TestArgs = {}, WorkerArgs = {}> {
 
 export type TestStatus = 'passed' | 'failed' | 'timedOut' | 'skipped' | 'interrupted';
 
-type TestDetailsAnnotation = {
+export type TestDetailsAnnotation = {
   type: string;
   description?: string;
 };
@@ -1830,8 +1875,316 @@ export type TestDetails = {
   annotation?: TestDetailsAnnotation | TestDetailsAnnotation[];
 }
 
-interface SuiteFunction {
+type TestBody<TestArgs> = (args: TestArgs, testInfo: TestInfo) => Promise<void> | void;
+type ConditionBody<TestArgs> = (args: TestArgs) => boolean;
+
+/**
+ * Playwright Test provides a `test` function to declare tests and `expect` function to write assertions.
+ *
+ * ```js
+ * import { test, expect } from '@playwright/test';
+ *
+ * test('basic test', async ({ page }) => {
+ *   await page.goto('https://playwright.dev/');
+ *   const name = await page.innerText('.navbar__title');
+ *   expect(name).toBe('Playwright');
+ * });
+ * ```
+ *
+ */
+export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
   /**
+   * Declares a test.
+   * - `test(title, body)`
+   * - `test(title, details, body)`
+   *
+   * **Usage**
+   *
+   * ```js
+   * import { test, expect } from '@playwright/test';
+   *
+   * test('basic test', async ({ page }) => {
+   *   await page.goto('https://playwright.dev/');
+   *   // ...
+   * });
+   * ```
+   *
+   * **Tags**
+   *
+   * You can tag tests by providing additional test details. Alternatively, you can include tags in the test title. Note
+   * that each tag must start with `@` symbol.
+   *
+   * ```js
+   * import { test, expect } from '@playwright/test';
+   *
+   * test('basic test', {
+   *   tag: '@smoke',
+   * }, async ({ page }) => {
+   *   await page.goto('https://playwright.dev/');
+   *   // ...
+   * });
+   *
+   * test('another test @smoke', async ({ page }) => {
+   *   await page.goto('https://playwright.dev/');
+   *   // ...
+   * });
+   * ```
+   *
+   * Test tags are displayed in the test report, and are available to a custom reporter via `TestCase.tags` property.
+   *
+   * You can also filter tests by their tags during test execution:
+   * - in the [command line](https://playwright.dev/docs/test-cli#reference);
+   * - in the config with [testConfig.grep](https://playwright.dev/docs/api/class-testconfig#test-config-grep) and
+   *   [testProject.grep](https://playwright.dev/docs/api/class-testproject#test-project-grep);
+   *
+   * Learn more about [tagging](https://playwright.dev/docs/test-annotations#tag-tests).
+   *
+   * **Annotations**
+   *
+   * You can annotate tests by providing additional test details.
+   *
+   * ```js
+   * import { test, expect } from '@playwright/test';
+   *
+   * test('basic test', {
+   *   annotation: {
+   *     type: 'issue',
+   *     description: 'https://github.com/microsoft/playwright/issues/23180',
+   *   },
+   * }, async ({ page }) => {
+   *   await page.goto('https://playwright.dev/');
+   *   // ...
+   * });
+   * ```
+   *
+   * Test annotations are displayed in the test report, and are available to a custom reporter via
+   * `TestCase.annotations` property.
+   *
+   * You can also add annotations during runtime by manipulating
+   * [testInfo.annotations](https://playwright.dev/docs/api/class-testinfo#test-info-annotations).
+   *
+   * Learn more about [test annotations](https://playwright.dev/docs/test-annotations).
+   * @param title Test title.
+   * @param details Additional test details.
+   * @param body Test body that takes one or two arguments: an object with fixtures and optional
+   * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
+   */
+  (title: string, body: TestBody<TestArgs & WorkerArgs>): void;
+  /**
+   * Declares a test.
+   * - `test(title, body)`
+   * - `test(title, details, body)`
+   *
+   * **Usage**
+   *
+   * ```js
+   * import { test, expect } from '@playwright/test';
+   *
+   * test('basic test', async ({ page }) => {
+   *   await page.goto('https://playwright.dev/');
+   *   // ...
+   * });
+   * ```
+   *
+   * **Tags**
+   *
+   * You can tag tests by providing additional test details. Alternatively, you can include tags in the test title. Note
+   * that each tag must start with `@` symbol.
+   *
+   * ```js
+   * import { test, expect } from '@playwright/test';
+   *
+   * test('basic test', {
+   *   tag: '@smoke',
+   * }, async ({ page }) => {
+   *   await page.goto('https://playwright.dev/');
+   *   // ...
+   * });
+   *
+   * test('another test @smoke', async ({ page }) => {
+   *   await page.goto('https://playwright.dev/');
+   *   // ...
+   * });
+   * ```
+   *
+   * Test tags are displayed in the test report, and are available to a custom reporter via `TestCase.tags` property.
+   *
+   * You can also filter tests by their tags during test execution:
+   * - in the [command line](https://playwright.dev/docs/test-cli#reference);
+   * - in the config with [testConfig.grep](https://playwright.dev/docs/api/class-testconfig#test-config-grep) and
+   *   [testProject.grep](https://playwright.dev/docs/api/class-testproject#test-project-grep);
+   *
+   * Learn more about [tagging](https://playwright.dev/docs/test-annotations#tag-tests).
+   *
+   * **Annotations**
+   *
+   * You can annotate tests by providing additional test details.
+   *
+   * ```js
+   * import { test, expect } from '@playwright/test';
+   *
+   * test('basic test', {
+   *   annotation: {
+   *     type: 'issue',
+   *     description: 'https://github.com/microsoft/playwright/issues/23180',
+   *   },
+   * }, async ({ page }) => {
+   *   await page.goto('https://playwright.dev/');
+   *   // ...
+   * });
+   * ```
+   *
+   * Test annotations are displayed in the test report, and are available to a custom reporter via
+   * `TestCase.annotations` property.
+   *
+   * You can also add annotations during runtime by manipulating
+   * [testInfo.annotations](https://playwright.dev/docs/api/class-testinfo#test-info-annotations).
+   *
+   * Learn more about [test annotations](https://playwright.dev/docs/test-annotations).
+   * @param title Test title.
+   * @param details Additional test details.
+   * @param body Test body that takes one or two arguments: an object with fixtures and optional
+   * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
+   */
+  (title: string, details: TestDetails, body: TestBody<TestArgs & WorkerArgs>): void;
+
+  /**
+   * Declares a focused test. If there are some focused tests or suites, all of them will be run but nothing else.
+   * - `test.only(title, body)`
+   * - `test.only(title, details, body)`
+   *
+   * **Usage**
+   *
+   * ```js
+   * test.only('focus this test', async ({ page }) => {
+   *   // Run only focused tests in the entire project.
+   * });
+   * ```
+   *
+   * @param title Test title.
+   * @param details See [test.(call)(title[, details, body])](https://playwright.dev/docs/api/class-test#test-call) for test details
+   * description.
+   * @param body Test body that takes one or two arguments: an object with fixtures and optional
+   * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
+   */
+  only(title: string, body: TestBody<TestArgs & WorkerArgs>): void;
+  /**
+   * Declares a focused test. If there are some focused tests or suites, all of them will be run but nothing else.
+   * - `test.only(title, body)`
+   * - `test.only(title, details, body)`
+   *
+   * **Usage**
+   *
+   * ```js
+   * test.only('focus this test', async ({ page }) => {
+   *   // Run only focused tests in the entire project.
+   * });
+   * ```
+   *
+   * @param title Test title.
+   * @param details See [test.(call)(title[, details, body])](https://playwright.dev/docs/api/class-test#test-call) for test details
+   * description.
+   * @param body Test body that takes one or two arguments: an object with fixtures and optional
+   * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
+   */
+  only(title: string, details: TestDetails, body: TestBody<TestArgs & WorkerArgs>): void;
+
+  /**
+   * Declares a group of tests.
+   * - `test.describe(title, callback)`
+   * - `test.describe(callback)`
+   * - `test.describe(title, details, callback)`
+   *
+   * **Usage**
+   *
+   * You can declare a group of tests with a title. The title will be visible in the test report as a part of each
+   * test's title.
+   *
+   * ```js
+   * test.describe('two tests', () => {
+   *   test('one', async ({ page }) => {
+   *     // ...
+   *   });
+   *
+   *   test('two', async ({ page }) => {
+   *     // ...
+   *   });
+   * });
+   * ```
+   *
+   * **Anonymous group**
+   *
+   * You can also declare a test group without a title. This is convenient to give a group of tests a common option with
+   * [test.use(options)](https://playwright.dev/docs/api/class-test#test-use).
+   *
+   * ```js
+   * test.describe(() => {
+   *   test.use({ colorScheme: 'dark' });
+   *
+   *   test('one', async ({ page }) => {
+   *     // ...
+   *   });
+   *
+   *   test('two', async ({ page }) => {
+   *     // ...
+   *   });
+   * });
+   * ```
+   *
+   * **Tags**
+   *
+   * You can tag all tests in a group by providing additional details. Note that each tag must start with `@` symbol.
+   *
+   * ```js
+   * import { test, expect } from '@playwright/test';
+   *
+   * test.describe('two tagged tests', {
+   *   tag: '@smoke',
+   * }, () => {
+   *   test('one', async ({ page }) => {
+   *     // ...
+   *   });
+   *
+   *   test('two', async ({ page }) => {
+   *     // ...
+   *   });
+   * });
+   * ```
+   *
+   * Learn more about [tagging](https://playwright.dev/docs/test-annotations#tag-tests).
+   *
+   * **Annotations**
+   *
+   * You can annotate all tests in a group by providing additional details.
+   *
+   * ```js
+   * import { test, expect } from '@playwright/test';
+   *
+   * test.describe('two annotated tests', {
+   *   annotation: {
+   *     type: 'issue',
+   *     description: 'https://github.com/microsoft/playwright/issues/23180',
+   *   },
+   * }, () => {
+   *   test('one', async ({ page }) => {
+   *     // ...
+   *   });
+   *
+   *   test('two', async ({ page }) => {
+   *     // ...
+   *   });
+   * });
+   * ```
+   *
+   * Learn more about [test annotations](https://playwright.dev/docs/test-annotations).
+   * @param title Group title.
+   * @param details Additional details for all tests in the group.
+   * @param callback A callback that is run immediately when calling
+   * [test.describe([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe). Any tests
+   * declared in this callback will belong to the group.
+   */
+  describe: {
+    /**
    * Declares a group of tests.
    * - `test.describe(title, callback)`
    * - `test.describe(callback)`
@@ -1926,7 +2279,7 @@ interface SuiteFunction {
    * declared in this callback will belong to the group.
    */
   (title: string, callback: () => void): void;
-  /**
+    /**
    * Declares a group of tests.
    * - `test.describe(title, callback)`
    * - `test.describe(callback)`
@@ -2021,7 +2374,7 @@ interface SuiteFunction {
    * declared in this callback will belong to the group.
    */
   (callback: () => void): void;
-  /**
+    /**
    * Declares a group of tests.
    * - `test.describe(title, callback)`
    * - `test.describe(callback)`
@@ -2116,292 +2469,7 @@ interface SuiteFunction {
    * declared in this callback will belong to the group.
    */
   (title: string, details: TestDetails, callback: () => void): void;
-}
 
-interface TestFunction<TestArgs> {
-  /**
-   * Declares a test.
-   * - `test(title, body)`
-   * - `test(title, details, body)`
-   *
-   * **Usage**
-   *
-   * ```js
-   * import { test, expect } from '@playwright/test';
-   *
-   * test('basic test', async ({ page }) => {
-   *   await page.goto('https://playwright.dev/');
-   *   // ...
-   * });
-   * ```
-   *
-   * **Tags**
-   *
-   * You can tag tests by providing additional test details. Alternatively, you can include tags in the test title. Note
-   * that each tag must start with `@` symbol.
-   *
-   * ```js
-   * import { test, expect } from '@playwright/test';
-   *
-   * test('basic test', {
-   *   tag: '@smoke',
-   * }, async ({ page }) => {
-   *   await page.goto('https://playwright.dev/');
-   *   // ...
-   * });
-   *
-   * test('another test @smoke', async ({ page }) => {
-   *   await page.goto('https://playwright.dev/');
-   *   // ...
-   * });
-   * ```
-   *
-   * Test tags are displayed in the test report, and are available to a custom reporter via `TestCase.tags` property.
-   *
-   * You can also filter tests by their tags during test execution:
-   * - in the [command line](https://playwright.dev/docs/test-cli#reference);
-   * - in the config with [testConfig.grep](https://playwright.dev/docs/api/class-testconfig#test-config-grep) and
-   *   [testProject.grep](https://playwright.dev/docs/api/class-testproject#test-project-grep);
-   *
-   * Learn more about [tagging](https://playwright.dev/docs/test-annotations#tag-tests).
-   *
-   * **Annotations**
-   *
-   * You can annotate tests by providing additional test details.
-   *
-   * ```js
-   * import { test, expect } from '@playwright/test';
-   *
-   * test('basic test', {
-   *   annotation: {
-   *     type: 'issue',
-   *     description: 'https://github.com/microsoft/playwright/issues/23180',
-   *   },
-   * }, async ({ page }) => {
-   *   await page.goto('https://playwright.dev/');
-   *   // ...
-   * });
-   * ```
-   *
-   * Test annotations are displayed in the test report, and are available to a custom reporter via
-   * `TestCase.annotations` property.
-   *
-   * You can also add annotations during runtime by manipulating
-   * [testInfo.annotations](https://playwright.dev/docs/api/class-testinfo#test-info-annotations).
-   *
-   * Learn more about [test annotations](https://playwright.dev/docs/test-annotations).
-   * @param title Test title.
-   * @param details Additional test details.
-   * @param body Test body that takes one or two arguments: an object with fixtures and optional {@link TestInfo}.
-   */
-  (title: string, body: (args: TestArgs, testInfo: TestInfo) => Promise<void> | void): void;
-  /**
-   * Declares a test.
-   * - `test(title, body)`
-   * - `test(title, details, body)`
-   *
-   * **Usage**
-   *
-   * ```js
-   * import { test, expect } from '@playwright/test';
-   *
-   * test('basic test', async ({ page }) => {
-   *   await page.goto('https://playwright.dev/');
-   *   // ...
-   * });
-   * ```
-   *
-   * **Tags**
-   *
-   * You can tag tests by providing additional test details. Alternatively, you can include tags in the test title. Note
-   * that each tag must start with `@` symbol.
-   *
-   * ```js
-   * import { test, expect } from '@playwright/test';
-   *
-   * test('basic test', {
-   *   tag: '@smoke',
-   * }, async ({ page }) => {
-   *   await page.goto('https://playwright.dev/');
-   *   // ...
-   * });
-   *
-   * test('another test @smoke', async ({ page }) => {
-   *   await page.goto('https://playwright.dev/');
-   *   // ...
-   * });
-   * ```
-   *
-   * Test tags are displayed in the test report, and are available to a custom reporter via `TestCase.tags` property.
-   *
-   * You can also filter tests by their tags during test execution:
-   * - in the [command line](https://playwright.dev/docs/test-cli#reference);
-   * - in the config with [testConfig.grep](https://playwright.dev/docs/api/class-testconfig#test-config-grep) and
-   *   [testProject.grep](https://playwright.dev/docs/api/class-testproject#test-project-grep);
-   *
-   * Learn more about [tagging](https://playwright.dev/docs/test-annotations#tag-tests).
-   *
-   * **Annotations**
-   *
-   * You can annotate tests by providing additional test details.
-   *
-   * ```js
-   * import { test, expect } from '@playwright/test';
-   *
-   * test('basic test', {
-   *   annotation: {
-   *     type: 'issue',
-   *     description: 'https://github.com/microsoft/playwright/issues/23180',
-   *   },
-   * }, async ({ page }) => {
-   *   await page.goto('https://playwright.dev/');
-   *   // ...
-   * });
-   * ```
-   *
-   * Test annotations are displayed in the test report, and are available to a custom reporter via
-   * `TestCase.annotations` property.
-   *
-   * You can also add annotations during runtime by manipulating
-   * [testInfo.annotations](https://playwright.dev/docs/api/class-testinfo#test-info-annotations).
-   *
-   * Learn more about [test annotations](https://playwright.dev/docs/test-annotations).
-   * @param title Test title.
-   * @param details Additional test details.
-   * @param body Test body that takes one or two arguments: an object with fixtures and optional {@link TestInfo}.
-   */
-  (title: string, details: TestDetails, body: (args: TestArgs, testInfo: TestInfo) => Promise<void> | void): void;
-}
-
-/**
- * Playwright Test provides a `test` function to declare tests and `expect` function to write assertions.
- *
- * ```js
- * import { test, expect } from '@playwright/test';
- *
- * test('basic test', async ({ page }) => {
- *   await page.goto('https://playwright.dev/');
- *   const name = await page.innerText('.navbar__title');
- *   expect(name).toBe('Playwright');
- * });
- * ```
- *
- */
-export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue> extends TestFunction<TestArgs & WorkerArgs> {
-  /**
-   * Declares a focused test. If there are some focused tests or suites, all of them will be run but nothing else.
-   * - `test.only(title, body)`
-   * - `test.only(title, details, body)`
-   *
-   * **Usage**
-   *
-   * ```js
-   * test.only('focus this test', async ({ page }) => {
-   *   // Run only focused tests in the entire project.
-   * });
-   * ```
-   *
-   * @param title Test title.
-   * @param details See [test.(call)(title[, details, body])](https://playwright.dev/docs/api/class-test#test-call) for test details
-   * description.
-   * @param body Test body that takes one or two arguments: an object with fixtures and optional {@link TestInfo}.
-   */
-  only: TestFunction<TestArgs & WorkerArgs>;
-  /**
-   * Declares a group of tests.
-   * - `test.describe(title, callback)`
-   * - `test.describe(callback)`
-   * - `test.describe(title, details, callback)`
-   *
-   * **Usage**
-   *
-   * You can declare a group of tests with a title. The title will be visible in the test report as a part of each
-   * test's title.
-   *
-   * ```js
-   * test.describe('two tests', () => {
-   *   test('one', async ({ page }) => {
-   *     // ...
-   *   });
-   *
-   *   test('two', async ({ page }) => {
-   *     // ...
-   *   });
-   * });
-   * ```
-   *
-   * **Anonymous group**
-   *
-   * You can also declare a test group without a title. This is convenient to give a group of tests a common option with
-   * [test.use(options)](https://playwright.dev/docs/api/class-test#test-use).
-   *
-   * ```js
-   * test.describe(() => {
-   *   test.use({ colorScheme: 'dark' });
-   *
-   *   test('one', async ({ page }) => {
-   *     // ...
-   *   });
-   *
-   *   test('two', async ({ page }) => {
-   *     // ...
-   *   });
-   * });
-   * ```
-   *
-   * **Tags**
-   *
-   * You can tag all tests in a group by providing additional details. Note that each tag must start with `@` symbol.
-   *
-   * ```js
-   * import { test, expect } from '@playwright/test';
-   *
-   * test.describe('two tagged tests', {
-   *   tag: '@smoke',
-   * }, () => {
-   *   test('one', async ({ page }) => {
-   *     // ...
-   *   });
-   *
-   *   test('two', async ({ page }) => {
-   *     // ...
-   *   });
-   * });
-   * ```
-   *
-   * Learn more about [tagging](https://playwright.dev/docs/test-annotations#tag-tests).
-   *
-   * **Annotations**
-   *
-   * You can annotate all tests in a group by providing additional details.
-   *
-   * ```js
-   * import { test, expect } from '@playwright/test';
-   *
-   * test.describe('two annotated tests', {
-   *   annotation: {
-   *     type: 'issue',
-   *     description: 'https://github.com/microsoft/playwright/issues/23180',
-   *   },
-   * }, () => {
-   *   test('one', async ({ page }) => {
-   *     // ...
-   *   });
-   *
-   *   test('two', async ({ page }) => {
-   *     // ...
-   *   });
-   * });
-   * ```
-   *
-   * Learn more about [test annotations](https://playwright.dev/docs/test-annotations).
-   * @param title Group title.
-   * @param details Additional details for all tests in the group.
-   * @param callback A callback that is run immediately when calling
-   * [test.describe([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe). Any tests
-   * declared in this callback will belong to the group.
-   */
-  describe: SuiteFunction & {
     /**
    * Declares a focused group of tests. If there are some focused tests or suites, all of them will be run but nothing
    * else.
@@ -2437,7 +2505,80 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    * [test.describe.only([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-only).
    * Any tests added in this callback will belong to the group.
    */
-  only: SuiteFunction;
+  only(title: string, callback: () => void): void;
+    /**
+   * Declares a focused group of tests. If there are some focused tests or suites, all of them will be run but nothing
+   * else.
+   * - `test.describe.only(title, callback)`
+   * - `test.describe.only(callback)`
+   * - `test.describe.only(title, details, callback)`
+   *
+   * **Usage**
+   *
+   * ```js
+   * test.describe.only('focused group', () => {
+   *   test('in the focused group', async ({ page }) => {
+   *     // This test will run
+   *   });
+   * });
+   * test('not in the focused group', async ({ page }) => {
+   *   // This test will not run
+   * });
+   * ```
+   *
+   * You can also omit the title.
+   *
+   * ```js
+   * test.describe.only(() => {
+   *   // ...
+   * });
+   * ```
+   *
+   * @param title Group title.
+   * @param details See [test.describe([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe) for
+   * details description.
+   * @param callback A callback that is run immediately when calling
+   * [test.describe.only([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-only).
+   * Any tests added in this callback will belong to the group.
+   */
+  only(callback: () => void): void;
+    /**
+   * Declares a focused group of tests. If there are some focused tests or suites, all of them will be run but nothing
+   * else.
+   * - `test.describe.only(title, callback)`
+   * - `test.describe.only(callback)`
+   * - `test.describe.only(title, details, callback)`
+   *
+   * **Usage**
+   *
+   * ```js
+   * test.describe.only('focused group', () => {
+   *   test('in the focused group', async ({ page }) => {
+   *     // This test will run
+   *   });
+   * });
+   * test('not in the focused group', async ({ page }) => {
+   *   // This test will not run
+   * });
+   * ```
+   *
+   * You can also omit the title.
+   *
+   * ```js
+   * test.describe.only(() => {
+   *   // ...
+   * });
+   * ```
+   *
+   * @param title Group title.
+   * @param details See [test.describe([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe) for
+   * details description.
+   * @param callback A callback that is run immediately when calling
+   * [test.describe.only([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-only).
+   * Any tests added in this callback will belong to the group.
+   */
+  only(title: string, details: TestDetails, callback: () => void): void;
+
     /**
    * Declares a skipped test group, similarly to
    * [test.describe([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe). Tests in the
@@ -2471,7 +2612,76 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    * [test.describe.skip(title[, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-skip).
    * Any tests added in this callback will belong to the group, and will not be run.
    */
-  skip: SuiteFunction;
+  skip(title: string, callback: () => void): void;
+    /**
+   * Declares a skipped test group, similarly to
+   * [test.describe([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe). Tests in the
+   * skipped group are never run.
+   * - `test.describe.skip(title, callback)`
+   * - `test.describe.skip(title)`
+   * - `test.describe.skip(title, details, callback)`
+   *
+   * **Usage**
+   *
+   * ```js
+   * test.describe.skip('skipped group', () => {
+   *   test('example', async ({ page }) => {
+   *     // This test will not run
+   *   });
+   * });
+   * ```
+   *
+   * You can also omit the title.
+   *
+   * ```js
+   * test.describe.skip(() => {
+   *   // ...
+   * });
+   * ```
+   *
+   * @param title Group title.
+   * @param details See [test.describe([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe) for
+   * details description.
+   * @param callback A callback that is run immediately when calling
+   * [test.describe.skip(title[, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-skip).
+   * Any tests added in this callback will belong to the group, and will not be run.
+   */
+  skip(callback: () => void): void;
+    /**
+   * Declares a skipped test group, similarly to
+   * [test.describe([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe). Tests in the
+   * skipped group are never run.
+   * - `test.describe.skip(title, callback)`
+   * - `test.describe.skip(title)`
+   * - `test.describe.skip(title, details, callback)`
+   *
+   * **Usage**
+   *
+   * ```js
+   * test.describe.skip('skipped group', () => {
+   *   test('example', async ({ page }) => {
+   *     // This test will not run
+   *   });
+   * });
+   * ```
+   *
+   * You can also omit the title.
+   *
+   * ```js
+   * test.describe.skip(() => {
+   *   // ...
+   * });
+   * ```
+   *
+   * @param title Group title.
+   * @param details See [test.describe([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe) for
+   * details description.
+   * @param callback A callback that is run immediately when calling
+   * [test.describe.skip(title[, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-skip).
+   * Any tests added in this callback will belong to the group, and will not be run.
+   */
+  skip(title: string, details: TestDetails, callback: () => void): void;
+
     /**
    * Declares a test group similarly to
    * [test.describe([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe). Tests in
@@ -2505,7 +2715,76 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    * [test.describe.fixme([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-fixme).
    * Any tests added in this callback will belong to the group, and will not be run.
    */
-  fixme: SuiteFunction;
+  fixme(title: string, callback: () => void): void;
+    /**
+   * Declares a test group similarly to
+   * [test.describe([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe). Tests in
+   * this group are marked as "fixme" and will not be executed.
+   * - `test.describe.fixme(title, callback)`
+   * - `test.describe.fixme(callback)`
+   * - `test.describe.fixme(title, details, callback)`
+   *
+   * **Usage**
+   *
+   * ```js
+   * test.describe.fixme('broken tests that should be fixed', () => {
+   *   test('example', async ({ page }) => {
+   *     // This test will not run
+   *   });
+   * });
+   * ```
+   *
+   * You can also omit the title.
+   *
+   * ```js
+   * test.describe.fixme(() => {
+   *   // ...
+   * });
+   * ```
+   *
+   * @param title Group title.
+   * @param details See [test.describe([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe) for
+   * details description.
+   * @param callback A callback that is run immediately when calling
+   * [test.describe.fixme([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-fixme).
+   * Any tests added in this callback will belong to the group, and will not be run.
+   */
+  fixme(callback: () => void): void;
+    /**
+   * Declares a test group similarly to
+   * [test.describe([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe). Tests in
+   * this group are marked as "fixme" and will not be executed.
+   * - `test.describe.fixme(title, callback)`
+   * - `test.describe.fixme(callback)`
+   * - `test.describe.fixme(title, details, callback)`
+   *
+   * **Usage**
+   *
+   * ```js
+   * test.describe.fixme('broken tests that should be fixed', () => {
+   *   test('example', async ({ page }) => {
+   *     // This test will not run
+   *   });
+   * });
+   * ```
+   *
+   * You can also omit the title.
+   *
+   * ```js
+   * test.describe.fixme(() => {
+   *   // ...
+   * });
+   * ```
+   *
+   * @param title Group title.
+   * @param details See [test.describe([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe) for
+   * details description.
+   * @param callback A callback that is run immediately when calling
+   * [test.describe.fixme([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-fixme).
+   * Any tests added in this callback will belong to the group, and will not be run.
+   */
+  fixme(title: string, details: TestDetails, callback: () => void): void;
+
     /**
    * **NOTE** See [test.describe.configure([options])](https://playwright.dev/docs/api/class-test#test-describe-configure) for
    * the preferred way of configuring the execution mode.
@@ -2515,6 +2794,7 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    *
    * **NOTE** Using serial is not recommended. It is usually better to make your tests isolated, so they can be run
    * independently.
+   *
    * - `test.describe.serial(title, callback)`
    * - `test.describe.serial(title)`
    * - `test.describe.serial(title, details, callback)`
@@ -2543,7 +2823,125 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    * [test.describe.serial([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-serial).
    * Any tests added in this callback will belong to the group.
    */
-  serial: SuiteFunction & {
+  serial: {
+      /**
+   * **NOTE** See [test.describe.configure([options])](https://playwright.dev/docs/api/class-test#test-describe-configure) for
+   * the preferred way of configuring the execution mode.
+   *
+   * Declares a group of tests that should always be run serially. If one of the tests fails, all subsequent tests are
+   * skipped. All tests in a group are retried together.
+   *
+   * **NOTE** Using serial is not recommended. It is usually better to make your tests isolated, so they can be run
+   * independently.
+   *
+   * - `test.describe.serial(title, callback)`
+   * - `test.describe.serial(title)`
+   * - `test.describe.serial(title, details, callback)`
+   *
+   * **Usage**
+   *
+   * ```js
+   * test.describe.serial('group', () => {
+   *   test('runs first', async ({ page }) => {});
+   *   test('runs second', async ({ page }) => {});
+   * });
+   * ```
+   *
+   * You can also omit the title.
+   *
+   * ```js
+   * test.describe.serial(() => {
+   *   // ...
+   * });
+   * ```
+   *
+   * @param title Group title.
+   * @param details See [test.describe([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe) for
+   * details description.
+   * @param callback A callback that is run immediately when calling
+   * [test.describe.serial([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-serial).
+   * Any tests added in this callback will belong to the group.
+   */
+  (title: string, callback: () => void): void;
+      /**
+   * **NOTE** See [test.describe.configure([options])](https://playwright.dev/docs/api/class-test#test-describe-configure) for
+   * the preferred way of configuring the execution mode.
+   *
+   * Declares a group of tests that should always be run serially. If one of the tests fails, all subsequent tests are
+   * skipped. All tests in a group are retried together.
+   *
+   * **NOTE** Using serial is not recommended. It is usually better to make your tests isolated, so they can be run
+   * independently.
+   *
+   * - `test.describe.serial(title, callback)`
+   * - `test.describe.serial(title)`
+   * - `test.describe.serial(title, details, callback)`
+   *
+   * **Usage**
+   *
+   * ```js
+   * test.describe.serial('group', () => {
+   *   test('runs first', async ({ page }) => {});
+   *   test('runs second', async ({ page }) => {});
+   * });
+   * ```
+   *
+   * You can also omit the title.
+   *
+   * ```js
+   * test.describe.serial(() => {
+   *   // ...
+   * });
+   * ```
+   *
+   * @param title Group title.
+   * @param details See [test.describe([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe) for
+   * details description.
+   * @param callback A callback that is run immediately when calling
+   * [test.describe.serial([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-serial).
+   * Any tests added in this callback will belong to the group.
+   */
+  (callback: () => void): void;
+      /**
+   * **NOTE** See [test.describe.configure([options])](https://playwright.dev/docs/api/class-test#test-describe-configure) for
+   * the preferred way of configuring the execution mode.
+   *
+   * Declares a group of tests that should always be run serially. If one of the tests fails, all subsequent tests are
+   * skipped. All tests in a group are retried together.
+   *
+   * **NOTE** Using serial is not recommended. It is usually better to make your tests isolated, so they can be run
+   * independently.
+   *
+   * - `test.describe.serial(title, callback)`
+   * - `test.describe.serial(title)`
+   * - `test.describe.serial(title, details, callback)`
+   *
+   * **Usage**
+   *
+   * ```js
+   * test.describe.serial('group', () => {
+   *   test('runs first', async ({ page }) => {});
+   *   test('runs second', async ({ page }) => {});
+   * });
+   * ```
+   *
+   * You can also omit the title.
+   *
+   * ```js
+   * test.describe.serial(() => {
+   *   // ...
+   * });
+   * ```
+   *
+   * @param title Group title.
+   * @param details See [test.describe([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe) for
+   * details description.
+   * @param callback A callback that is run immediately when calling
+   * [test.describe.serial([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-serial).
+   * Any tests added in this callback will belong to the group.
+   */
+  (title: string, details: TestDetails, callback: () => void): void;
+
       /**
    * **NOTE** See [test.describe.configure([options])](https://playwright.dev/docs/api/class-test#test-describe-configure) for
    * the preferred way of configuring the execution mode.
@@ -2554,6 +2952,7 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    *
    * **NOTE** Using serial is not recommended. It is usually better to make your tests isolated, so they can be run
    * independently.
+   *
    * - `test.describe.serial.only(title, callback)`
    * - `test.describe.serial.only(title)`
    * - `test.describe.serial.only(title, details, callback)`
@@ -2584,8 +2983,93 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    * [test.describe.serial.only(title[, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-serial-only).
    * Any tests added in this callback will belong to the group.
    */
-  only: SuiteFunction;
+  only(title: string, callback: () => void): void;
+      /**
+   * **NOTE** See [test.describe.configure([options])](https://playwright.dev/docs/api/class-test#test-describe-configure) for
+   * the preferred way of configuring the execution mode.
+   *
+   * Declares a focused group of tests that should always be run serially. If one of the tests fails, all subsequent
+   * tests are skipped. All tests in a group are retried together. If there are some focused tests or suites, all of
+   * them will be run but nothing else.
+   *
+   * **NOTE** Using serial is not recommended. It is usually better to make your tests isolated, so they can be run
+   * independently.
+   *
+   * - `test.describe.serial.only(title, callback)`
+   * - `test.describe.serial.only(title)`
+   * - `test.describe.serial.only(title, details, callback)`
+   *
+   * **Usage**
+   *
+   * ```js
+   * test.describe.serial.only('group', () => {
+   *   test('runs first', async ({ page }) => {
+   *   });
+   *   test('runs second', async ({ page }) => {
+   *   });
+   * });
+   * ```
+   *
+   * You can also omit the title.
+   *
+   * ```js
+   * test.describe.serial.only(() => {
+   *   // ...
+   * });
+   * ```
+   *
+   * @param title Group title.
+   * @param details See [test.describe([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe) for
+   * details description.
+   * @param callback A callback that is run immediately when calling
+   * [test.describe.serial.only(title[, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-serial-only).
+   * Any tests added in this callback will belong to the group.
+   */
+  only(callback: () => void): void;
+      /**
+   * **NOTE** See [test.describe.configure([options])](https://playwright.dev/docs/api/class-test#test-describe-configure) for
+   * the preferred way of configuring the execution mode.
+   *
+   * Declares a focused group of tests that should always be run serially. If one of the tests fails, all subsequent
+   * tests are skipped. All tests in a group are retried together. If there are some focused tests or suites, all of
+   * them will be run but nothing else.
+   *
+   * **NOTE** Using serial is not recommended. It is usually better to make your tests isolated, so they can be run
+   * independently.
+   *
+   * - `test.describe.serial.only(title, callback)`
+   * - `test.describe.serial.only(title)`
+   * - `test.describe.serial.only(title, details, callback)`
+   *
+   * **Usage**
+   *
+   * ```js
+   * test.describe.serial.only('group', () => {
+   *   test('runs first', async ({ page }) => {
+   *   });
+   *   test('runs second', async ({ page }) => {
+   *   });
+   * });
+   * ```
+   *
+   * You can also omit the title.
+   *
+   * ```js
+   * test.describe.serial.only(() => {
+   *   // ...
+   * });
+   * ```
+   *
+   * @param title Group title.
+   * @param details See [test.describe([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe) for
+   * details description.
+   * @param callback A callback that is run immediately when calling
+   * [test.describe.serial.only(title[, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-serial-only).
+   * Any tests added in this callback will belong to the group.
+   */
+  only(title: string, details: TestDetails, callback: () => void): void;
     };
+
     /**
    * **NOTE** See [test.describe.configure([options])](https://playwright.dev/docs/api/class-test#test-describe-configure) for
    * the preferred way of configuring the execution mode.
@@ -2625,7 +3109,128 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    * [test.describe.parallel([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-parallel).
    * Any tests added in this callback will belong to the group.
    */
-  parallel: SuiteFunction & {
+  parallel: {
+      /**
+   * **NOTE** See [test.describe.configure([options])](https://playwright.dev/docs/api/class-test#test-describe-configure) for
+   * the preferred way of configuring the execution mode.
+   *
+   * Declares a group of tests that could be run in parallel. By default, tests in a single test file run one after
+   * another, but using
+   * [test.describe.parallel([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-parallel)
+   * allows them to run in parallel.
+   * - `test.describe.parallel(title, callback)`
+   * - `test.describe.parallel(callback)`
+   * - `test.describe.parallel(title, details, callback)`
+   *
+   * **Usage**
+   *
+   * ```js
+   * test.describe.parallel('group', () => {
+   *   test('runs in parallel 1', async ({ page }) => {});
+   *   test('runs in parallel 2', async ({ page }) => {});
+   * });
+   * ```
+   *
+   * Note that parallel tests are executed in separate processes and cannot share any state or global variables. Each of
+   * the parallel tests executes all relevant hooks.
+   *
+   * You can also omit the title.
+   *
+   * ```js
+   * test.describe.parallel(() => {
+   *   // ...
+   * });
+   * ```
+   *
+   * @param title Group title.
+   * @param details See [test.describe([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe) for
+   * details description.
+   * @param callback A callback that is run immediately when calling
+   * [test.describe.parallel([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-parallel).
+   * Any tests added in this callback will belong to the group.
+   */
+  (title: string, callback: () => void): void;
+      /**
+   * **NOTE** See [test.describe.configure([options])](https://playwright.dev/docs/api/class-test#test-describe-configure) for
+   * the preferred way of configuring the execution mode.
+   *
+   * Declares a group of tests that could be run in parallel. By default, tests in a single test file run one after
+   * another, but using
+   * [test.describe.parallel([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-parallel)
+   * allows them to run in parallel.
+   * - `test.describe.parallel(title, callback)`
+   * - `test.describe.parallel(callback)`
+   * - `test.describe.parallel(title, details, callback)`
+   *
+   * **Usage**
+   *
+   * ```js
+   * test.describe.parallel('group', () => {
+   *   test('runs in parallel 1', async ({ page }) => {});
+   *   test('runs in parallel 2', async ({ page }) => {});
+   * });
+   * ```
+   *
+   * Note that parallel tests are executed in separate processes and cannot share any state or global variables. Each of
+   * the parallel tests executes all relevant hooks.
+   *
+   * You can also omit the title.
+   *
+   * ```js
+   * test.describe.parallel(() => {
+   *   // ...
+   * });
+   * ```
+   *
+   * @param title Group title.
+   * @param details See [test.describe([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe) for
+   * details description.
+   * @param callback A callback that is run immediately when calling
+   * [test.describe.parallel([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-parallel).
+   * Any tests added in this callback will belong to the group.
+   */
+  (callback: () => void): void;
+      /**
+   * **NOTE** See [test.describe.configure([options])](https://playwright.dev/docs/api/class-test#test-describe-configure) for
+   * the preferred way of configuring the execution mode.
+   *
+   * Declares a group of tests that could be run in parallel. By default, tests in a single test file run one after
+   * another, but using
+   * [test.describe.parallel([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-parallel)
+   * allows them to run in parallel.
+   * - `test.describe.parallel(title, callback)`
+   * - `test.describe.parallel(callback)`
+   * - `test.describe.parallel(title, details, callback)`
+   *
+   * **Usage**
+   *
+   * ```js
+   * test.describe.parallel('group', () => {
+   *   test('runs in parallel 1', async ({ page }) => {});
+   *   test('runs in parallel 2', async ({ page }) => {});
+   * });
+   * ```
+   *
+   * Note that parallel tests are executed in separate processes and cannot share any state or global variables. Each of
+   * the parallel tests executes all relevant hooks.
+   *
+   * You can also omit the title.
+   *
+   * ```js
+   * test.describe.parallel(() => {
+   *   // ...
+   * });
+   * ```
+   *
+   * @param title Group title.
+   * @param details See [test.describe([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe) for
+   * details description.
+   * @param callback A callback that is run immediately when calling
+   * [test.describe.parallel([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-parallel).
+   * Any tests added in this callback will belong to the group.
+   */
+  (title: string, details: TestDetails, callback: () => void): void;
+
       /**
    * **NOTE** See [test.describe.configure([options])](https://playwright.dev/docs/api/class-test#test-describe-configure) for
    * the preferred way of configuring the execution mode.
@@ -2661,8 +3266,81 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    * [test.describe.parallel.only([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-parallel-only).
    * Any tests added in this callback will belong to the group.
    */
-  only: SuiteFunction;
+  only(title: string, callback: () => void): void;
+      /**
+   * **NOTE** See [test.describe.configure([options])](https://playwright.dev/docs/api/class-test#test-describe-configure) for
+   * the preferred way of configuring the execution mode.
+   *
+   * Declares a focused group of tests that could be run in parallel. This is similar to
+   * [test.describe.parallel([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-parallel),
+   * but focuses the group. If there are some focused tests or suites, all of them will be run but nothing else.
+   * - `test.describe.parallel.only(title, callback)`
+   * - `test.describe.parallel.only(callback)`
+   * - `test.describe.parallel.only(title, details, callback)`
+   *
+   * **Usage**
+   *
+   * ```js
+   * test.describe.parallel.only('group', () => {
+   *   test('runs in parallel 1', async ({ page }) => {});
+   *   test('runs in parallel 2', async ({ page }) => {});
+   * });
+   * ```
+   *
+   * You can also omit the title.
+   *
+   * ```js
+   * test.describe.parallel.only(() => {
+   *   // ...
+   * });
+   * ```
+   *
+   * @param title Group title.
+   * @param details See [test.describe([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe) for
+   * details description.
+   * @param callback A callback that is run immediately when calling
+   * [test.describe.parallel.only([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-parallel-only).
+   * Any tests added in this callback will belong to the group.
+   */
+  only(callback: () => void): void;
+      /**
+   * **NOTE** See [test.describe.configure([options])](https://playwright.dev/docs/api/class-test#test-describe-configure) for
+   * the preferred way of configuring the execution mode.
+   *
+   * Declares a focused group of tests that could be run in parallel. This is similar to
+   * [test.describe.parallel([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-parallel),
+   * but focuses the group. If there are some focused tests or suites, all of them will be run but nothing else.
+   * - `test.describe.parallel.only(title, callback)`
+   * - `test.describe.parallel.only(callback)`
+   * - `test.describe.parallel.only(title, details, callback)`
+   *
+   * **Usage**
+   *
+   * ```js
+   * test.describe.parallel.only('group', () => {
+   *   test('runs in parallel 1', async ({ page }) => {});
+   *   test('runs in parallel 2', async ({ page }) => {});
+   * });
+   * ```
+   *
+   * You can also omit the title.
+   *
+   * ```js
+   * test.describe.parallel.only(() => {
+   *   // ...
+   * });
+   * ```
+   *
+   * @param title Group title.
+   * @param details See [test.describe([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe) for
+   * details description.
+   * @param callback A callback that is run immediately when calling
+   * [test.describe.parallel.only([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-parallel-only).
+   * Any tests added in this callback will belong to the group.
+   */
+  only(title: string, details: TestDetails, callback: () => void): void;
     };
+
     /**
    * Configures the enclosing scope. Can be executed either on the top level or inside a describe. Configuration applies
    * to the entire scope, regardless of whether it run before or after the test declaration.
@@ -2722,6 +3400,7 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    */
   configure: (options: { mode?: 'default' | 'parallel' | 'serial', retries?: number, timeout?: number }) => void;
   };
+
   /**
    * Skip a test. Playwright will not run the test past the `test.skip()` call.
    *
@@ -2795,13 +3474,14 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    * @param title Test title.
    * @param details See [test.(call)(title[, details, body])](https://playwright.dev/docs/api/class-test#test-call) for test details
    * description.
-   * @param body Test body that takes one or two arguments: an object with fixtures and optional {@link TestInfo}.
+   * @param body Test body that takes one or two arguments: an object with fixtures and optional
+   * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
    * @param condition Test is marked as "should fail" when the condition is `true`.
    * @param callback A function that returns whether to mark as "should fail", based on test fixtures. Test or tests are marked as
    * "should fail" when the return value is `true`.
    * @param description Optional description that will be reflected in a test report.
    */
-  skip(title: string, body: (args: TestArgs & WorkerArgs, testInfo: TestInfo) => Promise<void> | void): void;
+  skip(title: string, body: TestBody<TestArgs & WorkerArgs>): void;
   /**
    * Skip a test. Playwright will not run the test past the `test.skip()` call.
    *
@@ -2875,13 +3555,14 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    * @param title Test title.
    * @param details See [test.(call)(title[, details, body])](https://playwright.dev/docs/api/class-test#test-call) for test details
    * description.
-   * @param body Test body that takes one or two arguments: an object with fixtures and optional {@link TestInfo}.
+   * @param body Test body that takes one or two arguments: an object with fixtures and optional
+   * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
    * @param condition Test is marked as "should fail" when the condition is `true`.
    * @param callback A function that returns whether to mark as "should fail", based on test fixtures. Test or tests are marked as
    * "should fail" when the return value is `true`.
    * @param description Optional description that will be reflected in a test report.
    */
-  skip(title: string, details: TestDetails, body: (args: TestArgs & WorkerArgs, testInfo: TestInfo) => Promise<void> | void): void;
+  skip(title: string, details: TestDetails, body: TestBody<TestArgs & WorkerArgs>): void;
   /**
    * Skip a test. Playwright will not run the test past the `test.skip()` call.
    *
@@ -2955,7 +3636,8 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    * @param title Test title.
    * @param details See [test.(call)(title[, details, body])](https://playwright.dev/docs/api/class-test#test-call) for test details
    * description.
-   * @param body Test body that takes one or two arguments: an object with fixtures and optional {@link TestInfo}.
+   * @param body Test body that takes one or two arguments: an object with fixtures and optional
+   * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
    * @param condition Test is marked as "should fail" when the condition is `true`.
    * @param callback A function that returns whether to mark as "should fail", based on test fixtures. Test or tests are marked as
    * "should fail" when the return value is `true`.
@@ -3035,7 +3717,8 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    * @param title Test title.
    * @param details See [test.(call)(title[, details, body])](https://playwright.dev/docs/api/class-test#test-call) for test details
    * description.
-   * @param body Test body that takes one or two arguments: an object with fixtures and optional {@link TestInfo}.
+   * @param body Test body that takes one or two arguments: an object with fixtures and optional
+   * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
    * @param condition Test is marked as "should fail" when the condition is `true`.
    * @param callback A function that returns whether to mark as "should fail", based on test fixtures. Test or tests are marked as
    * "should fail" when the return value is `true`.
@@ -3115,13 +3798,15 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    * @param title Test title.
    * @param details See [test.(call)(title[, details, body])](https://playwright.dev/docs/api/class-test#test-call) for test details
    * description.
-   * @param body Test body that takes one or two arguments: an object with fixtures and optional {@link TestInfo}.
+   * @param body Test body that takes one or two arguments: an object with fixtures and optional
+   * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
    * @param condition Test is marked as "should fail" when the condition is `true`.
    * @param callback A function that returns whether to mark as "should fail", based on test fixtures. Test or tests are marked as
    * "should fail" when the return value is `true`.
    * @param description Optional description that will be reflected in a test report.
    */
-  skip(callback: (args: TestArgs & WorkerArgs) => boolean, description?: string): void;
+  skip(callback: ConditionBody<TestArgs & WorkerArgs>, description?: string): void;
+
   /**
    * Mark a test as "fixme", with the intention to fix it. Playwright will not run the test past the `test.fixme()`
    * call.
@@ -3192,13 +3877,14 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    * @param title Test title.
    * @param details See [test.(call)(title[, details, body])](https://playwright.dev/docs/api/class-test#test-call) for test details
    * description.
-   * @param body Test body that takes one or two arguments: an object with fixtures and optional {@link TestInfo}.
+   * @param body Test body that takes one or two arguments: an object with fixtures and optional
+   * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
    * @param condition Test is marked as "should fail" when the condition is `true`.
    * @param callback A function that returns whether to mark as "should fail", based on test fixtures. Test or tests are marked as
    * "should fail" when the return value is `true`.
    * @param description Optional description that will be reflected in a test report.
    */
-  fixme(title: string, body: (args: TestArgs & WorkerArgs, testInfo: TestInfo) => Promise<void> | void): void;
+  fixme(title: string, body: TestBody<TestArgs & WorkerArgs>): void;
   /**
    * Mark a test as "fixme", with the intention to fix it. Playwright will not run the test past the `test.fixme()`
    * call.
@@ -3269,13 +3955,14 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    * @param title Test title.
    * @param details See [test.(call)(title[, details, body])](https://playwright.dev/docs/api/class-test#test-call) for test details
    * description.
-   * @param body Test body that takes one or two arguments: an object with fixtures and optional {@link TestInfo}.
+   * @param body Test body that takes one or two arguments: an object with fixtures and optional
+   * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
    * @param condition Test is marked as "should fail" when the condition is `true`.
    * @param callback A function that returns whether to mark as "should fail", based on test fixtures. Test or tests are marked as
    * "should fail" when the return value is `true`.
    * @param description Optional description that will be reflected in a test report.
    */
-  fixme(title: string, details: TestDetails, body: (args: TestArgs & WorkerArgs, testInfo: TestInfo) => Promise<void> | void): void;
+  fixme(title: string, details: TestDetails, body: TestBody<TestArgs & WorkerArgs>): void;
   /**
    * Mark a test as "fixme", with the intention to fix it. Playwright will not run the test past the `test.fixme()`
    * call.
@@ -3346,7 +4033,8 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    * @param title Test title.
    * @param details See [test.(call)(title[, details, body])](https://playwright.dev/docs/api/class-test#test-call) for test details
    * description.
-   * @param body Test body that takes one or two arguments: an object with fixtures and optional {@link TestInfo}.
+   * @param body Test body that takes one or two arguments: an object with fixtures and optional
+   * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
    * @param condition Test is marked as "should fail" when the condition is `true`.
    * @param callback A function that returns whether to mark as "should fail", based on test fixtures. Test or tests are marked as
    * "should fail" when the return value is `true`.
@@ -3423,7 +4111,8 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    * @param title Test title.
    * @param details See [test.(call)(title[, details, body])](https://playwright.dev/docs/api/class-test#test-call) for test details
    * description.
-   * @param body Test body that takes one or two arguments: an object with fixtures and optional {@link TestInfo}.
+   * @param body Test body that takes one or two arguments: an object with fixtures and optional
+   * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
    * @param condition Test is marked as "should fail" when the condition is `true`.
    * @param callback A function that returns whether to mark as "should fail", based on test fixtures. Test or tests are marked as
    * "should fail" when the return value is `true`.
@@ -3500,13 +4189,15 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    * @param title Test title.
    * @param details See [test.(call)(title[, details, body])](https://playwright.dev/docs/api/class-test#test-call) for test details
    * description.
-   * @param body Test body that takes one or two arguments: an object with fixtures and optional {@link TestInfo}.
+   * @param body Test body that takes one or two arguments: an object with fixtures and optional
+   * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
    * @param condition Test is marked as "should fail" when the condition is `true`.
    * @param callback A function that returns whether to mark as "should fail", based on test fixtures. Test or tests are marked as
    * "should fail" when the return value is `true`.
    * @param description Optional description that will be reflected in a test report.
    */
-  fixme(callback: (args: TestArgs & WorkerArgs) => boolean, description?: string): void;
+  fixme(callback: ConditionBody<TestArgs & WorkerArgs>, description?: string): void;
+
   /**
    * Marks a test as "should fail". Playwright runs this test and ensures that it is actually failing. This is useful
    * for documentation purposes to acknowledge that some functionality is broken until it is fixed.
@@ -3576,14 +4267,15 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    * @param title Test title.
    * @param details See [test.(call)(title[, details, body])](https://playwright.dev/docs/api/class-test#test-call) for test details
    * description.
-   * @param body Test body that takes one or two arguments: an object with fixtures and optional {@link TestInfo}.
+   * @param body Test body that takes one or two arguments: an object with fixtures and optional
+   * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
    * @param condition Test is marked as "should fail" when the condition is `true`.
    * @param callback A function that returns whether to mark as "should fail", based on test fixtures. Test or tests are marked as
    * "should fail" when the return value is `true`.
    * @param description Optional description that will be reflected in a test report.
    */
-  fail(title: string, body: (args: TestArgs & WorkerArgs, testInfo: TestInfo) => Promise<void> | void): void;
-  /**
+  fail: {
+    /**
    * Marks a test as "should fail". Playwright runs this test and ensures that it is actually failing. This is useful
    * for documentation purposes to acknowledge that some functionality is broken until it is fixed.
    *
@@ -3652,14 +4344,15 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    * @param title Test title.
    * @param details See [test.(call)(title[, details, body])](https://playwright.dev/docs/api/class-test#test-call) for test details
    * description.
-   * @param body Test body that takes one or two arguments: an object with fixtures and optional {@link TestInfo}.
+   * @param body Test body that takes one or two arguments: an object with fixtures and optional
+   * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
    * @param condition Test is marked as "should fail" when the condition is `true`.
    * @param callback A function that returns whether to mark as "should fail", based on test fixtures. Test or tests are marked as
    * "should fail" when the return value is `true`.
    * @param description Optional description that will be reflected in a test report.
    */
-  fail(title: string, details: TestDetails, body: (args: TestArgs & WorkerArgs, testInfo: TestInfo) => Promise<void> | void): void;
-  /**
+  (title: string, body: TestBody<TestArgs & WorkerArgs>): void;
+    /**
    * Marks a test as "should fail". Playwright runs this test and ensures that it is actually failing. This is useful
    * for documentation purposes to acknowledge that some functionality is broken until it is fixed.
    *
@@ -3728,14 +4421,15 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    * @param title Test title.
    * @param details See [test.(call)(title[, details, body])](https://playwright.dev/docs/api/class-test#test-call) for test details
    * description.
-   * @param body Test body that takes one or two arguments: an object with fixtures and optional {@link TestInfo}.
+   * @param body Test body that takes one or two arguments: an object with fixtures and optional
+   * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
    * @param condition Test is marked as "should fail" when the condition is `true`.
    * @param callback A function that returns whether to mark as "should fail", based on test fixtures. Test or tests are marked as
    * "should fail" when the return value is `true`.
    * @param description Optional description that will be reflected in a test report.
    */
-  fail(condition: boolean, description?: string): void;
-  /**
+  (title: string, details: TestDetails, body: TestBody<TestArgs & WorkerArgs>): void;
+    /**
    * Marks a test as "should fail". Playwright runs this test and ensures that it is actually failing. This is useful
    * for documentation purposes to acknowledge that some functionality is broken until it is fixed.
    *
@@ -3804,14 +4498,15 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    * @param title Test title.
    * @param details See [test.(call)(title[, details, body])](https://playwright.dev/docs/api/class-test#test-call) for test details
    * description.
-   * @param body Test body that takes one or two arguments: an object with fixtures and optional {@link TestInfo}.
+   * @param body Test body that takes one or two arguments: an object with fixtures and optional
+   * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
    * @param condition Test is marked as "should fail" when the condition is `true`.
    * @param callback A function that returns whether to mark as "should fail", based on test fixtures. Test or tests are marked as
    * "should fail" when the return value is `true`.
    * @param description Optional description that will be reflected in a test report.
    */
-  fail(callback: (args: TestArgs & WorkerArgs) => boolean, description?: string): void;
-  /**
+  (condition: boolean, description?: string): void;
+    /**
    * Marks a test as "should fail". Playwright runs this test and ensures that it is actually failing. This is useful
    * for documentation purposes to acknowledge that some functionality is broken until it is fixed.
    *
@@ -3880,13 +4575,154 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    * @param title Test title.
    * @param details See [test.(call)(title[, details, body])](https://playwright.dev/docs/api/class-test#test-call) for test details
    * description.
-   * @param body Test body that takes one or two arguments: an object with fixtures and optional {@link TestInfo}.
+   * @param body Test body that takes one or two arguments: an object with fixtures and optional
+   * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
    * @param condition Test is marked as "should fail" when the condition is `true`.
    * @param callback A function that returns whether to mark as "should fail", based on test fixtures. Test or tests are marked as
    * "should fail" when the return value is `true`.
    * @param description Optional description that will be reflected in a test report.
    */
-  fail(): void;
+  (callback: ConditionBody<TestArgs & WorkerArgs>, description?: string): void;
+    /**
+   * Marks a test as "should fail". Playwright runs this test and ensures that it is actually failing. This is useful
+   * for documentation purposes to acknowledge that some functionality is broken until it is fixed.
+   *
+   * To declare a "failing" test:
+   * - `test.fail(title, body)`
+   * - `test.fail(title, details, body)`
+   *
+   * To annotate test as "failing" at runtime:
+   * - `test.fail(condition, description)`
+   * - `test.fail(callback, description)`
+   * - `test.fail()`
+   *
+   * **Usage**
+   *
+   * You can declare a test as failing, so that Playwright ensures it actually fails.
+   *
+   * ```js
+   * import { test, expect } from '@playwright/test';
+   *
+   * test.fail('not yet ready', async ({ page }) => {
+   *   // ...
+   * });
+   * ```
+   *
+   * If your test fails in some configurations, but not all, you can mark the test as failing inside the test body based
+   * on some condition. We recommend passing a `description` argument in this case.
+   *
+   * ```js
+   * import { test, expect } from '@playwright/test';
+   *
+   * test('fail in WebKit', async ({ page, browserName }) => {
+   *   test.fail(browserName === 'webkit', 'This feature is not implemented for Mac yet');
+   *   // ...
+   * });
+   * ```
+   *
+   * You can mark all tests in a file or
+   * [test.describe([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe) group as
+   * "should fail" based on some condition with a single `test.fail(callback, description)` call.
+   *
+   * ```js
+   * import { test, expect } from '@playwright/test';
+   *
+   * test.fail(({ browserName }) => browserName === 'webkit', 'not implemented yet');
+   *
+   * test('fail in WebKit 1', async ({ page }) => {
+   *   // ...
+   * });
+   * test('fail in WebKit 2', async ({ page }) => {
+   *   // ...
+   * });
+   * ```
+   *
+   * You can also call `test.fail()` without arguments inside the test body to always mark the test as failed. We
+   * recommend declaring a failing test with `test.fail(title, body)` instead.
+   *
+   * ```js
+   * import { test, expect } from '@playwright/test';
+   *
+   * test('less readable', async ({ page }) => {
+   *   test.fail();
+   *   // ...
+   * });
+   * ```
+   *
+   * @param title Test title.
+   * @param details See [test.(call)(title[, details, body])](https://playwright.dev/docs/api/class-test#test-call) for test details
+   * description.
+   * @param body Test body that takes one or two arguments: an object with fixtures and optional
+   * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
+   * @param condition Test is marked as "should fail" when the condition is `true`.
+   * @param callback A function that returns whether to mark as "should fail", based on test fixtures. Test or tests are marked as
+   * "should fail" when the return value is `true`.
+   * @param description Optional description that will be reflected in a test report.
+   */
+  (): void;
+
+    /**
+   * You can use `test.fail.only` to focus on a specific test that is expected to fail. This is particularly useful when
+   * debugging a failing test or working on a specific issue.
+   *
+   * To declare a focused "failing" test:
+   * - `test.fail.only(title, body)`
+   * - `test.fail.only(title, details, body)`
+   *
+   * **Usage**
+   *
+   * You can declare a focused failing test, so that Playwright runs only this test and ensures it actually fails.
+   *
+   * ```js
+   * import { test, expect } from '@playwright/test';
+   *
+   * test.fail.only('focused failing test', async ({ page }) => {
+   *   // This test is expected to fail
+   * });
+   * test('not in the focused group', async ({ page }) => {
+   *   // This test will not run
+   * });
+   * ```
+   *
+   * @param title Test title.
+   * @param details See [test.describe([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe) for test
+   * details description.
+   * @param body Test body that takes one or two arguments: an object with fixtures and optional
+   * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
+   */
+  only(title: string, body: TestBody<TestArgs & WorkerArgs>): void;
+    /**
+   * You can use `test.fail.only` to focus on a specific test that is expected to fail. This is particularly useful when
+   * debugging a failing test or working on a specific issue.
+   *
+   * To declare a focused "failing" test:
+   * - `test.fail.only(title, body)`
+   * - `test.fail.only(title, details, body)`
+   *
+   * **Usage**
+   *
+   * You can declare a focused failing test, so that Playwright runs only this test and ensures it actually fails.
+   *
+   * ```js
+   * import { test, expect } from '@playwright/test';
+   *
+   * test.fail.only('focused failing test', async ({ page }) => {
+   *   // This test is expected to fail
+   * });
+   * test('not in the focused group', async ({ page }) => {
+   *   // This test will not run
+   * });
+   * ```
+   *
+   * @param title Test title.
+   * @param details See [test.describe([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe) for test
+   * details description.
+   * @param body Test body that takes one or two arguments: an object with fixtures and optional
+   * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
+   */
+  only(title: string, details: TestDetails, body: TestBody<TestArgs & WorkerArgs>): void;
+  }
+
   /**
    * Marks a test as "slow". Slow test will be given triple the default timeout.
    *
@@ -4060,7 +4896,8 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    * the return value is `true`.
    * @param description Optional description that will be reflected in a test report.
    */
-  slow(callback: (args: TestArgs & WorkerArgs) => boolean, description?: string): void;
+  slow(callback: ConditionBody<TestArgs & WorkerArgs>, description?: string): void;
+
   /**
    * Changes the timeout for the test. Zero means no timeout. Learn more about [various timeouts](https://playwright.dev/docs/test-timeouts).
    *
@@ -4077,8 +4914,8 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    *   });
    *   ```
    *
-   * - Changing timeout from a slow `beforeEach` or `afterEach` hook. Note that this affects the test timeout that is
-   *   shared with `beforeEach`/`afterEach` hooks.
+   * - Changing timeout from a slow `beforeEach` hook. Note that this affects the test timeout that is shared with
+   *   `beforeEach` hooks.
    *
    *   ```js
    *   test.beforeEach(async ({ page }, testInfo) => {
@@ -4121,8 +4958,9 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    * [test.describe([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe) group, runs
    * before each test in the group.
    *
-   * You can access all the same {@link Fixtures} as the test body itself, and also the {@link TestInfo} object that
-   * gives a lot of useful information. For example, you can navigate the page before starting the test.
+   * You can access all the same [Fixtures](https://playwright.dev/docs/api/class-fixtures) as the test body itself, and
+   * also the [TestInfo](https://playwright.dev/docs/api/class-testinfo) object that gives a lot of useful information.
+   * For example, you can navigate the page before starting the test.
    *
    * You can use [test.afterEach([title, hookFunction])](https://playwright.dev/docs/api/class-test#test-after-each) to
    * teardown any resources set up in `beforeEach`.
@@ -4162,7 +5000,8 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    * ```
    *
    * @param title Hook title.
-   * @param hookFunction Hook function that takes one or two arguments: an object with fixtures and optional {@link TestInfo}.
+   * @param hookFunction Hook function that takes one or two arguments: an object with fixtures and optional
+   * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
    */
   beforeEach(inner: (args: TestArgs & WorkerArgs, testInfo: TestInfo) => Promise<any> | any): void;
   /**
@@ -4172,8 +5011,9 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    * [test.describe([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe) group, runs
    * before each test in the group.
    *
-   * You can access all the same {@link Fixtures} as the test body itself, and also the {@link TestInfo} object that
-   * gives a lot of useful information. For example, you can navigate the page before starting the test.
+   * You can access all the same [Fixtures](https://playwright.dev/docs/api/class-fixtures) as the test body itself, and
+   * also the [TestInfo](https://playwright.dev/docs/api/class-testinfo) object that gives a lot of useful information.
+   * For example, you can navigate the page before starting the test.
    *
    * You can use [test.afterEach([title, hookFunction])](https://playwright.dev/docs/api/class-test#test-after-each) to
    * teardown any resources set up in `beforeEach`.
@@ -4213,7 +5053,8 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    * ```
    *
    * @param title Hook title.
-   * @param hookFunction Hook function that takes one or two arguments: an object with fixtures and optional {@link TestInfo}.
+   * @param hookFunction Hook function that takes one or two arguments: an object with fixtures and optional
+   * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
    */
   beforeEach(title: string, inner: (args: TestArgs & WorkerArgs, testInfo: TestInfo) => Promise<any> | any): void;
   /**
@@ -4223,8 +5064,9 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    * [test.describe([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe) group, runs
    * after each test in the group.
    *
-   * You can access all the same {@link Fixtures} as the test body itself, and also the {@link TestInfo} object that
-   * gives a lot of useful information. For example, you can check whether the test succeeded or failed.
+   * You can access all the same [Fixtures](https://playwright.dev/docs/api/class-fixtures) as the test body itself, and
+   * also the [TestInfo](https://playwright.dev/docs/api/class-testinfo) object that gives a lot of useful information.
+   * For example, you can check whether the test succeeded or failed.
    * - `test.afterEach(hookFunction)`
    * - `test.afterEach(title, hookFunction)`
    *
@@ -4263,7 +5105,8 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    * ```
    *
    * @param title Hook title.
-   * @param hookFunction Hook function that takes one or two arguments: an object with fixtures and optional {@link TestInfo}.
+   * @param hookFunction Hook function that takes one or two arguments: an object with fixtures and optional
+   * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
    */
   afterEach(inner: (args: TestArgs & WorkerArgs, testInfo: TestInfo) => Promise<any> | any): void;
   /**
@@ -4273,8 +5116,9 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    * [test.describe([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe) group, runs
    * after each test in the group.
    *
-   * You can access all the same {@link Fixtures} as the test body itself, and also the {@link TestInfo} object that
-   * gives a lot of useful information. For example, you can check whether the test succeeded or failed.
+   * You can access all the same [Fixtures](https://playwright.dev/docs/api/class-fixtures) as the test body itself, and
+   * also the [TestInfo](https://playwright.dev/docs/api/class-testinfo) object that gives a lot of useful information.
+   * For example, you can check whether the test succeeded or failed.
    * - `test.afterEach(hookFunction)`
    * - `test.afterEach(title, hookFunction)`
    *
@@ -4313,7 +5157,8 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    * ```
    *
    * @param title Hook title.
-   * @param hookFunction Hook function that takes one or two arguments: an object with fixtures and optional {@link TestInfo}.
+   * @param hookFunction Hook function that takes one or two arguments: an object with fixtures and optional
+   * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
    */
   afterEach(title: string, inner: (args: TestArgs & WorkerArgs, testInfo: TestInfo) => Promise<any> | any): void;
   /**
@@ -4366,7 +5211,8 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    * ```
    *
    * @param title Hook title.
-   * @param hookFunction Hook function that takes one or two arguments: an object with worker fixtures and optional {@link TestInfo}.
+   * @param hookFunction Hook function that takes one or two arguments: an object with worker fixtures and optional
+   * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
    */
   beforeAll(inner: (args: TestArgs & WorkerArgs, testInfo: TestInfo) => Promise<any> | any): void;
   /**
@@ -4419,7 +5265,8 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    * ```
    *
    * @param title Hook title.
-   * @param hookFunction Hook function that takes one or two arguments: an object with worker fixtures and optional {@link TestInfo}.
+   * @param hookFunction Hook function that takes one or two arguments: an object with worker fixtures and optional
+   * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
    */
   beforeAll(title: string, inner: (args: TestArgs & WorkerArgs, testInfo: TestInfo) => Promise<any> | any): void;
   /**
@@ -4459,7 +5306,8 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    * ```
    *
    * @param title Hook title.
-   * @param hookFunction Hook function that takes one or two arguments: an object with worker fixtures and optional {@link TestInfo}.
+   * @param hookFunction Hook function that takes one or two arguments: an object with worker fixtures and optional
+   * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
    */
   afterAll(inner: (args: TestArgs & WorkerArgs, testInfo: TestInfo) => Promise<any> | any): void;
   /**
@@ -4499,7 +5347,8 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    * ```
    *
    * @param title Hook title.
-   * @param hookFunction Hook function that takes one or two arguments: an object with worker fixtures and optional {@link TestInfo}.
+   * @param hookFunction Hook function that takes one or two arguments: an object with worker fixtures and optional
+   * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
    */
   afterAll(title: string, inner: (args: TestArgs & WorkerArgs, testInfo: TestInfo) => Promise<any> | any): void;
   /**
@@ -4703,7 +5552,191 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    * @param body Step body.
    * @param options
    */
-  step<T>(title: string, body: () => T | Promise<T>, options?: { box?: boolean }): Promise<T>;
+  step: {
+    /**
+   * Declares a test step that is shown in the report.
+   *
+   * **Usage**
+   *
+   * ```js
+   * import { test, expect } from '@playwright/test';
+   *
+   * test('test', async ({ page }) => {
+   *   await test.step('Log in', async () => {
+   *     // ...
+   *   });
+   *
+   *   await test.step('Outer step', async () => {
+   *     // ...
+   *     // You can nest steps inside each other.
+   *     await test.step('Inner step', async () => {
+   *       // ...
+   *     });
+   *   });
+   * });
+   * ```
+   *
+   * **Details**
+   *
+   * The method returns the value returned by the step callback.
+   *
+   * ```js
+   * import { test, expect } from '@playwright/test';
+   *
+   * test('test', async ({ page }) => {
+   *   const user = await test.step('Log in', async () => {
+   *     // ...
+   *     return 'john';
+   *   });
+   *   expect(user).toBe('john');
+   * });
+   * ```
+   *
+   * **Decorator**
+   *
+   * You can use TypeScript method decorators to turn a method into a step. Each call to the decorated method will show
+   * up as a step in the report.
+   *
+   * ```js
+   * function step(target: Function, context: ClassMethodDecoratorContext) {
+   *   return function replacementMethod(...args: any) {
+   *     const name = this.constructor.name + '.' + (context.name as string);
+   *     return test.step(name, async () => {
+   *       return await target.call(this, ...args);
+   *     });
+   *   };
+   * }
+   *
+   * class LoginPage {
+   *   constructor(readonly page: Page) {}
+   *
+   *   @step
+   *   async login() {
+   *     const account = { username: 'Alice', password: 's3cr3t' };
+   *     await this.page.getByLabel('Username or email address').fill(account.username);
+   *     await this.page.getByLabel('Password').fill(account.password);
+   *     await this.page.getByRole('button', { name: 'Sign in' }).click();
+   *     await expect(this.page.getByRole('button', { name: 'View profile and more' })).toBeVisible();
+   *   }
+   * }
+   *
+   * test('example', async ({ page }) => {
+   *   const loginPage = new LoginPage(page);
+   *   await loginPage.login();
+   * });
+   * ```
+   *
+   * **Boxing**
+   *
+   * When something inside a step fails, you would usually see the error pointing to the exact action that failed. For
+   * example, consider the following login step:
+   *
+   * ```js
+   * async function login(page) {
+   *   await test.step('login', async () => {
+   *     const account = { username: 'Alice', password: 's3cr3t' };
+   *     await page.getByLabel('Username or email address').fill(account.username);
+   *     await page.getByLabel('Password').fill(account.password);
+   *     await page.getByRole('button', { name: 'Sign in' }).click();
+   *     await expect(page.getByRole('button', { name: 'View profile and more' })).toBeVisible();
+   *   });
+   * }
+   *
+   * test('example', async ({ page }) => {
+   *   await page.goto('https://github.com/login');
+   *   await login(page);
+   * });
+   * ```
+   *
+   * ```txt
+   * Error: Timed out 5000ms waiting for expect(locator).toBeVisible()
+   *   ... error details omitted ...
+   *
+   *    8 |     await page.getByRole('button', { name: 'Sign in' }).click();
+   * >  9 |     await expect(page.getByRole('button', { name: 'View profile and more' })).toBeVisible();
+   *      |                                                                               ^
+   *   10 |   });
+   * ```
+   *
+   * As we see above, the test may fail with an error pointing inside the step. If you would like the error to highlight
+   * the "login" step instead of its internals, use the `box` option. An error inside a boxed step points to the step
+   * call site.
+   *
+   * ```js
+   * async function login(page) {
+   *   await test.step('login', async () => {
+   *     // ...
+   *   }, { box: true });  // Note the "box" option here.
+   * }
+   * ```
+   *
+   * ```txt
+   * Error: Timed out 5000ms waiting for expect(locator).toBeVisible()
+   *   ... error details omitted ...
+   *
+   *   14 |   await page.goto('https://github.com/login');
+   * > 15 |   await login(page);
+   *      |         ^
+   *   16 | });
+   * ```
+   *
+   * You can also create a TypeScript decorator for a boxed step, similar to a regular step decorator above:
+   *
+   * ```js
+   * function boxedStep(target: Function, context: ClassMethodDecoratorContext) {
+   *   return function replacementMethod(...args: any) {
+   *     const name = this.constructor.name + '.' + (context.name as string);
+   *     return test.step(name, async () => {
+   *       return await target.call(this, ...args);
+   *     }, { box: true });  // Note the "box" option here.
+   *   };
+   * }
+   *
+   * class LoginPage {
+   *   constructor(readonly page: Page) {}
+   *
+   *   @boxedStep
+   *   async login() {
+   *     // ....
+   *   }
+   * }
+   *
+   * test('example', async ({ page }) => {
+   *   const loginPage = new LoginPage(page);
+   *   await loginPage.login();  // <-- Error will be reported on this line.
+   * });
+   * ```
+   *
+   * @param title Step name.
+   * @param body Step body.
+   * @param options
+   */
+  <T>(title: string, body: () => T | Promise<T>, options?: { box?: boolean, location?: Location, timeout?: number }): Promise<T>;
+    /**
+   * Mark a test step as "skip" to temporarily disable its execution, useful for steps that are currently failing and
+   * planned for a near-term fix. Playwright will not run the step.
+   *
+   * **Usage**
+   *
+   * You can declare a skipped step, and Playwright will not run it.
+   *
+   * ```js
+   * import { test, expect } from '@playwright/test';
+   *
+   * test('my test', async ({ page }) => {
+   *   // ...
+   *   await test.step.skip('not yet ready', async () => {
+   *     // ...
+   *   });
+   * });
+   * ```
+   *
+   * @param title Step name.
+   * @param body Step body.
+   * @param options
+   */
+  skip(title: string, body: () => any | Promise<any>, options?: { box?: boolean, location?: Location, timeout?: number }): Promise<void>;
+  }
   /**
    * `expect` function can be used to create test assertions. Read more about [test assertions](https://playwright.dev/docs/test-assertions).
    *
@@ -4784,7 +5817,7 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
    * Learn more about [fixtures](https://playwright.dev/docs/test-fixtures) and [parametrizing tests](https://playwright.dev/docs/test-parameterize).
    * @param fixtures An object containing fixtures and/or options. Learn more about [fixtures format](https://playwright.dev/docs/test-fixtures).
    */
-  extend<T extends KeyValue, W extends KeyValue = {}>(fixtures: Fixtures<T, W, TestArgs, WorkerArgs>): TestType<TestArgs & T, WorkerArgs & W>;
+  extend<T extends {}, W extends {} = {}>(fixtures: Fixtures<T, W, TestArgs, WorkerArgs>): TestType<TestArgs & T, WorkerArgs & W>;
   /**
    * Returns information about the currently running test. This method can only be called during the test execution,
    * otherwise it throws.
@@ -4805,24 +5838,24 @@ export interface TestType<TestArgs extends KeyValue, WorkerArgs extends KeyValue
   info(): TestInfo;
 }
 
-type KeyValue = { [key: string]: any };
-export type TestFixture<R, Args extends KeyValue> = (args: Args, use: (r: R) => Promise<void>, testInfo: TestInfo) => any;
-export type WorkerFixture<R, Args extends KeyValue> = (args: Args, use: (r: R) => Promise<void>, workerInfo: WorkerInfo) => any;
-type TestFixtureValue<R, Args extends KeyValue> = Exclude<R, Function> | TestFixture<R, Args>;
-type WorkerFixtureValue<R, Args extends KeyValue> = Exclude<R, Function> | WorkerFixture<R, Args>;
-export type Fixtures<T extends KeyValue = {}, W extends KeyValue = {}, PT extends KeyValue = {}, PW extends KeyValue = {}> = {
-  [K in keyof PW]?: WorkerFixtureValue<PW[K], W & PW> | [WorkerFixtureValue<PW[K], W & PW>, { scope: 'worker', timeout?: number | undefined }];
+export type TestFixture<R, Args extends {}> = (args: Args, use: (r: R) => Promise<void>, testInfo: TestInfo) => any;
+export type WorkerFixture<R, Args extends {}> = (args: Args, use: (r: R) => Promise<void>, workerInfo: WorkerInfo) => any;
+type TestFixtureValue<R, Args extends {}> = Exclude<R, Function> | TestFixture<R, Args>;
+type WorkerFixtureValue<R, Args extends {}> = Exclude<R, Function> | WorkerFixture<R, Args>;
+export type Fixtures<T extends {} = {}, W extends {} = {}, PT extends {} = {}, PW extends {} = {}> = {
+  [K in keyof PW]?: WorkerFixtureValue<PW[K], W & PW> | [WorkerFixtureValue<PW[K], W & PW>, { scope: 'worker', timeout?: number | undefined, title?: string, box?: boolean }];
 } & {
-  [K in keyof PT]?: TestFixtureValue<PT[K], T & W & PT & PW> | [TestFixtureValue<PT[K], T & W & PT & PW>, { scope: 'test', timeout?: number | undefined }];
+  [K in keyof PT]?: TestFixtureValue<PT[K], T & W & PT & PW> | [TestFixtureValue<PT[K], T & W & PT & PW>, { scope: 'test', timeout?: number | undefined, title?: string, box?: boolean }];
 } & {
-  [K in keyof W]?: [WorkerFixtureValue<W[K], W & PW>, { scope: 'worker', auto?: boolean, option?: boolean, timeout?: number | undefined }];
+  [K in Exclude<keyof W, keyof PW | keyof PT>]?: [WorkerFixtureValue<W[K], W & PW>, { scope: 'worker', auto?: boolean, option?: boolean, timeout?: number | undefined, title?: string, box?: boolean }];
 } & {
-  [K in keyof T]?: TestFixtureValue<T[K], T & W & PT & PW> | [TestFixtureValue<T[K], T & W & PT & PW>, { scope?: 'test', auto?: boolean, option?: boolean, timeout?: number | undefined }];
+  [K in Exclude<keyof T, keyof PW | keyof PT>]?: TestFixtureValue<T[K], T & W & PT & PW> | [TestFixtureValue<T[K], T & W & PT & PW>, { scope?: 'test', auto?: boolean, option?: boolean, timeout?: number | undefined, title?: string, box?: boolean }];
 };
 
 type BrowserName = 'chromium' | 'firefox' | 'webkit';
 type BrowserChannel = Exclude<LaunchOptions['channel'], undefined>;
 type ColorScheme = Exclude<BrowserContextOptions['colorScheme'], undefined>;
+type ClientCertificate = Exclude<BrowserContextOptions['clientCertificates'], undefined>[0];
 type ExtraHTTPHeaders = Exclude<BrowserContextOptions['extraHTTPHeaders'], undefined>;
 type Proxy = Exclude<BrowserContextOptions['proxy'], undefined>;
 type StorageState = Exclude<BrowserContextOptions['storageState'], undefined>;
@@ -4861,8 +5894,9 @@ type ConnectOptions = {
 };
 
 /**
- * Playwright Test provides many options to configure test environment, {@link Browser}, {@link BrowserContext} and
- * more.
+ * Playwright Test provides many options to configure test environment,
+ * [Browser](https://playwright.dev/docs/api/class-browser),
+ * [BrowserContext](https://playwright.dev/docs/api/class-browsercontext) and more.
  *
  * These options are usually provided in the [configuration file](https://playwright.dev/docs/test-configuration) through
  * [testConfig.use](https://playwright.dev/docs/api/class-testconfig#test-config-use) and
@@ -4900,7 +5934,7 @@ type ConnectOptions = {
 export interface PlaywrightWorkerOptions {
   /**
    * Name of the browser that runs tests. Defaults to `'chromium'`. Most of the time you should set `browserName` in
-   * your {@link TestConfig}:
+   * your [TestConfig](https://playwright.dev/docs/api/class-testconfig):
    *
    * **Usage**
    *
@@ -4922,7 +5956,8 @@ export interface PlaywrightWorkerOptions {
    * Whether to run browser in headless mode. More details for
    * [Chromium](https://developers.google.com/web/updates/2017/04/headless-chrome) and
    * [Firefox](https://developer.mozilla.org/en-US/docs/Mozilla/Firefox/Headless_mode). Defaults to `true` unless the
-   * `devtools` option is `true`.
+   * [`devtools`](https://playwright.dev/docs/api/class-browsertype#browser-type-launch-option-devtools) option is
+   * `true`.
    *
    * **Usage**
    *
@@ -4940,9 +5975,12 @@ export interface PlaywrightWorkerOptions {
    */
   headless: boolean;
   /**
-   * Browser distribution channel.  Supported values are "chrome", "chrome-beta", "chrome-dev", "chrome-canary",
-   * "msedge", "msedge-beta", "msedge-dev", "msedge-canary". Read more about using
-   * [Google Chrome and Microsoft Edge](https://playwright.dev/docs/browsers#google-chrome--microsoft-edge).
+   * Browser distribution channel.
+   *
+   * Use "chromium" to [opt in to new headless mode](https://playwright.dev/docs/browsers#chromium-new-headless-mode).
+   *
+   * Use "chrome", "chrome-beta", "chrome-dev", "chrome-canary", "msedge", "msedge-beta", "msedge-dev", or
+   * "msedge-canary" to use branded [Google Chrome and Microsoft Edge](https://playwright.dev/docs/browsers#google-chrome--microsoft-edge).
    *
    * **Usage**
    *
@@ -5027,6 +6065,7 @@ export interface PlaywrightWorkerOptions {
    * - `'off'`: Do not capture screenshots.
    * - `'on'`: Capture screenshot after each test.
    * - `'only-on-failure'`: Capture screenshot after each test failure.
+   * - `'on-first-failure'`: Capture screenshot after each test's first failure.
    *
    * **Usage**
    *
@@ -5102,13 +6141,14 @@ export interface PlaywrightWorkerOptions {
   video: VideoMode | /** deprecated */ 'retry-with-video' | { mode: VideoMode, size?: ViewportSize };
 }
 
-export type ScreenshotMode = 'off' | 'on' | 'only-on-failure';
+export type ScreenshotMode = 'off' | 'on' | 'only-on-failure' | 'on-first-failure';
 export type TraceMode = 'off' | 'on' | 'retain-on-failure' | 'on-first-retry' | 'on-all-retries' | 'retain-on-first-failure';
 export type VideoMode = 'off' | 'on' | 'retain-on-failure' | 'on-first-retry';
 
 /**
- * Playwright Test provides many options to configure test environment, {@link Browser}, {@link BrowserContext} and
- * more.
+ * Playwright Test provides many options to configure test environment,
+ * [Browser](https://playwright.dev/docs/api/class-browser),
+ * [BrowserContext](https://playwright.dev/docs/api/class-browsercontext) and more.
  *
  * These options are usually provided in the [configuration file](https://playwright.dev/docs/test-configuration) through
  * [testConfig.use](https://playwright.dev/docs/api/class-testconfig#test-config-use) and
@@ -5181,7 +6221,8 @@ export interface PlaywrightTestOptions {
    */
   bypassCSP: boolean;
   /**
-   * Emulates `'prefers-colors-scheme'` media feature, supported values are `'light'`, `'dark'`, `'no-preference'`. See
+   * Emulates [prefers-colors-scheme](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-color-scheme)
+   * media feature, supported values are `'light'` and `'dark'`. See
    * [page.emulateMedia([options])](https://playwright.dev/docs/api/class-page#page-emulate-media) for more details.
    * Passing `null` resets emulation to system defaults. Defaults to `'light'`.
    *
@@ -5200,6 +6241,39 @@ export interface PlaywrightTestOptions {
    *
    */
   colorScheme: ColorScheme;
+  /**
+   * TLS Client Authentication allows the server to request a client certificate and verify it.
+   *
+   * **Details**
+   *
+   * An array of client certificates to be used. Each certificate object must have either both `certPath` and `keyPath`,
+   * a single `pfxPath`, or their corresponding direct value equivalents (`cert` and `key`, or `pfx`). Optionally,
+   * `passphrase` property should be provided if the certificate is encrypted. The `origin` property should be provided
+   * with an exact match to the request origin that the certificate is valid for.
+   *
+   * **NOTE** When using WebKit on macOS, accessing `localhost` will not pick up client certificates. You can make it
+   * work by replacing `localhost` with `local.playwright`.
+   *
+   * **Usage**
+   *
+   * ```js
+   * // playwright.config.ts
+   * import { defineConfig } from '@playwright/test';
+   *
+   * export default defineConfig({
+   *   use: {
+   *     clientCertificates: [{
+   *       origin: 'https://example.com',
+   *       certPath: './cert.pem',
+   *       keyPath: './key.pem',
+   *       passphrase: 'mysecretpassword',
+   *     }],
+   *   },
+   * });
+   * ```
+   *
+   */
+  clientCertificates: ClientCertificate[] | undefined;
   /**
    * Specify device scale factor (can be thought of as dpr). Defaults to `1`. Learn more about
    * [emulating devices with device scale factor](https://playwright.dev/docs/emulation#devices).
@@ -5357,8 +6431,8 @@ export interface PlaywrightTestOptions {
   javaScriptEnabled: boolean;
   /**
    * Specify user locale, for example `en-GB`, `de-DE`, etc. Locale will affect `navigator.language` value,
-   * `Accept-Language` request header value as well as number and date formatting rules. Defaults to the system default
-   * locale. Learn more about emulation in our [emulation guide](https://playwright.dev/docs/emulation#locale--timezone).
+   * `Accept-Language` request header value as well as number and date formatting rules. Defaults to `en-US`. Learn more
+   * about emulation in our [emulation guide](https://playwright.dev/docs/emulation#locale--timezone).
    *
    * **Usage**
    *
@@ -5692,10 +6766,11 @@ export interface PlaywrightTestOptions {
  * ```
  *
  * Given the test above, Playwright Test will set up the `page` fixture before running the test, and tear it down
- * after the test has finished. `page` fixture provides a {@link Page} object that is available to the test.
+ * after the test has finished. `page` fixture provides a [Page](https://playwright.dev/docs/api/class-page) object
+ * that is available to the test.
  *
  * Playwright Test comes with builtin fixtures listed below, and you can add your own fixtures as well. Playwright
- * Test also [provides options]{@link TestOptions} to  configure
+ * Test also [provides options][TestOptions](https://playwright.dev/docs/api/class-testoptions) to  configure
  * [fixtures.browser](https://playwright.dev/docs/api/class-fixtures#fixtures-browser),
  * [fixtures.context](https://playwright.dev/docs/api/class-fixtures#fixtures-context) and
  * [fixtures.page](https://playwright.dev/docs/api/class-fixtures#fixtures-page).
@@ -5703,10 +6778,12 @@ export interface PlaywrightTestOptions {
 export interface PlaywrightWorkerArgs {
   playwright: typeof import('playwright-core');
   /**
-   * {@link Browser} instance is shared between all tests in the [same worker](https://playwright.dev/docs/test-parallel) - this makes testing
-   * efficient. However, each test runs in an isolated {@link BrowserContext}  and gets a fresh environment.
+   * [Browser](https://playwright.dev/docs/api/class-browser) instance is shared between all tests in the
+   * [same worker](https://playwright.dev/docs/test-parallel) - this makes testing efficient. However, each test runs in an isolated
+   * [BrowserContext](https://playwright.dev/docs/api/class-browsercontext)  and gets a fresh environment.
    *
-   * Learn how to [configure browser](https://playwright.dev/docs/test-configuration) and see [available options]{@link TestOptions}.
+   * Learn how to [configure browser](https://playwright.dev/docs/test-configuration) and see
+   * [available options][TestOptions](https://playwright.dev/docs/api/class-testoptions).
    *
    * **Usage**
    *
@@ -5738,21 +6815,23 @@ export interface PlaywrightWorkerArgs {
  * ```
  *
  * Given the test above, Playwright Test will set up the `page` fixture before running the test, and tear it down
- * after the test has finished. `page` fixture provides a {@link Page} object that is available to the test.
+ * after the test has finished. `page` fixture provides a [Page](https://playwright.dev/docs/api/class-page) object
+ * that is available to the test.
  *
  * Playwright Test comes with builtin fixtures listed below, and you can add your own fixtures as well. Playwright
- * Test also [provides options]{@link TestOptions} to  configure
+ * Test also [provides options][TestOptions](https://playwright.dev/docs/api/class-testoptions) to  configure
  * [fixtures.browser](https://playwright.dev/docs/api/class-fixtures#fixtures-browser),
  * [fixtures.context](https://playwright.dev/docs/api/class-fixtures#fixtures-context) and
  * [fixtures.page](https://playwright.dev/docs/api/class-fixtures#fixtures-page).
  */
 export interface PlaywrightTestArgs {
   /**
-   * Isolated {@link BrowserContext} instance, created for each test. Since contexts are isolated between each other,
-   * every test gets a fresh environment, even when multiple tests run in a single {@link Browser} for maximum
-   * efficiency.
+   * Isolated [BrowserContext](https://playwright.dev/docs/api/class-browsercontext) instance, created for each test.
+   * Since contexts are isolated between each other, every test gets a fresh environment, even when multiple tests run
+   * in a single [Browser](https://playwright.dev/docs/api/class-browser) for maximum efficiency.
    *
-   * Learn how to [configure context](https://playwright.dev/docs/test-configuration) and see [available options]{@link TestOptions}.
+   * Learn how to [configure context](https://playwright.dev/docs/test-configuration) and see
+   * [available options][TestOptions](https://playwright.dev/docs/api/class-testoptions).
    *
    * Default [fixtures.page](https://playwright.dev/docs/api/class-fixtures#fixtures-page) belongs to this context.
    *
@@ -5768,8 +6847,8 @@ export interface PlaywrightTestArgs {
    */
   context: BrowserContext;
   /**
-   * Isolated {@link Page} instance, created for each test. Pages are isolated between tests due to
-   * [fixtures.context](https://playwright.dev/docs/api/class-fixtures#fixtures-context) isolation.
+   * Isolated [Page](https://playwright.dev/docs/api/class-page) instance, created for each test. Pages are isolated
+   * between tests due to [fixtures.context](https://playwright.dev/docs/api/class-fixtures#fixtures-context) isolation.
    *
    * This is the most common fixture used in a test.
    *
@@ -5790,7 +6869,7 @@ export interface PlaywrightTestArgs {
    */
   page: Page;
   /**
-   * Isolated {@link APIRequestContext} instance for each test.
+   * Isolated [APIRequestContext](https://playwright.dev/docs/api/class-apirequestcontext) instance for each test.
    *
    * **Usage**
    *
@@ -5824,8 +6903,9 @@ type AsymmetricMatcher = Record<string, any>;
 
 interface AsymmetricMatchers {
   /**
-   * `expect.any()` matches any object instance created from the `constructor` or a corresponding primitive type. Use it
-   * inside
+   * `expect.any()` matches any object instance created from the
+   * [`constructor`](https://playwright.dev/docs/api/class-genericassertions#generic-assertions-any-option-constructor)
+   * or a corresponding primitive type. Use it inside
    * [expect(value).toEqual(expected)](https://playwright.dev/docs/api/class-genericassertions#generic-assertions-to-equal)
    * to perform pattern matching.
    *
@@ -5968,8 +7048,9 @@ interface AsymmetricMatchers {
 }
 
 /**
- * The {@link GenericAssertions} class provides assertion methods that can be used to make assertions about any values
- * in the tests. A new instance of {@link GenericAssertions} is created by calling
+ * The [GenericAssertions](https://playwright.dev/docs/api/class-genericassertions) class provides assertion methods
+ * that can be used to make assertions about any values in the tests. A new instance of
+ * [GenericAssertions](https://playwright.dev/docs/api/class-genericassertions) is created by calling
  * [expect(value)](https://playwright.dev/docs/api/class-playwrightassertions#playwright-assertions-expect-generic):
  *
  * ```js
@@ -5994,8 +7075,10 @@ interface GenericAssertions<R> {
    */
   not: GenericAssertions<R>;
   /**
-   * Compares value with `expected` by calling `Object.is`. This method compares objects by reference instead of their
-   * contents, similarly to the strict equality operator `===`.
+   * Compares value with
+   * [`expected`](https://playwright.dev/docs/api/class-genericassertions#generic-assertions-to-be-option-expected) by
+   * calling `Object.is`. This method compares objects by reference instead of their contents, similarly to the strict
+   * equality operator `===`.
    *
    * **Usage**
    *
@@ -6220,7 +7303,9 @@ interface GenericAssertions<R> {
    */
   toContainEqual(expected: unknown): R;
   /**
-   * Compares contents of the value with contents of `expected`, performing "deep equality" check.
+   * Compares contents of the value with contents of
+   * [`expected`](https://playwright.dev/docs/api/class-genericassertions#generic-assertions-to-equal-option-expected),
+   * performing "deep equality" check.
    *
    * For objects, this method recursively checks equality of all fields, rather than comparing objects by reference as
    * performed by
@@ -6279,7 +7364,9 @@ interface GenericAssertions<R> {
    */
   toEqual(expected: unknown): R;
   /**
-   * Ensures that value has a `.length` property equal to `expected`. Useful for arrays and strings.
+   * Ensures that value has a `.length` property equal to
+   * [`expected`](https://playwright.dev/docs/api/class-genericassertions#generic-assertions-to-have-length-option-expected).
+   * Useful for arrays and strings.
    *
    * **Usage**
    *
@@ -6293,7 +7380,9 @@ interface GenericAssertions<R> {
   toHaveLength(expected: number): R;
   /**
    * Ensures that property at provided `keyPath` exists on the object and optionally checks that property is equal to
-   * the `expected`. Equality is checked recursively, similarly to
+   * the
+   * [`expected`](https://playwright.dev/docs/api/class-genericassertions#generic-assertions-to-have-property-option-expected).
+   * Equality is checked recursively, similarly to
    * [expect(value).toEqual(expected)](https://playwright.dev/docs/api/class-genericassertions#generic-assertions-to-equal).
    *
    * **Usage**
@@ -6331,8 +7420,9 @@ interface GenericAssertions<R> {
    */
   toMatch(expected: RegExp | string): R;
   /**
-   * Compares contents of the value with contents of `expected`, performing "deep equality" check. Allows extra
-   * properties to be present in the value, unlike
+   * Compares contents of the value with contents of
+   * [`expected`](https://playwright.dev/docs/api/class-genericassertions#generic-assertions-to-match-object-option-expected),
+   * performing "deep equality" check. Allows extra properties to be present in the value, unlike
    * [expect(value).toEqual(expected)](https://playwright.dev/docs/api/class-genericassertions#generic-assertions-to-equal),
    * so you can check just a subset of object properties.
    *
@@ -6356,7 +7446,9 @@ interface GenericAssertions<R> {
    */
   toMatchObject(expected: Record<string, unknown> | Array<unknown>): R;
   /**
-   * Compares contents of the value with contents of `expected` **and** their types.
+   * Compares contents of the value with contents of
+   * [`expected`](https://playwright.dev/docs/api/class-genericassertions#generic-assertions-to-strict-equal-option-expected)
+   * **and** their types.
    *
    * Differences from
    * [expect(value).toEqual(expected)](https://playwright.dev/docs/api/class-genericassertions#generic-assertions-to-equal):
@@ -6378,7 +7470,9 @@ interface GenericAssertions<R> {
   /**
    * Calls the function and ensures it throws an error.
    *
-   * Optionally compares the error with `expected`. Allowed expected values:
+   * Optionally compares the error with
+   * [`expected`](https://playwright.dev/docs/api/class-genericassertions#generic-assertions-to-throw-option-expected).
+   * Allowed expected values:
    * - Regular expression - error message should **match** the pattern.
    * - String - error message should **include** the substring.
    * - Error object - error message should be **equal to** the message property of the object.
@@ -6510,6 +7604,7 @@ export type MatcherReturnType = {
   expected?: unknown;
   actual?: any;
   log?: string[];
+  timeout?: number;
 };
 
 type MakeMatchers<R, T, ExtendedMatchers> = {
@@ -6529,15 +7624,17 @@ type MakeMatchers<R, T, ExtendedMatchers> = {
   rejects: MakeMatchers<Promise<R>, any, ExtendedMatchers>;
 } & IfAny<T, AllMatchers<R, T>, SpecificMatchers<R, T> & ToUserMatcherObject<ExtendedMatchers, T>>;
 
+type PollMatchers<R, T, ExtendedMatchers> = {
+  /**
+   * If you know how to test something, `.not` lets you test its opposite.
+   */
+  not: PollMatchers<R, T, ExtendedMatchers>;
+} & BaseMatchers<R, T> & ToUserMatcherObject<ExtendedMatchers, T>;
+
 export type Expect<ExtendedMatchers = {}> = {
   <T = unknown>(actual: T, messageOrOptions?: string | { message?: string }): MakeMatchers<void, T, ExtendedMatchers>;
   soft: <T = unknown>(actual: T, messageOrOptions?: string | { message?: string }) => MakeMatchers<void, T, ExtendedMatchers>;
-  poll: <T = unknown>(actual: () => T | Promise<T>, messageOrOptions?: string | { message?: string, timeout?: number, intervals?: number[] }) => BaseMatchers<Promise<void>, T> & {
-    /**
-     * If you know how to test something, `.not` lets you test its opposite.
-     */
-     not: BaseMatchers<Promise<void>, T>;
-  };
+  poll: <T = unknown>(actual: () => T | Promise<T>, messageOrOptions?: string | { message?: string, timeout?: number, intervals?: number[] }) => PollMatchers<Promise<void>, T, ExtendedMatchers>;
   extend<MoreMatchers extends Record<string, (this: ExpectMatcherState, receiver: any, ...args: any[]) => MatcherReturnType | Promise<MatcherReturnType>>>(matchers: MoreMatchers): Expect<ExtendedMatchers & MoreMatchers>;
   configure: (configuration: {
     message?: string,
@@ -6574,8 +7671,8 @@ export function defineConfig(config: PlaywrightTestConfig): PlaywrightTestConfig
 export function defineConfig<T>(config: PlaywrightTestConfig<T>): PlaywrightTestConfig<T>;
 export function defineConfig<T, W>(config: PlaywrightTestConfig<T, W>): PlaywrightTestConfig<T, W>;
 export function defineConfig(config: PlaywrightTestConfig, ...configs: PlaywrightTestConfig[]): PlaywrightTestConfig;
-export function defineConfig<T>(config: PlaywrightTestConfig<T>, ...configs: PlaywrightTestConfig[]): PlaywrightTestConfig<T>;
-export function defineConfig<T, W>(config: PlaywrightTestConfig<T, W>, ...configs: PlaywrightTestConfig[]): PlaywrightTestConfig<T, W>;
+export function defineConfig<T>(config: PlaywrightTestConfig<T>, ...configs: PlaywrightTestConfig<T>[]): PlaywrightTestConfig<T>;
+export function defineConfig<T, W>(config: PlaywrightTestConfig<T, W>, ...configs: PlaywrightTestConfig<T, W>[]): PlaywrightTestConfig<T, W>;
 
 type MergedT<List> = List extends [TestType<infer T, any>, ...(infer Rest)] ? T & MergedT<Rest> : {};
 type MergedW<List> = List extends [TestType<any, infer W>, ...(infer Rest)] ? W & MergedW<Rest> : {};
@@ -6600,8 +7697,9 @@ export { };
 
 
 /**
- * The {@link APIResponseAssertions} class provides assertion methods that can be used to make assertions about the
- * {@link APIResponse} in the tests.
+ * The [APIResponseAssertions](https://playwright.dev/docs/api/class-apiresponseassertions) class provides assertion
+ * methods that can be used to make assertions about the
+ * [APIResponse](https://playwright.dev/docs/api/class-apiresponse) in the tests.
  *
  * ```js
  * import { test, expect } from '@playwright/test';
@@ -6640,8 +7738,9 @@ interface APIResponseAssertions {
 }
 
 /**
- * The {@link LocatorAssertions} class provides assertion methods that can be used to make assertions about the {@link
- * Locator} state in the tests.
+ * The [LocatorAssertions](https://playwright.dev/docs/api/class-locatorassertions) class provides assertion methods
+ * that can be used to make assertions about the [Locator](https://playwright.dev/docs/api/class-locator) state in the
+ * tests.
  *
  * ```js
  * import { test, expect } from '@playwright/test';
@@ -6656,7 +7755,7 @@ interface APIResponseAssertions {
  */
 interface LocatorAssertions {
   /**
-   * Ensures that {@link Locator} points to an element that is
+   * Ensures that [Locator](https://playwright.dev/docs/api/class-locator) points to an element that is
    * [connected](https://developer.mozilla.org/en-US/docs/Web/API/Node/isConnected) to a Document or a ShadowRoot.
    *
    * **Usage**
@@ -6677,7 +7776,7 @@ interface LocatorAssertions {
   }): Promise<void>;
 
   /**
-   * Ensures the {@link Locator} points to a checked input.
+   * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) points to a checked input.
    *
    * **Usage**
    *
@@ -6689,7 +7788,20 @@ interface LocatorAssertions {
    * @param options
    */
   toBeChecked(options?: {
+    /**
+     * Provides state to assert for. Asserts for input to be checked by default. This option can't be used when
+     * [`indeterminate`](https://playwright.dev/docs/api/class-locatorassertions#locator-assertions-to-be-checked-option-indeterminate)
+     * is set to true.
+     */
     checked?: boolean;
+
+    /**
+     * Asserts that the element is in the indeterminate (mixed) state. Only supported for checkboxes and radio buttons.
+     * This option can't be true when
+     * [`checked`](https://playwright.dev/docs/api/class-locatorassertions#locator-assertions-to-be-checked-option-checked)
+     * is provided.
+     */
+    indeterminate?: boolean;
 
     /**
      * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
@@ -6698,8 +7810,8 @@ interface LocatorAssertions {
   }): Promise<void>;
 
   /**
-   * Ensures the {@link Locator} points to a disabled element. Element is disabled if it has "disabled" attribute or is
-   * disabled via
+   * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) points to a disabled element. Element is
+   * disabled if it has "disabled" attribute or is disabled via
    * ['aria-disabled'](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-disabled). Note
    * that only native control elements such as HTML `button`, `input`, `select`, `textarea`, `option`, `optgroup` can be
    * disabled by setting "disabled" attribute. "disabled" attribute on other elements is ignored by the browser.
@@ -6721,7 +7833,7 @@ interface LocatorAssertions {
   }): Promise<void>;
 
   /**
-   * Ensures the {@link Locator} points to an editable element.
+   * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) points to an editable element.
    *
    * **Usage**
    *
@@ -6742,7 +7854,8 @@ interface LocatorAssertions {
   }): Promise<void>;
 
   /**
-   * Ensures the {@link Locator} points to an empty editable element or to a DOM node that has no text.
+   * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) points to an empty editable element or to a
+   * DOM node that has no text.
    *
    * **Usage**
    *
@@ -6761,7 +7874,7 @@ interface LocatorAssertions {
   }): Promise<void>;
 
   /**
-   * Ensures the {@link Locator} points to an enabled element.
+   * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) points to an enabled element.
    *
    * **Usage**
    *
@@ -6782,7 +7895,7 @@ interface LocatorAssertions {
   }): Promise<void>;
 
   /**
-   * Ensures the {@link Locator} points to a focused DOM node.
+   * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) points to a focused DOM node.
    *
    * **Usage**
    *
@@ -6801,8 +7914,8 @@ interface LocatorAssertions {
   }): Promise<void>;
 
   /**
-   * Ensures that {@link Locator} either does not resolve to any DOM node, or resolves to a
-   * [non-visible](https://playwright.dev/docs/actionability#visible) one.
+   * Ensures that [Locator](https://playwright.dev/docs/api/class-locator) either does not resolve to any DOM node, or
+   * resolves to a [non-visible](https://playwright.dev/docs/actionability#visible) one.
    *
    * **Usage**
    *
@@ -6821,7 +7934,8 @@ interface LocatorAssertions {
   }): Promise<void>;
 
   /**
-   * Ensures the {@link Locator} points to an element that intersects viewport, according to the
+   * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) points to an element that intersects viewport,
+   * according to the
    * [intersection observer API](https://developer.mozilla.org/en-US/docs/Web/API/Intersection_Observer_API).
    *
    * **Usage**
@@ -6852,7 +7966,8 @@ interface LocatorAssertions {
   }): Promise<void>;
 
   /**
-   * Ensures that {@link Locator} points to an attached and [visible](https://playwright.dev/docs/actionability#visible) DOM node.
+   * Ensures that [Locator](https://playwright.dev/docs/api/class-locator) points to an attached and
+   * [visible](https://playwright.dev/docs/actionability#visible) DOM node.
    *
    * To check that at least one element from the list is visible, use
    * [locator.first()](https://playwright.dev/docs/api/class-locator#locator-first).
@@ -6886,8 +8001,9 @@ interface LocatorAssertions {
   }): Promise<void>;
 
   /**
-   * Ensures the {@link Locator} points to an element that contains the given text. All nested elements will be
-   * considered when computing the text content of the element. You can use regular expressions for the value as well.
+   * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) points to an element that contains the given
+   * text. All nested elements will be considered when computing the text content of the element. You can use regular
+   * expressions for the value as well.
    *
    * **Details**
    *
@@ -6939,8 +8055,9 @@ interface LocatorAssertions {
    */
   toContainText(expected: string|RegExp|ReadonlyArray<string|RegExp>, options?: {
     /**
-     * Whether to perform case-insensitive match. `ignoreCase` option takes precedence over the corresponding regular
-     * expression flag if specified.
+     * Whether to perform case-insensitive match.
+     * [`ignoreCase`](https://playwright.dev/docs/api/class-locatorassertions#locator-assertions-to-contain-text-option-ignore-case)
+     * option takes precedence over the corresponding regular expression flag if specified.
      */
     ignoreCase?: boolean;
 
@@ -6956,7 +8073,7 @@ interface LocatorAssertions {
   }): Promise<void>;
 
   /**
-   * Ensures the {@link Locator} points to an element with a given
+   * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) points to an element with a given
    * [accessible description](https://w3c.github.io/accname/#dfn-accessible-description).
    *
    * **Usage**
@@ -6971,8 +8088,9 @@ interface LocatorAssertions {
    */
   toHaveAccessibleDescription(description: string|RegExp, options?: {
     /**
-     * Whether to perform case-insensitive match. `ignoreCase` option takes precedence over the corresponding regular
-     * expression flag if specified.
+     * Whether to perform case-insensitive match.
+     * [`ignoreCase`](https://playwright.dev/docs/api/class-locatorassertions#locator-assertions-to-have-accessible-description-option-ignore-case)
+     * option takes precedence over the corresponding regular expression flag if specified.
      */
     ignoreCase?: boolean;
 
@@ -6983,7 +8101,35 @@ interface LocatorAssertions {
   }): Promise<void>;
 
   /**
-   * Ensures the {@link Locator} points to an element with a given
+   * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) points to an element with a given
+   * [aria errormessage](https://w3c.github.io/aria/#aria-errormessage).
+   *
+   * **Usage**
+   *
+   * ```js
+   * const locator = page.getByTestId('username-input');
+   * await expect(locator).toHaveAccessibleErrorMessage('Username is required.');
+   * ```
+   *
+   * @param errorMessage Expected accessible error message.
+   * @param options
+   */
+  toHaveAccessibleErrorMessage(errorMessage: string|RegExp, options?: {
+    /**
+     * Whether to perform case-insensitive match.
+     * [`ignoreCase`](https://playwright.dev/docs/api/class-locatorassertions#locator-assertions-to-have-accessible-error-message-option-ignore-case)
+     * option takes precedence over the corresponding regular expression flag if specified.
+     */
+    ignoreCase?: boolean;
+
+    /**
+     * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
+     */
+    timeout?: number;
+  }): Promise<void>;
+
+  /**
+   * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) points to an element with a given
    * [accessible name](https://w3c.github.io/accname/#dfn-accessible-name).
    *
    * **Usage**
@@ -6996,10 +8142,11 @@ interface LocatorAssertions {
    * @param name Expected accessible name.
    * @param options
    */
-  toHaveAccessibleName(name: string|RegExp, options?: {
+  toHaveAccessibleName(name: string|RegExp|ReadonlyArray<string|RegExp>, options?: {
     /**
-     * Whether to perform case-insensitive match. `ignoreCase` option takes precedence over the corresponding regular
-     * expression flag if specified.
+     * Whether to perform case-insensitive match.
+     * [`ignoreCase`](https://playwright.dev/docs/api/class-locatorassertions#locator-assertions-to-have-accessible-name-option-ignore-case)
+     * option takes precedence over the corresponding regular expression flag if specified.
      */
     ignoreCase?: boolean;
 
@@ -7010,7 +8157,7 @@ interface LocatorAssertions {
   }): Promise<void>;
 
   /**
-   * Ensures the {@link Locator} points to an element with given attribute.
+   * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) points to an element with given attribute.
    *
    * **Usage**
    *
@@ -7025,8 +8172,9 @@ interface LocatorAssertions {
    */
   toHaveAttribute(name: string, value: string|RegExp, options?: {
     /**
-     * Whether to perform case-insensitive match. `ignoreCase` option takes precedence over the corresponding regular
-     * expression flag if specified.
+     * Whether to perform case-insensitive match.
+     * [`ignoreCase`](https://playwright.dev/docs/api/class-locatorassertions#locator-assertions-to-have-attribute-option-ignore-case)
+     * option takes precedence over the corresponding regular expression flag if specified.
      */
     ignoreCase?: boolean;
 
@@ -7037,7 +8185,8 @@ interface LocatorAssertions {
   }): Promise<void>;
 
   /**
-   * Ensures the {@link Locator} points to an element with given attribute. The method will assert attribute presence.
+   * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) points to an element with given attribute. The
+   * method will assert attribute presence.
    *
    * ```js
    * const locator = page.locator('input');
@@ -7057,22 +8206,25 @@ interface LocatorAssertions {
   }): Promise<void>;
 
   /**
-   * Ensures the {@link Locator} points to an element with given CSS classes. This needs to be a full match or using a
-   * relaxed regular expression.
+   * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) points to an element with given CSS classes.
+   * When a string is provided, it must fully match the element's `class` attribute. To match individual classes or
+   * perform partial matches, use a regular expression:
    *
    * **Usage**
    *
    * ```html
-   * <div class='selected row' id='component'></div>
+   * <div class='middle selected row' id='component'></div>
    * ```
    *
    * ```js
    * const locator = page.locator('#component');
-   * await expect(locator).toHaveClass(/selected/);
-   * await expect(locator).toHaveClass('selected row');
+   * await expect(locator).toHaveClass('middle selected row');
+   * await expect(locator).toHaveClass(/(^|\s)selected(\s|$)/);
    * ```
    *
-   * Note that if array is passed as an expected value, entire lists of elements can be asserted:
+   * When an array is passed, the method asserts that the list of elements located matches the corresponding list of
+   * expected class values. Each element's class attribute is matched against the corresponding string or regular
+   * expression in the array:
    *
    * ```js
    * const locator = page.locator('list > .component');
@@ -7090,7 +8242,7 @@ interface LocatorAssertions {
   }): Promise<void>;
 
   /**
-   * Ensures the {@link Locator} resolves to an exact number of DOM nodes.
+   * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) resolves to an exact number of DOM nodes.
    *
    * **Usage**
    *
@@ -7110,7 +8262,8 @@ interface LocatorAssertions {
   }): Promise<void>;
 
   /**
-   * Ensures the {@link Locator} resolves to an element with the given computed CSS style.
+   * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) resolves to an element with the given computed
+   * CSS style.
    *
    * **Usage**
    *
@@ -7131,7 +8284,8 @@ interface LocatorAssertions {
   }): Promise<void>;
 
   /**
-   * Ensures the {@link Locator} points to an element with the given DOM Node ID.
+   * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) points to an element with the given DOM Node
+   * ID.
    *
    * **Usage**
    *
@@ -7151,8 +8305,8 @@ interface LocatorAssertions {
   }): Promise<void>;
 
   /**
-   * Ensures the {@link Locator} points to an element with given JavaScript property. Note that this property can be of
-   * a primitive type as well as a plain serializable JavaScript object.
+   * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) points to an element with given JavaScript
+   * property. Note that this property can be of a primitive type as well as a plain serializable JavaScript object.
    *
    * **Usage**
    *
@@ -7173,7 +8327,7 @@ interface LocatorAssertions {
   }): Promise<void>;
 
   /**
-   * Ensures the {@link Locator} points to an element with a given
+   * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) points to an element with a given
    * [ARIA role](https://www.w3.org/TR/wai-aria-1.2/#roles).
    *
    * Note that role is matched as a string, disregarding the ARIA role hierarchy. For example, asserting  a superclass
@@ -7230,7 +8384,9 @@ interface LocatorAssertions {
 
     /**
      * Specify locators that should be masked when the screenshot is taken. Masked elements will be overlaid with a pink
-     * box `#FF00FF` (customized by `maskColor`) that completely covers its bounding box.
+     * box `#FF00FF` (customized by
+     * [`maskColor`](https://playwright.dev/docs/api/class-locatorassertions#locator-assertions-to-have-screenshot-1-option-mask-color))
+     * that completely covers its bounding box.
      */
     mask?: Array<Locator>;
 
@@ -7320,7 +8476,9 @@ interface LocatorAssertions {
 
     /**
      * Specify locators that should be masked when the screenshot is taken. Masked elements will be overlaid with a pink
-     * box `#FF00FF` (customized by `maskColor`) that completely covers its bounding box.
+     * box `#FF00FF` (customized by
+     * [`maskColor`](https://playwright.dev/docs/api/class-locatorassertions#locator-assertions-to-have-screenshot-2-option-mask-color))
+     * that completely covers its bounding box.
      */
     mask?: Array<Locator>;
 
@@ -7378,8 +8536,9 @@ interface LocatorAssertions {
   }): Promise<void>;
 
   /**
-   * Ensures the {@link Locator} points to an element with the given text. All nested elements will be considered when
-   * computing the text content of the element. You can use regular expressions for the value as well.
+   * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) points to an element with the given text. All
+   * nested elements will be considered when computing the text content of the element. You can use regular expressions
+   * for the value as well.
    *
    * **Details**
    *
@@ -7430,8 +8589,9 @@ interface LocatorAssertions {
    */
   toHaveText(expected: string|RegExp|ReadonlyArray<string|RegExp>, options?: {
     /**
-     * Whether to perform case-insensitive match. `ignoreCase` option takes precedence over the corresponding regular
-     * expression flag if specified.
+     * Whether to perform case-insensitive match.
+     * [`ignoreCase`](https://playwright.dev/docs/api/class-locatorassertions#locator-assertions-to-have-text-option-ignore-case)
+     * option takes precedence over the corresponding regular expression flag if specified.
      */
     ignoreCase?: boolean;
 
@@ -7447,8 +8607,8 @@ interface LocatorAssertions {
   }): Promise<void>;
 
   /**
-   * Ensures the {@link Locator} points to an element with the given input value. You can use regular expressions for
-   * the value as well.
+   * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) points to an element with the given input
+   * value. You can use regular expressions for the value as well.
    *
    * **Usage**
    *
@@ -7468,8 +8628,8 @@ interface LocatorAssertions {
   }): Promise<void>;
 
   /**
-   * Ensures the {@link Locator} points to multi-select/combobox (i.e. a `select` with the `multiple` attribute) and the
-   * specified values are selected.
+   * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) points to multi-select/combobox (i.e. a
+   * `select` with the `multiple` attribute) and the specified values are selected.
    *
    * **Usage**
    *
@@ -7500,6 +8660,60 @@ interface LocatorAssertions {
   }): Promise<void>;
 
   /**
+   * Asserts that the target element matches the given [accessibility snapshot](https://playwright.dev/docs/aria-snapshots).
+   *
+   * **Usage**
+   *
+   * ```js
+   * await page.goto('https://demo.playwright.dev/todomvc/');
+   * await expect(page.locator('body')).toMatchAriaSnapshot(`
+   *   - heading "todos"
+   *   - textbox "What needs to be done?"
+   * `);
+   * ```
+   *
+   * @param expected
+   * @param options
+   */
+  toMatchAriaSnapshot(expected: string, options?: {
+    /**
+     * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
+     */
+    timeout?: number;
+  }): Promise<void>;
+
+  /**
+   * Asserts that the target element matches the given [accessibility snapshot](https://playwright.dev/docs/aria-snapshots).
+   *
+   * **Usage**
+   *
+   * ```js
+   * await expect(page.locator('body')).toMatchAriaSnapshot();
+   * await expect(page.locator('body')).toMatchAriaSnapshot({ name: 'snapshot' });
+   * await expect(page.locator('body')).toMatchAriaSnapshot({ path: '/path/to/snapshot.yml' });
+   * ```
+   *
+   * @param options
+   */
+  toMatchAriaSnapshot(options?: {
+    /**
+     * Name of the snapshot to store in the snapshot folder corresponding to this test. Generates ordinal name if not
+     * specified.
+     */
+    name?: string;
+
+    /**
+     * Path to the YAML snapshot file.
+     */
+    path?: string;
+
+    /**
+     * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
+     */
+    timeout?: number;
+  }): Promise<void>;
+
+  /**
    * Makes the assertion check for the opposite condition. For example, this code tests that the Locator doesn't contain
    * text `"error"`:
    *
@@ -7512,8 +8726,8 @@ interface LocatorAssertions {
 }
 
 /**
- * The {@link PageAssertions} class provides assertion methods that can be used to make assertions about the {@link
- * Page} state in the tests.
+ * The [PageAssertions](https://playwright.dev/docs/api/class-pageassertions) class provides assertion methods that
+ * can be used to make assertions about the [Page](https://playwright.dev/docs/api/class-page) state in the tests.
  *
  * ```js
  * import { test, expect } from '@playwright/test';
@@ -7541,112 +8755,7 @@ interface PageAssertions {
    * @param name Snapshot name.
    * @param options
    */
-  toHaveScreenshot(name: string|ReadonlyArray<string>, options?: {
-    /**
-     * When set to `"disabled"`, stops CSS animations, CSS transitions and Web Animations. Animations get different
-     * treatment depending on their duration:
-     * - finite animations are fast-forwarded to completion, so they'll fire `transitionend` event.
-     * - infinite animations are canceled to initial state, and then played over after the screenshot.
-     *
-     * Defaults to `"disabled"` that disables animations.
-     */
-    animations?: "disabled"|"allow";
-
-    /**
-     * When set to `"hide"`, screenshot will hide text caret. When set to `"initial"`, text caret behavior will not be
-     * changed.  Defaults to `"hide"`.
-     */
-    caret?: "hide"|"initial";
-
-    /**
-     * An object which specifies clipping of the resulting image.
-     */
-    clip?: {
-      /**
-       * x-coordinate of top-left corner of clip area
-       */
-      x: number;
-
-      /**
-       * y-coordinate of top-left corner of clip area
-       */
-      y: number;
-
-      /**
-       * width of clipping area
-       */
-      width: number;
-
-      /**
-       * height of clipping area
-       */
-      height: number;
-    };
-
-    /**
-     * When true, takes a screenshot of the full scrollable page, instead of the currently visible viewport. Defaults to
-     * `false`.
-     */
-    fullPage?: boolean;
-
-    /**
-     * Specify locators that should be masked when the screenshot is taken. Masked elements will be overlaid with a pink
-     * box `#FF00FF` (customized by `maskColor`) that completely covers its bounding box.
-     */
-    mask?: Array<Locator>;
-
-    /**
-     * Specify the color of the overlay box for masked elements, in
-     * [CSS color format](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value). Default color is pink `#FF00FF`.
-     */
-    maskColor?: string;
-
-    /**
-     * An acceptable ratio of pixels that are different to the total amount of pixels, between `0` and `1`. Default is
-     * configurable with `TestConfig.expect`. Unset by default.
-     */
-    maxDiffPixelRatio?: number;
-
-    /**
-     * An acceptable amount of pixels that could be different. Default is configurable with `TestConfig.expect`. Unset by
-     * default.
-     */
-    maxDiffPixels?: number;
-
-    /**
-     * Hides default white background and allows capturing screenshots with transparency. Not applicable to `jpeg` images.
-     * Defaults to `false`.
-     */
-    omitBackground?: boolean;
-
-    /**
-     * When set to `"css"`, screenshot will have a single pixel per each css pixel on the page. For high-dpi devices, this
-     * will keep screenshots small. Using `"device"` option will produce a single pixel per each device pixel, so
-     * screenshots of high-dpi devices will be twice as large or even larger.
-     *
-     * Defaults to `"css"`.
-     */
-    scale?: "css"|"device";
-
-    /**
-     * File name containing the stylesheet to apply while making the screenshot. This is where you can hide dynamic
-     * elements, make elements invisible or change their properties to help you creating repeatable screenshots. This
-     * stylesheet pierces the Shadow DOM and applies to the inner frames.
-     */
-    stylePath?: string|Array<string>;
-
-    /**
-     * An acceptable perceived color difference in the [YIQ color space](https://en.wikipedia.org/wiki/YIQ) between the
-     * same pixel in compared images, between zero (strict) and one (lax), default is configurable with
-     * `TestConfig.expect`. Defaults to `0.2`.
-     */
-    threshold?: number;
-
-    /**
-     * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
-     */
-    timeout?: number;
-  }): Promise<void>;
+  toHaveScreenshot(name: string|ReadonlyArray<string>, options?: PageAssertionsToHaveScreenshotOptions): Promise<void>;
 
   /**
    * This function will wait until two consecutive page screenshots yield the same result, and then compare the last
@@ -7661,112 +8770,7 @@ interface PageAssertions {
    * Note that screenshot assertions only work with Playwright test runner.
    * @param options
    */
-  toHaveScreenshot(options?: {
-    /**
-     * When set to `"disabled"`, stops CSS animations, CSS transitions and Web Animations. Animations get different
-     * treatment depending on their duration:
-     * - finite animations are fast-forwarded to completion, so they'll fire `transitionend` event.
-     * - infinite animations are canceled to initial state, and then played over after the screenshot.
-     *
-     * Defaults to `"disabled"` that disables animations.
-     */
-    animations?: "disabled"|"allow";
-
-    /**
-     * When set to `"hide"`, screenshot will hide text caret. When set to `"initial"`, text caret behavior will not be
-     * changed.  Defaults to `"hide"`.
-     */
-    caret?: "hide"|"initial";
-
-    /**
-     * An object which specifies clipping of the resulting image.
-     */
-    clip?: {
-      /**
-       * x-coordinate of top-left corner of clip area
-       */
-      x: number;
-
-      /**
-       * y-coordinate of top-left corner of clip area
-       */
-      y: number;
-
-      /**
-       * width of clipping area
-       */
-      width: number;
-
-      /**
-       * height of clipping area
-       */
-      height: number;
-    };
-
-    /**
-     * When true, takes a screenshot of the full scrollable page, instead of the currently visible viewport. Defaults to
-     * `false`.
-     */
-    fullPage?: boolean;
-
-    /**
-     * Specify locators that should be masked when the screenshot is taken. Masked elements will be overlaid with a pink
-     * box `#FF00FF` (customized by `maskColor`) that completely covers its bounding box.
-     */
-    mask?: Array<Locator>;
-
-    /**
-     * Specify the color of the overlay box for masked elements, in
-     * [CSS color format](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value). Default color is pink `#FF00FF`.
-     */
-    maskColor?: string;
-
-    /**
-     * An acceptable ratio of pixels that are different to the total amount of pixels, between `0` and `1`. Default is
-     * configurable with `TestConfig.expect`. Unset by default.
-     */
-    maxDiffPixelRatio?: number;
-
-    /**
-     * An acceptable amount of pixels that could be different. Default is configurable with `TestConfig.expect`. Unset by
-     * default.
-     */
-    maxDiffPixels?: number;
-
-    /**
-     * Hides default white background and allows capturing screenshots with transparency. Not applicable to `jpeg` images.
-     * Defaults to `false`.
-     */
-    omitBackground?: boolean;
-
-    /**
-     * When set to `"css"`, screenshot will have a single pixel per each css pixel on the page. For high-dpi devices, this
-     * will keep screenshots small. Using `"device"` option will produce a single pixel per each device pixel, so
-     * screenshots of high-dpi devices will be twice as large or even larger.
-     *
-     * Defaults to `"css"`.
-     */
-    scale?: "css"|"device";
-
-    /**
-     * File name containing the stylesheet to apply while making the screenshot. This is where you can hide dynamic
-     * elements, make elements invisible or change their properties to help you creating repeatable screenshots. This
-     * stylesheet pierces the Shadow DOM and applies to the inner frames.
-     */
-    stylePath?: string|Array<string>;
-
-    /**
-     * An acceptable perceived color difference in the [YIQ color space](https://en.wikipedia.org/wiki/YIQ) between the
-     * same pixel in compared images, between zero (strict) and one (lax), default is configurable with
-     * `TestConfig.expect`. Defaults to `0.2`.
-     */
-    threshold?: number;
-
-    /**
-     * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
-     */
-    timeout?: number;
-  }): Promise<void>;
+  toHaveScreenshot(options?: PageAssertionsToHaveScreenshotOptions): Promise<void>;
 
   /**
    * Ensures the page has the given title.
@@ -7801,8 +8805,9 @@ interface PageAssertions {
    */
   toHaveURL(urlOrRegExp: string|RegExp, options?: {
     /**
-     * Whether to perform case-insensitive match. `ignoreCase` option takes precedence over the corresponding regular
-     * expression flag if specified.
+     * Whether to perform case-insensitive match.
+     * [`ignoreCase`](https://playwright.dev/docs/api/class-pageassertions#page-assertions-to-have-url-option-ignore-case)
+     * option takes precedence over the corresponding regular expression flag if specified.
      */
     ignoreCase?: boolean;
 
@@ -7946,6 +8951,26 @@ interface SnapshotAssertions {
 }
 
 /**
+ * Represents a location in the source code where [TestCase] or [Suite] is defined.
+ */
+export interface Location {
+  /**
+   * Column number in the source file.
+   */
+  column: number;
+
+  /**
+   * Path to the source file.
+   */
+  file: string;
+
+  /**
+   * Line number in the source file.
+   */
+  line: number;
+}
+
+/**
  * `TestInfo` contains information about currently running test. It is available to test functions,
  * [test.beforeEach([title, hookFunction])](https://playwright.dev/docs/api/class-test#test-before-each),
  * [test.afterEach([title, hookFunction])](https://playwright.dev/docs/api/class-test#test-after-each),
@@ -7966,8 +8991,10 @@ interface SnapshotAssertions {
  */
 export interface TestInfo {
   /**
-   * Attach a value or a file from disk to the current test. Some reporters show test attachments. Either `path` or
-   * `body` must be specified, but not both.
+   * Attach a value or a file from disk to the current test. Some reporters show test attachments. Either
+   * [`path`](https://playwright.dev/docs/api/class-testinfo#test-info-attach-option-path) or
+   * [`body`](https://playwright.dev/docs/api/class-testinfo#test-info-attach-option-body) must be specified, but not
+   * both.
    *
    * For example, you can attach a screenshot to the test:
    *
@@ -7996,24 +9023,28 @@ export interface TestInfo {
    * **NOTE** [testInfo.attach(name[, options])](https://playwright.dev/docs/api/class-testinfo#test-info-attach)
    * automatically takes care of copying attached files to a location that is accessible to reporters. You can safely
    * remove the attachment after awaiting the attach call.
+   *
    * @param name Attachment name. The name will also be sanitized and used as the prefix of file name when saving to disk.
    * @param options
    */
   attach(name: string, options?: {
     /**
-     * Attachment body. Mutually exclusive with `path`.
+     * Attachment body. Mutually exclusive with
+     * [`path`](https://playwright.dev/docs/api/class-testinfo#test-info-attach-option-path).
      */
     body?: string|Buffer;
 
     /**
      * Content type of this attachment to properly present in the report, for example `'application/json'` or
-     * `'image/png'`. If omitted, content type is inferred based on the `path`, or defaults to `text/plain` for [string]
-     * attachments and `application/octet-stream` for [Buffer] attachments.
+     * `'image/png'`. If omitted, content type is inferred based on the
+     * [`path`](https://playwright.dev/docs/api/class-testinfo#test-info-attach-option-path), or defaults to `text/plain`
+     * for [string] attachments and `application/octet-stream` for [Buffer] attachments.
      */
     contentType?: string;
 
     /**
-     * Path on the filesystem to the attached file. Mutually exclusive with `body`.
+     * Path on the filesystem to the attached file. Mutually exclusive with
+     * [`body`](https://playwright.dev/docs/api/class-testinfo#test-info-attach-option-body).
      */
     path?: string;
   }): Promise<void>;
@@ -8346,7 +9377,8 @@ export interface TestInfo {
   /**
    * Tags that apply to the test. Learn more about [tags](https://playwright.dev/docs/test-annotations#tag-tests).
    *
-   * Note that any changes made to this list while the test is running will not be visible to test reporters.
+   * **NOTE** Any changes made to this list while the test is running will not be visible to test reporters.
+   *
    */
   tags: Array<string>;
 
@@ -8379,7 +9411,7 @@ export interface TestInfo {
   title: string;
 
   /**
-   * The full title path starting with the project.
+   * The full title path starting with the test file name.
    */
   titlePath: Array<string>;
 
@@ -8398,6 +9430,13 @@ export interface TestInfo {
  */
 export interface TestInfoError {
   /**
+   * Error cause. Set when there is a
+   * [cause](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error/cause) for the
+   * error. Will be `undefined` if there is no cause or if the cause is not an instance of [Error].
+   */
+  cause?: TestInfoError;
+
+  /**
    * Error message. Set when [Error] (or its subclass) has been thrown.
    */
   message?: string;
@@ -8415,7 +9454,8 @@ export interface TestInfoError {
 
 /**
  * `WorkerInfo` contains information about the worker that is running tests and is available to worker-scoped
- * fixtures. `WorkerInfo` is a subset of {@link TestInfo} that is available in many other places.
+ * fixtures. `WorkerInfo` is a subset of [TestInfo](https://playwright.dev/docs/api/class-testinfo) that is available
+ * in many other places.
  */
 export interface WorkerInfo {
   /**
@@ -8446,6 +9486,115 @@ export interface WorkerInfo {
    * with Playwright Test.
    */
   workerIndex: number;
+}
+
+export interface PageAssertionsToHaveScreenshotOptions {
+  /**
+   * When set to `"disabled"`, stops CSS animations, CSS transitions and Web Animations. Animations get different
+   * treatment depending on their duration:
+   * - finite animations are fast-forwarded to completion, so they'll fire `transitionend` event.
+   * - infinite animations are canceled to initial state, and then played over after the screenshot.
+   *
+   * Defaults to `"disabled"` that disables animations.
+   */
+  animations?: "disabled"|"allow";
+
+  /**
+   * When set to `"hide"`, screenshot will hide text caret. When set to `"initial"`, text caret behavior will not be
+   * changed.  Defaults to `"hide"`.
+   */
+  caret?: "hide"|"initial";
+
+  /**
+   * An object which specifies clipping of the resulting image.
+   */
+  clip?: {
+    /**
+     * x-coordinate of top-left corner of clip area
+     */
+    x: number;
+
+    /**
+     * y-coordinate of top-left corner of clip area
+     */
+    y: number;
+
+    /**
+     * width of clipping area
+     */
+    width: number;
+
+    /**
+     * height of clipping area
+     */
+    height: number;
+  };
+
+  /**
+   * When true, takes a screenshot of the full scrollable page, instead of the currently visible viewport. Defaults to
+   * `false`.
+   */
+  fullPage?: boolean;
+
+  /**
+   * Specify locators that should be masked when the screenshot is taken. Masked elements will be overlaid with a pink
+   * box `#FF00FF` (customized by
+   * [`maskColor`](https://playwright.dev/docs/api/class-pageassertions#page-assertions-to-have-screenshot-1-option-mask-color))
+   * that completely covers its bounding box.
+   */
+  mask?: Array<Locator>;
+
+  /**
+   * Specify the color of the overlay box for masked elements, in
+   * [CSS color format](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value). Default color is pink `#FF00FF`.
+   */
+  maskColor?: string;
+
+  /**
+   * An acceptable ratio of pixels that are different to the total amount of pixels, between `0` and `1`. Default is
+   * configurable with `TestConfig.expect`. Unset by default.
+   */
+  maxDiffPixelRatio?: number;
+
+  /**
+   * An acceptable amount of pixels that could be different. Default is configurable with `TestConfig.expect`. Unset by
+   * default.
+   */
+  maxDiffPixels?: number;
+
+  /**
+   * Hides default white background and allows capturing screenshots with transparency. Not applicable to `jpeg` images.
+   * Defaults to `false`.
+   */
+  omitBackground?: boolean;
+
+  /**
+   * When set to `"css"`, screenshot will have a single pixel per each css pixel on the page. For high-dpi devices, this
+   * will keep screenshots small. Using `"device"` option will produce a single pixel per each device pixel, so
+   * screenshots of high-dpi devices will be twice as large or even larger.
+   *
+   * Defaults to `"css"`.
+   */
+  scale?: "css"|"device";
+
+  /**
+   * File name containing the stylesheet to apply while making the screenshot. This is where you can hide dynamic
+   * elements, make elements invisible or change their properties to help you creating repeatable screenshots. This
+   * stylesheet pierces the Shadow DOM and applies to the inner frames.
+   */
+  stylePath?: string|Array<string>;
+
+  /**
+   * An acceptable perceived color difference in the [YIQ color space](https://en.wikipedia.org/wiki/YIQ) between the
+   * same pixel in compared images, between zero (strict) and one (lax), default is configurable with
+   * `TestConfig.expect`. Defaults to `0.2`.
+   */
+  threshold?: number;
+
+  /**
+   * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
+   */
+  timeout?: number;
 }
 
 interface TestConfigWebServer {
@@ -8498,6 +9647,18 @@ interface TestConfigWebServer {
    * How long to wait for the process to start up and be available in milliseconds. Defaults to 60000.
    */
   timeout?: number;
+
+  /**
+   * How to shut down the process. If unspecified, the process group is forcefully `SIGKILL`ed. If set to `{ signal:
+   * 'SIGINT', timeout: 500 }`, the process group is sent a `SIGINT` signal, followed by `SIGKILL` if it doesn't exit
+   * within 500ms. You can also use `SIGTERM` instead. A `0` timeout means no `SIGKILL` will be sent. Windows doesn't
+   * support `SIGINT` and `SIGTERM` signals, so this option is ignored.
+   */
+  gracefulShutdown?: {
+    signal: "SIGINT"|"SIGTERM";
+
+    timeout: number;
+  };
 
   /**
    * The url on your http server that is expected to return a 2xx, 3xx, 400, 401, 402, or 403 status code when the

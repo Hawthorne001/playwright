@@ -536,7 +536,7 @@ export module Protocol {
     /**
      * Pseudo-style identifier (see <code>enum PseudoId</code> in <code>RenderStyleConstants.h</code>).
      */
-    export type PseudoId = "first-line"|"first-letter"|"grammar-error"|"highlight"|"marker"|"before"|"after"|"selection"|"backdrop"|"spelling-error"|"view-transition"|"view-transition-group"|"view-transition-image-pair"|"view-transition-old"|"view-transition-new"|"-webkit-scrollbar"|"-webkit-resizer"|"-webkit-scrollbar-thumb"|"-webkit-scrollbar-button"|"-webkit-scrollbar-track"|"-webkit-scrollbar-track-piece"|"-webkit-scrollbar-corner";
+    export type PseudoId = "first-line"|"first-letter"|"grammar-error"|"highlight"|"marker"|"before"|"after"|"selection"|"backdrop"|"spelling-error"|"target-text"|"view-transition"|"view-transition-group"|"view-transition-image-pair"|"view-transition-old"|"view-transition-new"|"-webkit-scrollbar"|"-webkit-resizer"|"-webkit-scrollbar-thumb"|"-webkit-scrollbar-button"|"-webkit-scrollbar-track"|"-webkit-scrollbar-track-piece"|"-webkit-scrollbar-corner";
     /**
      * Pseudo-style identifier (see <code>enum PseudoId</code> in <code>RenderStyleConstants.h</code>).
      */
@@ -2122,6 +2122,10 @@ export module Protocol {
        * Array of <code>DOMNode</code> ids of any children marked as selected.
        */
       selectedChildNodeIds?: NodeId[];
+      /**
+       * On / off state of switch form controls.
+       */
+      switchState?: "off"|"on";
     }
     /**
      * A structure holding an RGBA color.
@@ -4448,19 +4452,23 @@ might return multiple quads for inline nodes.
       savedResultIndex?: number;
     }
     /**
-     * Sets whether the given URL should be in the list of blackboxed scripts, which are ignored when pausing/stepping/debugging.
+     * Sets whether the given URL should be in the list of blackboxed scripts, which are ignored when pausing.
      */
     export type setShouldBlackboxURLParameters = {
       url: string;
       shouldBlackbox: boolean;
       /**
-       * If true, <code>url</code> is case sensitive.
+       * If <code>true</code>, <code>url</code> is case sensitive.
        */
       caseSensitive?: boolean;
       /**
-       * If true, treat <code>url</code> as regular expression.
+       * If <code>true</code>, treat <code>url</code> as regular expression.
        */
       isRegex?: boolean;
+      /**
+       * If provided, limits where in the script the debugger will skip pauses. Expected structure is a repeated <code>[startLine, startColumn, endLine, endColumn]</code>. Ignored if <code>shouldBlackbox</code> is <code>false</code>.
+       */
+      sourceRanges?: number[];
     }
     export type setShouldBlackboxURLReturnValue = {
     }
@@ -5009,6 +5017,23 @@ might return multiple quads for inline nodes.
      * UTC time in seconds, counted from January 1, 1970.
      */
     export type TimeSinceEpoch = number;
+    /**
+     * Touch point.
+     */
+    export interface TouchPoint {
+      /**
+       * X coordinate of the event relative to the main frame's viewport in CSS pixels.
+       */
+      x: number;
+      /**
+       * Y coordinate of the event relative to the main frame's viewport in CSS pixels.
+       */
+      y: number;
+      /**
+       * Identifier used to track touch sources between events, must be unique within an event.
+       */
+      id: number;
+    }
     
     
     /**
@@ -5164,6 +5189,26 @@ the top of the viewport and Y increases as it proceeds towards the bottom of the
       modifiers?: number;
     }
     export type dispatchTapEventReturnValue = {
+    }
+    /**
+     * Dispatches a touch event to the page.
+     */
+    export type dispatchTouchEventParameters = {
+      /**
+       * Type of the touch event.
+       */
+      type: "touchStart"|"touchMove"|"touchEnd"|"touchCancel";
+      /**
+       * Bit field representing pressed modifier keys. Alt=1, Ctrl=2, Meta/Command=4, Shift=8
+(default: 0).
+       */
+      modifiers?: number;
+      /**
+       * List of touch points
+       */
+      touchPoints?: TouchPoint[];
+    }
+    export type dispatchTouchEventReturnValue = {
     }
   }
   
@@ -6465,7 +6510,7 @@ the top of the viewport and Y increases as it proceeds towards the bottom of the
     /**
      * List of settings able to be overridden by WebInspector.
      */
-    export type Setting = "PrivateClickMeasurementDebugModeEnabled"|"AuthorAndUserStylesEnabled"|"ICECandidateFilteringEnabled"|"ITPDebugModeEnabled"|"ImagesEnabled"|"MediaCaptureRequiresSecureConnection"|"MockCaptureDevicesEnabled"|"NeedsSiteSpecificQuirks"|"ScriptEnabled"|"ShowDebugBorders"|"ShowRepaintCounter"|"WebSecurityEnabled"|"DeviceOrientationEventEnabled"|"SpeechRecognitionEnabled"|"PointerLockEnabled"|"NotificationsEnabled"|"FullScreenEnabled"|"InputTypeMonthEnabled"|"InputTypeWeekEnabled";
+    export type Setting = "PrivateClickMeasurementDebugModeEnabled"|"AuthorAndUserStylesEnabled"|"ICECandidateFilteringEnabled"|"ITPDebugModeEnabled"|"ImagesEnabled"|"MediaCaptureRequiresSecureConnection"|"MockCaptureDevicesEnabled"|"NeedsSiteSpecificQuirks"|"ScriptEnabled"|"ShowDebugBorders"|"ShowRepaintCounter"|"WebSecurityEnabled"|"DeviceOrientationEventEnabled"|"SpeechRecognitionEnabled"|"PointerLockEnabled"|"NotificationsEnabled"|"FullScreenEnabled"|"InputTypeMonthEnabled"|"InputTypeWeekEnabled"|"FixedBackgroundsPaintRelativeToDocument";
     /**
      * A user preference that can be overriden by Web Inspector, like an accessibility preference.
      */
@@ -6644,6 +6689,10 @@ the top of the viewport and Y increases as it proceeds towards the bottom of the
        * Cookie Same-Site policy.
        */
       sameSite: CookieSameSitePolicy;
+      /**
+       * Cookie partition key. If null and partitioned property is true, then key must be computed.
+       */
+      partitionKey?: string;
     }
     /**
      * Accessibility Node
@@ -7028,6 +7077,10 @@ the top of the viewport and Y increases as it proceeds towards the bottom of the
      */
     export type setCookieParameters = {
       cookie: Cookie;
+      /**
+       * If true, then cookie's partition key should be set.
+       */
+      shouldPartition?: boolean;
     }
     export type setCookieReturnValue = {
     }
@@ -9528,6 +9581,7 @@ the top of the viewport and Y increases as it proceeds towards the bottom of the
     "Input.dispatchMouseEvent": Input.dispatchMouseEventParameters;
     "Input.dispatchWheelEvent": Input.dispatchWheelEventParameters;
     "Input.dispatchTapEvent": Input.dispatchTapEventParameters;
+    "Input.dispatchTouchEvent": Input.dispatchTouchEventParameters;
     "Inspector.enable": Inspector.enableParameters;
     "Inspector.disable": Inspector.disableParameters;
     "Inspector.initialized": Inspector.initializedParameters;
@@ -9839,6 +9893,7 @@ the top of the viewport and Y increases as it proceeds towards the bottom of the
     "Input.dispatchMouseEvent": Input.dispatchMouseEventReturnValue;
     "Input.dispatchWheelEvent": Input.dispatchWheelEventReturnValue;
     "Input.dispatchTapEvent": Input.dispatchTapEventReturnValue;
+    "Input.dispatchTouchEvent": Input.dispatchTouchEventReturnValue;
     "Inspector.enable": Inspector.enableReturnValue;
     "Inspector.disable": Inspector.disableReturnValue;
     "Inspector.initialized": Inspector.initializedReturnValue;

@@ -43,12 +43,12 @@ export async function launchApp(browserType: BrowserType, options: {
   }
 
   const context = await browserType.launchPersistentContext(serverSideCallMetadata(), '', {
-    channel: findChromiumChannel(options.sdkLanguage),
-    noDefaultViewport: true,
     ignoreDefaultArgs: ['--enable-automation'],
-    colorScheme: 'no-override',
-    acceptDownloads: isUnderTest() ? 'accept' : 'internal-browser-default',
     ...options?.persistentContextOptions,
+    channel: options.persistentContextOptions?.channel ?? (!options.persistentContextOptions?.executablePath ? findChromiumChannel(options.sdkLanguage) : undefined),
+    noDefaultViewport: options.persistentContextOptions?.noDefaultViewport ?? true,
+    acceptDownloads: options?.persistentContextOptions?.acceptDownloads ?? (isUnderTest() ? 'accept' : 'internal-browser-default'),
+    colorScheme: options?.persistentContextOptions?.colorScheme ?? 'no-override',
     args,
   });
   const [page] = context.pages();
@@ -89,6 +89,8 @@ export async function syncLocalStorageWithSettings(page: Page, appName: string) 
       `(${String((settings: any) => {
         // iframes w/ snapshots, etc.
         if (location && location.protocol === 'data:')
+          return;
+        if (window.top !== window)
           return;
         Object.entries(settings).map(([k, v]) => localStorage[k] = v);
         (window as any).saveSettings = () => {

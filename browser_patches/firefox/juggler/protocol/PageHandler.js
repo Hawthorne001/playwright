@@ -256,6 +256,13 @@ class PageHandler {
     return await this._contentPage.send('disposeObject', options);
   }
 
+  async ['Heap.collectGarbage']() {
+    Services.obs.notifyObservers(null, "child-gc-request");
+    Cu.forceGC();
+    Services.obs.notifyObservers(null, "child-cc-request");
+    Cu.forceCC();
+  }
+
   async ['Network.getResponseBody']({requestId}) {
     return this._pageNetwork.getResponseBody(requestId);
   }
@@ -302,8 +309,8 @@ class PageHandler {
     await this._pageTarget.activateAndRun(() => {});
   }
 
-  async ['Page.setCacheDisabled'](options) {
-    return await this._contentPage.send('setCacheDisabled', options);
+  async ['Page.setCacheDisabled']({cacheDisabled}) {
+    return await this._pageTarget.setCacheDisabled(cacheDisabled);
   }
 
   async ['Page.addBinding']({ worldName, name, script }) {

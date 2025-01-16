@@ -40,13 +40,9 @@ export type TraceViewerRedirectOptions = {
   grep?: string;
   grepInvert?: string;
   project?: string[];
-  workers?: number | string;
-  headed?: boolean;
-  timeout?: number;
   reporter?: string[];
   webApp?: string;
   isServer?: boolean;
-  outputDir?: string;
 };
 
 export type TraceViewerAppOptions = {
@@ -108,6 +104,8 @@ export async function startTraceViewerServer(options?: TraceViewerServerOptions)
 
 export async function installRootRedirect(server: HttpServer, traceUrls: string[], options: TraceViewerRedirectOptions) {
   const params = new URLSearchParams();
+  if (path.sep !== path.posix.sep)
+    params.set('pathSeparator', path.sep);
   for (const traceUrl of traceUrls)
     params.append('trace', traceUrl);
   if (server.wsGuid())
@@ -124,18 +122,16 @@ export async function installRootRedirect(server: HttpServer, traceUrls: string[
     params.append('grepInvert', options.grepInvert);
   for (const project of options.project || [])
     params.append('project', project);
-  if (options.workers)
-    params.append('workers', String(options.workers));
-  if (options.timeout)
-    params.append('timeout', String(options.timeout));
-  if (options.headed)
-    params.append('headed', '');
-  if (options.outputDir)
-    params.append('outputDir', options.outputDir);
   for (const reporter of options.reporter || [])
     params.append('reporter', reporter);
 
-  const urlPath  = `./trace/${options.webApp || 'index.html'}?${params.toString()}`;
+  let baseUrl = '.';
+  if (process.env.PW_HMR) {
+    baseUrl = 'http://localhost:44223'; // port is hardcoded in build.js
+    params.set('server', server.urlPrefix('precise'));
+  }
+
+  const urlPath  = `${baseUrl}/trace/${options.webApp || 'index.html'}?${params.toString()}`;
   server.routePath('/', (_, response) => {
     response.statusCode = 302;
     response.setHeader('Location', urlPath);
@@ -173,6 +169,7 @@ export async function openTraceViewerApp(url: string, browserName: string, optio
       ...options?.persistentContextOptions,
       useWebSocket: isUnderTest(),
       headless: !!options?.headless,
+      colorScheme: isUnderTest() ? 'light' : undefined,
     },
   });
 
@@ -216,6 +213,9 @@ class StdinServer implements Transport {
         this._loadTrace(url);
     });
     process.stdin.on('close', () => gracefullyProcessExitDoNotHang(0));
+  }
+
+  onconnect() {
   }
 
   async dispatch(method: string, params: any) {

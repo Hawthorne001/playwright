@@ -91,27 +91,10 @@ class TypesGenerator {
       if (!docClass)
         return '';
       handledClasses.add(className);
-      return this.writeComment(docClass.comment) + '\n';
+      return this.writeComment(docClass.comment, '') + '\n';
     }, (className, methodName, overloadIndex) => {
-      if (className === 'SuiteFunction' && methodName === '__call') {
-        const cls = this.documentation.classes.get('Test');
-        if (!cls)
-          throw new Error(`Unknown class "Test"`);
-        const method = cls.membersArray.find(m => m.alias === 'describe');
-        if (!method)
-          throw new Error(`Unknown method "Test.describe"`);
-        return this.memberJSDOC(method, '  ').trimLeft();
-      }
-      if (className === 'TestFunction' && methodName === '__call') {
-        const cls = this.documentation.classes.get('Test');
-        if (!cls)
-          throw new Error(`Unknown class "Test"`);
-        const method = cls.membersArray.find(m => m.alias === '(call)');
-        if (!method)
-          throw new Error(`Unknown method "Test.(call)"`);
-        return this.memberJSDOC(method, '  ').trimLeft();
-      }
-
+      if (methodName === '__call')
+        methodName = '(call)';
       const docClass = this.docClassForName(className);
       let method;
       if (docClass) {
@@ -218,7 +201,7 @@ class TypesGenerator {
   classToString(classDesc) {
     const parts = [];
     if (classDesc.comment) {
-      parts.push(this.writeComment(classDesc.comment))
+      parts.push(this.writeComment(classDesc.comment, ''))
     }
     const shouldExport = !this.doNotExportClassNames.has(classDesc.name);
     parts.push(`${shouldExport ? 'export ' : ''}interface ${classDesc.name} ${classDesc.extends ? `extends ${classDesc.extends} ` : ''}{`);
@@ -258,7 +241,7 @@ class TypesGenerator {
     const descriptions = [];
     for (let [eventName, value] of classDesc.events) {
       eventName = eventName.toLowerCase();
-      const type = this.stringifyComplexType(value && value.type, 'out', '  ', classDesc.name, eventName, 'payload');
+      const type = this.stringifyComplexType(value && value.type, 'out', '  ', [classDesc.name, eventName, 'payload']);
       const argName = this.argNameForType(type);
       const params = argName ? `${argName}: ${type}` : '';
       descriptions.push({
@@ -311,8 +294,8 @@ class TypesGenerator {
         return parts.join('\n');
       }
       const jsdoc = this.memberJSDOC(member, indent);
-      const args = this.argsFromMember(member, indent, classDesc.name);
-      let type = this.stringifyComplexType(member.type, 'out', indent, classDesc.name, member.alias);
+      const args = this.argsFromMember(member, indent, [classDesc.name]);
+      let type = this.stringifyComplexType(member.type, 'out', indent, [classDesc.name, member.alias]);
       if (member.async)
         type = `Promise<${type}>`;
       // do this late, because we still want object definitions for overridden types
@@ -351,7 +334,12 @@ class TypesGenerator {
     return this.documentation.classes.get(classDesc.extends);
   }
 
-  writeComment(comment, indent = '') {
+  /**
+   * @param {string} comment
+   * @param {string} indent
+   * @returns {string}
+   */
+  writeComment(comment, indent) {
     const parts = [];
     const out = [];
     const pushLine = (line) => {
@@ -387,26 +375,30 @@ class TypesGenerator {
 
   /**
    * @param {docs.Type|null} type
+   * @param {'in' | 'out'} direction
+   * @param {string} indent
+   * @param {string[]} namespace
+   * @returns {string}
    */
-  stringifyComplexType(type, direction, indent, ...namespace) {
+  stringifyComplexType(type, direction, indent, namespace) {
     if (!type)
       return 'void';
-    return this.stringifySimpleType(type, direction, indent, ...namespace);
+    return this.stringifySimpleType(type, direction, indent, namespace);
   }
 
   /**
    * @param {docs.Member[]} properties
    * @param {string} name
-   * @param {string=} indent
+   * @param {string} indent
    * @returns {string}
    */
-  stringifyObjectType(properties, name, indent = '') {
+  stringifyObjectType(properties, name, indent) {
     const parts = [];
     parts.push(`{`);
     parts.push(properties.map(member => {
       const comment = this.memberJSDOC(member, indent + '  ');
-      const args = this.argsFromMember(member, indent + '  ', name);
-      const type = this.stringifyComplexType(member.type, 'out', indent + '  ', name, member.name);
+      const args = this.argsFromMember(member, indent + '  ', [name]);
+      const type = this.stringifyComplexType(member.type, 'out', indent + '  ', [name, member.name]);
       return `${comment}${this.nameForProperty(member)}${args}: ${type};`;
     }).join('\n\n'));
     parts.push(indent + '}');
@@ -416,25 +408,27 @@ class TypesGenerator {
   /**
    * @param {docs.Type | null | undefined} type
    * @param {'in' | 'out'} direction
-   * @returns{string}
+   * @param {string} indent
+   * @param {string[]} namespace
+   * @returns {string}
    */
-  stringifySimpleType(type, direction, indent = '', ...namespace) {
+  stringifySimpleType(type, direction, indent, namespace) {
     if (!type)
       return 'void';
     if (type.name === 'Object' && type.templates) {
-      const keyType = this.stringifySimpleType(type.templates[0], direction, indent, ...namespace);
-      const valueType = this.stringifySimpleType(type.templates[1], direction, indent, ...namespace);
+      const keyType = this.stringifySimpleType(type.templates[0], direction, indent, namespace);
+      const valueType = this.stringifySimpleType(type.templates[1], direction, indent, namespace);
       return `{ [key: ${keyType}]: ${valueType}; }`;
     }
     let out = type.name;
-    if (out === 'int' || out === 'float')
+    if (out === 'int' || out === 'long' || out === 'float')
       out = 'number';
     if (out === 'Array' && direction === 'in')
       out = 'ReadonlyArray';
     if (type.name === 'Object' && type.properties && type.properties.length) {
       const name = namespace.map(n => n[0].toUpperCase() + n.substring(1)).join('');
       const shouldExport = exported[name];
-      const properties = namespace[namespace.length - 1] === 'options' ? type.sortedProperties() : type.properties;
+      const properties = type.properties;
       if (!properties)
         throw new Error(`Object type must have properties`);
       if (!this.objectDefinitions.some(o => o.name === name))
@@ -448,10 +442,10 @@ class TypesGenerator {
 
     if (type.args) {
       const stringArgs = type.args.map(a => ({
-        type: this.stringifySimpleType(a, direction, indent, ...namespace),
+        type: this.stringifySimpleType(a, direction, indent, namespace),
         name: a.name.toLowerCase()
       }));
-      out = `((${stringArgs.map(({ name, type }) => `${name}: ${type}`).join(', ')}) => ${this.stringifySimpleType(type.returnType, 'out', indent, ...namespace)})`;
+      out = `((${stringArgs.map(({ name, type }) => `${name}: ${type}`).join(', ')}) => ${this.stringifySimpleType(type.returnType, 'out', indent, namespace)})`;
     } else if (type.name === 'function') {
       out = 'Function';
     }
@@ -460,19 +454,22 @@ class TypesGenerator {
     if (out === 'Any')
       return 'any';
     if (type.templates)
-      out += '<' + type.templates.map(t => this.stringifySimpleType(t, direction, indent, ...namespace)).join(', ') + '>';
+      out += '<' + type.templates.map(t => this.stringifySimpleType(t, direction, indent, namespace)).join(', ') + '>';
     if (type.union)
-      out = type.union.map(t => this.stringifySimpleType(t, direction, indent, ...namespace)).join('|');
+      out = type.union.map(t => this.stringifySimpleType(t, direction, indent, namespace)).join('|');
     return out.trim();
   }
 
   /**
    * @param {docs.Member} member
+   * @param {string} indent
+   * @param {string[]} namespace
+   * @returns {string}
    */
-  argsFromMember(member, indent, ...namespace) {
+  argsFromMember(member, indent, namespace) {
     if (member.kind === 'property')
       return '';
-    return '(' + member.argsArray.map(arg => `${this.nameForProperty(arg)}: ${this.stringifyComplexType(arg.type, 'in', indent, ...namespace, member.alias, arg.alias)}`).join(', ') + ')';
+    return '(' + member.argsArray.map(arg => `${this.nameForProperty(arg)}: ${this.stringifyComplexType(arg.type, 'in', indent, [...namespace, member.alias, arg.alias])}`).join(', ') + ')';
   }
 
   /**
@@ -577,8 +574,6 @@ class TypesGenerator {
         'PlaywrightWorkerArgs.playwright',
         'PlaywrightWorkerOptions.defaultBrowserType',
         'Project',
-        'SuiteFunction',
-        'TestFunction',
       ]),
       doNotExportClassNames: assertionClasses,
     });

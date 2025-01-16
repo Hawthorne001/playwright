@@ -22,15 +22,14 @@ import { Worker } from './worker';
 import type { Headers, RemoteAddr, SecurityDetails, WaitForEventOptions } from './types';
 import fs from 'fs';
 import { mime } from '../utilsBundle';
-import { assert, isString, headersObjectToArray, isRegExp, rewriteErrorMessage } from '../utils';
+import { assert, isString, headersObjectToArray, isRegExp, rewriteErrorMessage, MultiMap, urlMatches, zones } from '../utils';
+import type { URLMatch, Zone } from '../utils';
 import { ManualPromise, LongStandingScope } from '../utils/manualPromise';
 import { Events } from './events';
 import type { Page } from './page';
 import { Waiter } from './waiter';
 import type * as api from '../../types/types';
-import type { HeadersArray, URLMatch } from '../common/types';
-import { urlMatches } from '../utils/network';
-import { MultiMap } from '../utils/multimap';
+import type { HeadersArray } from '../common/types';
 import { APIResponse } from './fetch';
 import type { Serializable } from '../../types/structs';
 import type { BrowserContext } from './browserContext';
@@ -98,6 +97,7 @@ export class Request extends ChannelOwner<channels.RequestChannel> implements ap
 
   constructor(parent: ChannelOwner, type: string, guid: string, initializer: channels.RequestInitializer) {
     super(parent, type, guid, initializer);
+    this.markAsInternalType();
     this._redirectedFrom = Request.fromNullable(initializer.redirectedFrom);
     if (this._redirectedFrom)
       this._redirectedFrom._redirectedTo = this;
@@ -300,6 +300,7 @@ export class Route extends ChannelOwner<channels.RouteChannel> implements api.Ro
 
   constructor(parent: ChannelOwner, type: string, guid: string, initializer: channels.RouteInitializer) {
     super(parent, type, guid, initializer);
+    this.markAsInternalType();
   }
 
   request(): Request {
@@ -326,7 +327,7 @@ export class Route extends ChannelOwner<channels.RouteChannel> implements api.Ro
 
   async abort(errorCode?: string) {
     await this._handleRoute(async () => {
-      await this._raceWithTargetClose(this._channel.abort({ requestUrl: this.request()._initializer.url, errorCode }));
+      await this._raceWithTargetClose(this._channel.abort({ errorCode }));
     });
   }
 
@@ -336,7 +337,7 @@ export class Route extends ChannelOwner<channels.RouteChannel> implements api.Ro
     });
   }
 
-  async fetch(options: FallbackOverrides & { maxRedirects?: number, timeout?: number } = {}): Promise<APIResponse> {
+  async fetch(options: FallbackOverrides & { maxRedirects?: number, maxRetries?: number, timeout?: number } = {}): Promise<APIResponse> {
     return await this._wrapApiCall(async () => {
       return await this._context.request._innerFetch({ request: this.request(), data: options.postData, ...options });
     });
@@ -410,7 +411,6 @@ export class Route extends ChannelOwner<channels.RouteChannel> implements api.Ro
       headers['content-length'] = String(length);
 
     await this._raceWithTargetClose(this._channel.fulfill({
-      requestUrl: this.request()._initializer.url,
       status: statusOption || 200,
       headers: headersObjectToArray(headers),
       body,
@@ -422,7 +422,7 @@ export class Route extends ChannelOwner<channels.RouteChannel> implements api.Ro
   async continue(options: FallbackOverrides = {}) {
     await this._handleRoute(async () => {
       this.request()._applyFallbackOverrides(options);
-      await this._innerContinue();
+      await this._innerContinue(false /* isFallback */);
     });
   }
 
@@ -437,22 +437,179 @@ export class Route extends ChannelOwner<channels.RouteChannel> implements api.Ro
     chain.resolve(done);
   }
 
-  async _innerContinue(internal = false) {
+  async _innerContinue(isFallback: boolean) {
     const options = this.request()._fallbackOverridesForContinue();
-    return await this._wrapApiCall(async () => {
-      await this._raceWithTargetClose(this._channel.continue({
-        requestUrl: this.request()._initializer.url,
-        url: options.url,
-        method: options.method,
-        headers: options.headers ? headersObjectToArray(options.headers) : undefined,
-        postData: options.postDataBuffer,
-        isFallback: internal,
-      }));
-    }, !!internal);
+    return await this._raceWithTargetClose(this._channel.continue({
+      url: options.url,
+      method: options.method,
+      headers: options.headers ? headersObjectToArray(options.headers) : undefined,
+      postData: options.postDataBuffer,
+      isFallback,
+    }));
+  }
+}
+
+export class WebSocketRoute extends ChannelOwner<channels.WebSocketRouteChannel> implements api.WebSocketRoute {
+  static from(route: channels.WebSocketRouteChannel): WebSocketRoute {
+    return (route as any)._object;
+  }
+
+  private _onPageMessage?: (message: string | Buffer) => any;
+  private _onPageClose?: (code: number | undefined, reason: string | undefined) => any;
+  private _onServerMessage?: (message: string | Buffer) => any;
+  private _onServerClose?: (code: number | undefined, reason: string | undefined) => any;
+  private _server: api.WebSocketRoute;
+  private _connected = false;
+
+  constructor(parent: ChannelOwner, type: string, guid: string, initializer: channels.WebSocketRouteInitializer) {
+    super(parent, type, guid, initializer);
+    this.markAsInternalType();
+
+    this._server = {
+      onMessage: (handler: (message: string | Buffer) => any) => {
+        this._onServerMessage = handler;
+      },
+
+      onClose: (handler: (code: number | undefined, reason: string | undefined) => any) => {
+        this._onServerClose = handler;
+      },
+
+      connectToServer: () => {
+        throw new Error(`connectToServer must be called on the page-side WebSocketRoute`);
+      },
+
+      url: () => {
+        return this._initializer.url;
+      },
+
+      close: async (options: { code?: number, reason?: string } = {}) => {
+        await this._channel.closeServer({ ...options, wasClean: true }).catch(() => {});
+      },
+
+      send: (message: string | Buffer) => {
+        if (isString(message))
+          this._channel.sendToServer({ message, isBase64: false }).catch(() => {});
+        else
+          this._channel.sendToServer({ message: message.toString('base64'), isBase64: true }).catch(() => {});
+      },
+
+      async [Symbol.asyncDispose]() {
+        await this.close();
+      },
+    };
+
+    this._channel.on('messageFromPage', ({ message, isBase64 }) => {
+      if (this._onPageMessage)
+        this._onPageMessage(isBase64 ? Buffer.from(message, 'base64') : message);
+      else if (this._connected)
+        this._channel.sendToServer({ message, isBase64 }).catch(() => {});
+    });
+
+    this._channel.on('messageFromServer', ({ message, isBase64 }) => {
+      if (this._onServerMessage)
+        this._onServerMessage(isBase64 ? Buffer.from(message, 'base64') : message);
+      else
+        this._channel.sendToPage({ message, isBase64 }).catch(() => {});
+    });
+
+    this._channel.on('closePage', ({ code, reason, wasClean }) => {
+      if (this._onPageClose)
+        this._onPageClose(code, reason);
+      else
+        this._channel.closeServer({ code, reason, wasClean }).catch(() => {});
+    });
+
+    this._channel.on('closeServer', ({ code, reason, wasClean }) => {
+      if (this._onServerClose)
+        this._onServerClose(code, reason);
+      else
+        this._channel.closePage({ code, reason, wasClean }).catch(() => {});
+    });
+  }
+
+  url() {
+    return this._initializer.url;
+  }
+
+  async close(options: { code?: number, reason?: string } = {}) {
+    await this._channel.closePage({ ...options, wasClean: true }).catch(() => {});
+  }
+
+  connectToServer() {
+    if (this._connected)
+      throw new Error('Already connected to the server');
+    this._connected = true;
+    this._channel.connect().catch(() => {});
+    return this._server;
+  }
+
+  send(message: string | Buffer) {
+    if (isString(message))
+      this._channel.sendToPage({ message, isBase64: false }).catch(() => {});
+    else
+      this._channel.sendToPage({ message: message.toString('base64'), isBase64: true }).catch(() => {});
+  }
+
+  onMessage(handler: (message: string | Buffer) => any) {
+    this._onPageMessage = handler;
+  }
+
+  onClose(handler: (code: number | undefined, reason: string | undefined) => any) {
+    this._onPageClose = handler;
+  }
+
+  async [Symbol.asyncDispose]() {
+    await this.close();
+  }
+
+  async _afterHandle() {
+    if (this._connected)
+      return;
+    // Ensure that websocket is "open" and can send messages without an actual server connection.
+    await this._channel.ensureOpened();
+  }
+}
+
+export class WebSocketRouteHandler {
+  private readonly _baseURL: string | undefined;
+  readonly url: URLMatch;
+  readonly handler: WebSocketRouteHandlerCallback;
+
+  constructor(baseURL: string | undefined, url: URLMatch, handler: WebSocketRouteHandlerCallback) {
+    this._baseURL = baseURL;
+    this.url = url;
+    this.handler = handler;
+  }
+
+  static prepareInterceptionPatterns(handlers: WebSocketRouteHandler[]) {
+    const patterns: channels.BrowserContextSetWebSocketInterceptionPatternsParams['patterns'] = [];
+    let all = false;
+    for (const handler of handlers) {
+      if (isString(handler.url))
+        patterns.push({ glob: handler.url });
+      else if (isRegExp(handler.url))
+        patterns.push({ regexSource: handler.url.source, regexFlags: handler.url.flags });
+      else
+        all = true;
+    }
+    if (all)
+      return [{ glob: '**/*' }];
+    return patterns;
+  }
+
+  public matches(wsURL: string): boolean {
+    return urlMatches(this._baseURL, wsURL, this.url);
+  }
+
+  public async handle(webSocketRoute: WebSocketRoute) {
+    const handler = this.handler;
+    await handler(webSocketRoute);
+    await webSocketRoute._afterHandle();
   }
 }
 
 export type RouteHandlerCallback = (route: Route, request: Request) => Promise<any> | void;
+export type WebSocketRouteHandlerCallback = (ws: WebSocketRoute) => Promise<any> | void;
 
 export type ResourceTiming = {
   startTime: number;
@@ -489,6 +646,7 @@ export class Response extends ChannelOwner<channels.ResponseChannel> implements 
 
   constructor(parent: ChannelOwner, type: string, guid: string, initializer: channels.ResponseInitializer) {
     super(parent, type, guid, initializer);
+    this.markAsInternalType();
     this._provisionalHeaders = new RawHeaders(initializer.headers);
     this._request = Request.from(this._initializer.request);
     Object.assign(this._request._timing, this._initializer.timing);
@@ -655,12 +813,14 @@ export class RouteHandler {
   readonly handler: RouteHandlerCallback;
   private _ignoreException: boolean = false;
   private _activeInvocations: Set<{ complete: Promise<void>, route: Route }> = new Set();
+  private _svedZone: Zone;
 
   constructor(baseURL: string | undefined, url: URLMatch, handler: RouteHandlerCallback, times: number = Number.MAX_SAFE_INTEGER) {
     this._baseURL = baseURL;
     this._times = times;
     this.url = url;
     this.handler = handler;
+    this._svedZone = zones.current().without('apiZone');
   }
 
   static prepareInterceptionPatterns(handlers: RouteHandler[]) {
@@ -684,6 +844,10 @@ export class RouteHandler {
   }
 
   public async handle(route: Route): Promise<boolean> {
+    return await this._svedZone.run(async () => this._handleImpl(route));
+  }
+
+  private async _handleImpl(route: Route): Promise<boolean> {
     const handlerInvocation = { complete: new ManualPromise(), route } ;
     this._activeInvocations.add(handlerInvocation);
     try {

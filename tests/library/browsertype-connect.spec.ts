@@ -16,7 +16,6 @@
  */
 
 import fs from 'fs';
-import os from 'os';
 import type http from 'http';
 import type net from 'net';
 import * as path from 'path';
@@ -170,14 +169,17 @@ for (const kind of ['launchServer', 'run-server'] as const) {
       await browser.close();
     });
 
-    test('should ignore page.pause when headed', async ({ connect, startRemoteServer, browserType }) => {
+    test('should ignore page.pause when headed', async ({ connect, startRemoteServer, browserType, channel }) => {
+      test.skip(channel === 'chromium-headless-shell', 'shell is never headed');
+
       const headless = (browserType as any)._defaultLaunchOptions.headless;
       (browserType as any)._defaultLaunchOptions.headless = false;
       const remoteServer = await startRemoteServer(kind);
       const browser = await connect(remoteServer.wsEndpoint());
       const browserContext = await browser.newContext();
       const page = await browserContext.newPage();
-      await page.pause();
+      // @ts-ignore
+      await page.pause({ __testHookKeepTestTimeout: true });
       await browser.close();
       (browserType as any)._defaultLaunchOptions.headless = headless;
     });
@@ -406,6 +408,29 @@ for (const kind of ['launchServer', 'run-server'] as const) {
         expect(message).toContain(kTargetClosedErrorMessage);
         expect(message).not.toContain('Timeout');
       }
+    });
+
+    test('should reject waitForEvent before browser.close finishes', async ({ connect, startRemoteServer, server }) => {
+      const remoteServer = await startRemoteServer(kind);
+      const browser = await connect(remoteServer.wsEndpoint());
+      const newPage = await browser.newPage();
+      let rejected = false;
+      const promise = newPage.waitForEvent('download').catch(() => rejected = true);
+      await browser.close();
+      expect(rejected).toBe(true);
+      await promise;
+    });
+
+    test('should reject waitForEvent before browser.onDisconnect fires', async ({ connect, startRemoteServer, server }) => {
+      const remoteServer = await startRemoteServer(kind);
+      const browser = await connect(remoteServer.wsEndpoint());
+      const newPage = await browser.newPage();
+      const log: string[] = [];
+      const promise = newPage.waitForEvent('download').catch(() => log.push('rejected'));
+      browser.on('disconnected', () => log.push('disconnected'));
+      await remoteServer.close();
+      await promise;
+      await expect.poll(() => log).toEqual(['rejected', 'disconnected']);
     });
 
     test('should respect selectors', async ({ playwright, connect, startRemoteServer }) => {
@@ -655,9 +680,8 @@ for (const kind of ['launchServer', 'run-server'] as const) {
       expect(await response.json()).toEqual({ 'foo': 'bar' });
     });
 
-    test('should upload large file', async ({ connect, startRemoteServer, server, browserName, isMac, mode }, testInfo) => {
+    test('should upload large file', async ({ connect, startRemoteServer, server, mode }, testInfo) => {
       test.skip(mode.startsWith('service'), 'Take it easy on service');
-      test.skip(browserName === 'webkit' && isMac && parseInt(os.release(), 10) < 20, 'WebKit for macOS 10.15 is frozen and does not have corresponding protocol features.');
       test.slow();
       const remoteServer = await startRemoteServer(kind);
       const browser = await connect(remoteServer.wsEndpoint());
@@ -739,7 +763,6 @@ for (const kind of ['launchServer', 'run-server'] as const) {
     });
 
     test.describe('socks proxy', () => {
-      test.fixme(({ platform, browserName }) => browserName === 'webkit' && platform === 'win32');
       test.skip(({ mode }) => mode !== 'default');
       test.skip(kind === 'launchServer', 'not supported yet');
 

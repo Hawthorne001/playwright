@@ -14,14 +14,13 @@
   limitations under the License.
 */
 
-import { ToolbarButton } from '@web/components/toolbarButton';
 import * as React from 'react';
-import type { ContextEntry } from '../entries';
+import type { ContextEntry } from '../types/entries';
 import { MultiTraceModel } from './modelUtil';
 import './workbenchLoader.css';
-import { toggleTheme } from '@web/theme';
 import { Workbench } from './workbench';
-import { TestServerConnection } from '@testIsomorphic/testServerConnection';
+import { TestServerConnection, WebSocketTestServerTransport } from '@testIsomorphic/testServerConnection';
+import { SettingsToolbarButton } from './settingsToolbarButton';
 
 export const WorkbenchLoader: React.FunctionComponent<{
 }> = () => {
@@ -58,6 +57,21 @@ export const WorkbenchLoader: React.FunctionComponent<{
     setProcessingErrorMessage(null);
   }, []);
 
+  React.useEffect(() => {
+    const listener = async (e: ClipboardEvent) => {
+      if (!e.clipboardData?.files.length)
+        return;
+      for (const file of e.clipboardData.files) {
+        if (file.type !== 'application/zip')
+          return;
+      }
+      e.preventDefault();
+      processTraceFiles(e.clipboardData.files);
+    };
+    document.addEventListener('paste', listener);
+    return () => document.removeEventListener('paste', listener);
+  });
+
   const handleDropEvent = React.useCallback((event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     processTraceFiles(event.dataTransfer.files);
@@ -87,7 +101,7 @@ export const WorkbenchLoader: React.FunctionComponent<{
       const guid = new URLSearchParams(window.location.search).get('ws');
       const wsURL = new URL(`../${guid}`, window.location.toString());
       wsURL.protocol = (window.location.protocol === 'https:' ? 'wss:' : 'ws:');
-      const testServerConnection = new TestServerConnection(wsURL.toString());
+      const testServerConnection = new TestServerConnection(new WebSocketTestServerTransport(wsURL));
       testServerConnection.onLoadTraceRequested(async params => {
         setTraceURLs(params.traceUrl ? [params.traceUrl] : []);
         setDragOver(false);
@@ -116,6 +130,7 @@ export const WorkbenchLoader: React.FunctionComponent<{
           params.set('trace', url);
           if (uploadedTraceNames.length)
             params.set('traceFileName', uploadedTraceNames[i]);
+          params.set('limit', String(traceURLs.length));
           const response = await fetch(`contexts?${params.toString()}`);
           if (!response.ok) {
             if (!isServer)
@@ -145,7 +160,7 @@ export const WorkbenchLoader: React.FunctionComponent<{
       <div className='product'>Playwright</div>
       {model.title && <div className='title'>{model.title}</div>}
       <div className='spacer'></div>
-      <ToolbarButton icon='color-mode' title='Toggle color mode' toggled={false} onClick={() => toggleTheme()}></ToolbarButton>
+      <SettingsToolbarButton />
     </div>
     <div className='progress'>
       <div className='inner-progress' style={{ width: progress.total ? (100 * progress.done / progress.total) + '%' : 0 }}></div>

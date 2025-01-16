@@ -18,12 +18,11 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import type { NameValue } from '../../../common/types';
-import type { TracingTracingStopChunkParams } from '@protocol/channels';
+import type { TracingTracingStopChunkParams, StackFrame } from '@protocol/channels';
 import { commandsWithTracingSnapshots } from '../../../protocol/debug';
 import { assert, createGuid, monotonicTime, SerializedFS, removeFolders, eventsHelper, type RegisteredListener } from '../../../utils';
 import { Artifact } from '../../artifact';
 import { BrowserContext } from '../../browserContext';
-import type { ElementHandle } from '../../dom';
 import type { APIRequestContext } from '../../fetch';
 import type { CallMetadata, InstrumentationListener } from '../../instrumentation';
 import { SdkObject } from '../../instrumentation';
@@ -38,6 +37,8 @@ import { Snapshotter } from './snapshotter';
 import type { ConsoleMessage } from '../../console';
 import { Dispatcher } from '../../dispatchers/dispatcher';
 import { serializeError } from '../../errors';
+import type { Dialog } from '../../dialog';
+import type { Download } from '../../download';
 
 const version: trace.VERSION = 7;
 
@@ -60,6 +61,7 @@ type RecordingState = {
   traceSha1s: Set<string>,
   recording: boolean;
   callIds: Set<string>;
+  groupStack: string[];
 };
 
 const kScreencastOptions = { width: 800, height: 600, quality: 90 };
@@ -147,6 +149,7 @@ export class Tracing extends SdkObject implements InstrumentationListener, Snaps
       networkSha1s: new Set(),
       recording: false,
       callIds: new Set(),
+      groupStack: [],
     };
     this._fs.mkdir(this._state.resourcesDir);
     this._fs.writeFile(this._state.networkFile, '');
@@ -179,7 +182,7 @@ export class Tracing extends SdkObject implements InstrumentationListener, Snaps
       wallTime: Date.now(),
       monotonicTime: monotonicTime()
     };
-    this._fs.appendFile(this._state.traceFile, JSON.stringify(event) + '\n');
+    this._appendTraceEvent(event);
 
     this._context.instrumentation.addListener(this, this._context);
     this._eventListeners.push(
@@ -191,6 +194,53 @@ export class Tracing extends SdkObject implements InstrumentationListener, Snaps
     if (this._state.options.snapshots)
       await this._snapshotter?.start();
     return { traceName: this._state.traceName };
+  }
+
+  private _currentGroupId(): string | undefined {
+    return this._state?.groupStack.length ? this._state.groupStack[this._state.groupStack.length - 1] : undefined;
+  }
+
+  async group(name: string, location: { file: string, line?: number, column?: number } | undefined, metadata: CallMetadata): Promise<void> {
+    if (!this._state)
+      return;
+    const stackFrames: StackFrame[] = [];
+    const { file, line, column } = location ?? metadata.location ?? {};
+    if (file) {
+      stackFrames.push({
+        file,
+        line: line ?? 0,
+        column: column ?? 0,
+      });
+    }
+    const event: trace.BeforeActionTraceEvent = {
+      type: 'before',
+      callId: metadata.id,
+      startTime: metadata.startTime,
+      apiName: name,
+      class: 'Tracing',
+      method: 'tracingGroup',
+      params: { },
+      stepId: metadata.stepId,
+      stack: stackFrames,
+    };
+    if (this._currentGroupId())
+      event.parentId = this._currentGroupId();
+    this._state.groupStack.push(event.callId);
+    this._appendTraceEvent(event);
+  }
+
+  groupEnd() {
+    if (!this._state)
+      return;
+    const callId = this._state.groupStack.pop();
+    if (!callId)
+      return;
+    const event: trace.AfterActionTraceEvent = {
+      type: 'after',
+      callId,
+      endTime: monotonicTime(),
+    };
+    this._appendTraceEvent(event);
   }
 
   private _startScreencast() {
@@ -235,6 +285,7 @@ export class Tracing extends SdkObject implements InstrumentationListener, Snaps
       throw new Error(`Tracing is already stopping`);
     if (this._state.recording)
       throw new Error(`Must stop trace file before stopping tracing`);
+    this._closeAllGroups();
     this._harTracer.stop();
     this.flushHarEntries();
     await this._fs.syncAndGetError();
@@ -263,6 +314,11 @@ export class Tracing extends SdkObject implements InstrumentationListener, Snaps
     await this._fs.syncAndGetError();
   }
 
+  private _closeAllGroups() {
+    while (this._currentGroupId())
+      this.groupEnd();
+  }
+
   async stopChunk(params: TracingTracingStopChunkParams): Promise<{ artifact?: Artifact, entries?: NameValue[] }> {
     if (this._isStopping)
       throw new Error(`Tracing is already stopping`);
@@ -274,6 +330,8 @@ export class Tracing extends SdkObject implements InstrumentationListener, Snaps
         throw new Error(`Must start tracing before stopping`);
       return {};
     }
+
+    this._closeAllGroups();
 
     this._context.instrumentation.removeListener(this);
     eventsHelper.removeEventListeners(this._eventListeners);
@@ -339,7 +397,7 @@ export class Tracing extends SdkObject implements InstrumentationListener, Snaps
     return { artifact };
   }
 
-  async _captureSnapshot(snapshotName: string, sdkObject: SdkObject, metadata: CallMetadata, element?: ElementHandle): Promise<void> {
+  async _captureSnapshot(snapshotName: string, sdkObject: SdkObject, metadata: CallMetadata): Promise<void> {
     if (!this._snapshotter)
       return;
     if (!sdkObject.attribution.page)
@@ -348,12 +406,12 @@ export class Tracing extends SdkObject implements InstrumentationListener, Snaps
       return;
     if (!shouldCaptureSnapshot(metadata))
       return;
-    await this._snapshotter.captureSnapshot(sdkObject.attribution.page, metadata.id, snapshotName, element).catch(() => {});
+    await this._snapshotter.captureSnapshot(sdkObject.attribution.page, metadata.id, snapshotName).catch(() => {});
   }
 
   onBeforeCall(sdkObject: SdkObject, metadata: CallMetadata) {
     // IMPORTANT: no awaits before this._appendTraceEvent in this method.
-    const event = createBeforeActionTraceEvent(metadata);
+    const event = createBeforeActionTraceEvent(metadata, this._currentGroupId());
     if (!event)
       return Promise.resolve();
     sdkObject.attribution.page?.temporarilyDisableTracingScreencastThrottling();
@@ -363,7 +421,7 @@ export class Tracing extends SdkObject implements InstrumentationListener, Snaps
     return this._captureSnapshot(event.beforeSnapshot, sdkObject, metadata);
   }
 
-  onBeforeInputAction(sdkObject: SdkObject, metadata: CallMetadata, element: ElementHandle) {
+  onBeforeInputAction(sdkObject: SdkObject, metadata: CallMetadata) {
     if (!this._state?.callIds.has(metadata.id))
       return Promise.resolve();
     // IMPORTANT: no awaits before this._appendTraceEvent in this method.
@@ -373,7 +431,7 @@ export class Tracing extends SdkObject implements InstrumentationListener, Snaps
     sdkObject.attribution.page?.temporarilyDisableTracingScreencastThrottling();
     event.inputSnapshot = `input@${metadata.id}`;
     this._appendTraceEvent(event);
-    return this._captureSnapshot(event.inputSnapshot, sdkObject, metadata, element);
+    return this._captureSnapshot(event.inputSnapshot, sdkObject, metadata);
   }
 
   onCallLog(sdkObject: SdkObject, metadata: CallMetadata, logName: string, message: string) {
@@ -447,6 +505,50 @@ export class Tracing extends SdkObject implements InstrumentationListener, Snaps
     this._appendTraceEvent(event);
   }
 
+  onDialog(dialog: Dialog) {
+    const event: trace.EventTraceEvent = {
+      type: 'event',
+      time: monotonicTime(),
+      class: 'BrowserContext',
+      method: 'dialog',
+      params: { pageId: dialog.page().guid, type: dialog.type(), message: dialog.message(), defaultValue: dialog.defaultValue() },
+    };
+    this._appendTraceEvent(event);
+  }
+
+  onDownload(page: Page, download: Download) {
+    const event: trace.EventTraceEvent = {
+      type: 'event',
+      time: monotonicTime(),
+      class: 'BrowserContext',
+      method: 'download',
+      params: { pageId: page.guid, url: download.url, suggestedFilename: download.suggestedFilename() },
+    };
+    this._appendTraceEvent(event);
+  }
+
+  onPageOpen(page: Page) {
+    const event: trace.EventTraceEvent = {
+      type: 'event',
+      time: monotonicTime(),
+      class: 'BrowserContext',
+      method: 'page',
+      params: { pageId: page.guid, openerPageId: page.opener()?.guid },
+    };
+    this._appendTraceEvent(event);
+  }
+
+  onPageClose(page: Page) {
+    const event: trace.EventTraceEvent = {
+      type: 'event',
+      time: monotonicTime(),
+      class: 'BrowserContext',
+      method: 'pageClosed',
+      params: { pageId: page.guid },
+    };
+    this._appendTraceEvent(event);
+  }
+
   private _onPageError(error: Error, page: Page) {
     const event: trace.EventTraceEvent = {
       type: 'event',
@@ -472,7 +574,8 @@ export class Tracing extends SdkObject implements InstrumentationListener, Snaps
             sha1,
             width: params.width,
             height: params.height,
-            timestamp: monotonicTime()
+            timestamp: monotonicTime(),
+            frameSwapWallTime: params.frameSwapWallTime,
           };
           // Make sure to write the screencast frame before adding a reference to it.
           this._appendResource(sha1, params.buffer);
@@ -525,10 +628,10 @@ export function shouldCaptureSnapshot(metadata: CallMetadata): boolean {
   return commandsWithTracingSnapshots.has(metadata.type + '.' + metadata.method);
 }
 
-function createBeforeActionTraceEvent(metadata: CallMetadata): trace.BeforeActionTraceEvent | null {
+function createBeforeActionTraceEvent(metadata: CallMetadata, parentId?: string): trace.BeforeActionTraceEvent | null {
   if (metadata.internal || metadata.method.startsWith('tracing'))
     return null;
-  return {
+  const event: trace.BeforeActionTraceEvent = {
     type: 'before',
     callId: metadata.id,
     startTime: metadata.startTime,
@@ -539,6 +642,9 @@ function createBeforeActionTraceEvent(metadata: CallMetadata): trace.BeforeActio
     stepId: metadata.stepId,
     pageId: metadata.pageId,
   };
+  if (parentId)
+    event.parentId = parentId;
+  return event;
 }
 
 function createInputActionTraceEvent(metadata: CallMetadata): trace.InputActionTraceEvent | null {

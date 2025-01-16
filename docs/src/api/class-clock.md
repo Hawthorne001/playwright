@@ -41,7 +41,7 @@ await page.Clock.FastForwardAsync("30:00");
 
 ### param: Clock.fastForward.ticks
 * since: v1.45
-- `ticks` <[int]|[string]>
+- `ticks` <[long]|[string]>
 
 Time may be the number of milliseconds to advance the clock by or a human-readable string. Valid string formats are "08" for eight seconds, "01:00" for one minute and "02:34:10" for two hours, 34 minutes and ten seconds.
 
@@ -64,8 +64,23 @@ Install fake implementations for the following time-related functions:
 Fake timers are used to manually control the flow of time in tests. They allow you to advance time, fire timers, and control the behavior of time-dependent functions. See [`method: Clock.runFor`] and [`method: Clock.fastForward`] for more information.
 
 ### option: Clock.install.time
+* langs: js, java
 * since: v1.45
-- `time` <[int]|[string]|[Date]>
+- `time` <[long]|[string]|[Date]>
+
+Time to initialize with, current system time by default.
+
+### option: Clock.install.time
+* langs: python
+* since: v1.45
+- `time` <[float]|[string]|[Date]>
+
+Time to initialize with, current system time by default.
+
+### option: Clock.install.time
+* langs: csharp
+* since: v1.45
+- `time` <[string]|[Date]>
 
 Time to initialize with, current system time by default.
 
@@ -103,7 +118,7 @@ await page.Clock.RunForAsync("30:00");
 
 ### param: Clock.runFor.ticks
 * since: v1.45
-- `ticks` <[int]|[string]>
+- `ticks` <[long]|[string]>
 
 Time may be the number of milliseconds to advance the clock by or a human-readable string. Valid string formats are "08" for eight seconds, "01:00" for one minute and "02:34:10" for two hours, 34 minutes and ten seconds.
 
@@ -136,7 +151,8 @@ page.clock.pause_at("2020-02-02")
 ```
 
 ```java
-page.clock().pauseAt(Instant.parse("2020-02-02"));
+SimpleDateFormat format = new SimpleDateFormat("yyy-MM-dd");
+page.clock().pauseAt(format.parse("2020-02-02"));
 page.clock().pauseAt("2020-02-02");
 ```
 
@@ -145,10 +161,61 @@ await page.Clock.PauseAtAsync(DateTime.Parse("2020-02-02"));
 await page.Clock.PauseAtAsync("2020-02-02");
 ```
 
-### param: Clock.pauseAt.time
-* since: v1.45
-- `time` <[int]|[string]|[Date]>
+For best results, install the clock before navigating the page and set it to a time slightly before the intended test time. This ensures that all timers run normally during page loading, preventing the page from getting stuck. Once the page has fully loaded, you can safely use [`method: Clock.pauseAt`] to pause the clock.
 
+```js
+// Initialize clock with some time before the test time and let the page load
+// naturally. `Date.now` will progress as the timers fire.
+await page.clock.install({ time: new Date('2024-12-10T08:00:00') });
+await page.goto('http://localhost:3333');
+await page.clock.pauseAt(new Date('2024-12-10T10:00:00'));
+```
+
+```python async
+# Initialize clock with some time before the test time and let the page load
+# naturally. `Date.now` will progress as the timers fire.
+await page.clock.install(time=datetime.datetime(2024, 12, 10, 8, 0, 0))
+await page.goto("http://localhost:3333")
+await page.clock.pause_at(datetime.datetime(2024, 12, 10, 10, 0, 0))
+```
+
+```python sync
+# Initialize clock with some time before the test time and let the page load
+# naturally. `Date.now` will progress as the timers fire.
+page.clock.install(time=datetime.datetime(2024, 12, 10, 8, 0, 0))
+page.goto("http://localhost:3333")
+page.clock.pause_at(datetime.datetime(2024, 12, 10, 10, 0, 0))
+```
+
+```java
+// Initialize clock with some time before the test time and let the page load
+// naturally. `Date.now` will progress as the timers fire.
+SimpleDateFormat format = new SimpleDateFormat("yyy-MM-dd'T'HH:mm:ss");
+page.clock().install(new Clock.InstallOptions().setTime(format.parse("2024-12-10T08:00:00")));
+page.navigate("http://localhost:3333");
+page.clock().pauseAt(format.parse("2024-12-10T10:00:00"));
+```
+
+### param: Clock.pauseAt.time
+* langs: js, java
+* since: v1.45
+- `time` <[long]|[string]|[Date]>
+
+Time to pause at.
+
+### param: Clock.pauseAt.time
+* langs: python
+* since: v1.45
+- `time` <[float]|[string]|[Date]>
+
+Time to pause at.
+
+### param: Clock.pauseAt.time
+* langs: csharp
+* since: v1.45
+- `time` <[Date]|[string]>
+
+Time to pause at.
 
 ## async method: Clock.resume
 * since: v1.45
@@ -160,6 +227,8 @@ Resumes timers. Once this method is called, time resumes flowing, timers are fir
 
 Makes `Date.now` and `new Date()` return fixed fake time at all times,
 keeps all the timers running.
+
+Use this method for simple scenarios where you only need to test with a predefined time. For more advanced scenarios, use [`method: Clock.install`] instead. Read docs on [clock emulation](../clock.md) to learn more.
 
 **Usage**
 
@@ -182,8 +251,8 @@ page.clock.set_fixed_time("2020-02-02")
 ```
 
 ```java
-page.clock().setFixedTime(Instant.now());
-page.clock().setFixedTime(Instant.parse("2020-02-02"));
+page.clock().setFixedTime(new Date());
+page.clock().setFixedTime(new SimpleDateFormat("yyy-MM-dd").parse("2020-02-02"));
 page.clock().setFixedTime("2020-02-02");
 ```
 
@@ -194,15 +263,30 @@ await page.Clock.SetFixedTimeAsync("2020-02-02");
 ```
 
 ### param: Clock.setFixedTime.time
+* langs: js, java
 * since: v1.45
-- `time` <[int]|[string]|[Date]>
+- `time` <[long]|[string]|[Date]>
+
+Time to be set in milliseconds.
+
+### param: Clock.setFixedTime.time
+* langs: python
+* since: v1.45
+- `time` <[float]|[string]|[Date]>
+
+Time to be set.
+
+### param: Clock.setFixedTime.time
+* langs: csharp
+* since: v1.45
+- `time` <[string]|[Date]>
 
 Time to be set.
 
 ## async method: Clock.setSystemTime
 * since: v1.45
 
-Sets current system time but does not trigger any timers.
+Sets system time, but does not trigger any timers. Use this to test how the web page reacts to a time shift, for example switching from summer to winter time, or changing time zones.
 
 **Usage**
 
@@ -225,8 +309,8 @@ page.clock.set_system_time("2020-02-02")
 ```
 
 ```java
-page.clock().setSystemTime(Instant.now());
-page.clock().setSystemTime(Instant.parse("2020-02-02"));
+page.clock().setSystemTime(new Date());
+page.clock().setSystemTime(new SimpleDateFormat("yyy-MM-dd").parse("2020-02-02"));
 page.clock().setSystemTime("2020-02-02");
 ```
 
@@ -237,5 +321,22 @@ await page.Clock.SetSystemTimeAsync("2020-02-02");
 ```
 
 ### param: Clock.setSystemTime.time
+* langs: js, java
 * since: v1.45
-- `time` <[int]|[string]|[Date]>
+- `time` <[long]|[string]|[Date]>
+
+Time to be set in milliseconds.
+
+### param: Clock.setSystemTime.time
+* langs: python
+* since: v1.45
+- `time` <[float]|[string]|[Date]>
+
+Time to be set.
+
+### param: Clock.setSystemTime.time
+* langs: csharp
+* since: v1.45
+- `time` <[string]|[Date]>
+
+Time to be set.

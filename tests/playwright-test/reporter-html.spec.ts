@@ -43,7 +43,7 @@ const expect = baseExpect.configure({ timeout: process.env.CI ? 75000 : 25000 })
 
 test.describe.configure({ mode: 'parallel' });
 
-for (const useIntermediateMergeReport of [false] as const) {
+for (const useIntermediateMergeReport of [true, false] as const) {
   test.describe(`${useIntermediateMergeReport ? 'merged' : 'created'}`, () => {
     test.use({ useIntermediateMergeReport });
 
@@ -83,7 +83,7 @@ for (const useIntermediateMergeReport of [false] as const) {
       await expect(page.getByTestId('overall-duration'), 'should contain humanized total time with at most 1 decimal place').toContainText(/^Total time: \d+(\.\d)?(ms|s|m)$/);
       await expect(page.getByTestId('project-name'), 'should contain project name').toContainText('project-name');
 
-      await expect(page.locator('.metadata-view')).not.toBeVisible();
+      await expect(page.getByTestId('metadata-view')).not.toBeVisible();
     });
 
     test('should allow navigating to testId=test.id', async ({ runInlineTest, page, showReport }) => {
@@ -179,7 +179,7 @@ for (const useIntermediateMergeReport of [false] as const) {
       await expect(page.locator('text=Image mismatch')).toBeVisible();
       await expect(page.locator('text=Snapshot mismatch')).toHaveCount(0);
 
-      await expect(page.getByTestId('test-result-image-mismatch-tabs').locator('div')).toHaveText([
+      await expect(page.getByTestId('test-screenshot-error-view').getByTestId('test-result-image-mismatch-tabs').locator('div')).toHaveText([
         'Diff',
         'Actual',
         'Expected',
@@ -187,36 +187,40 @@ for (const useIntermediateMergeReport of [false] as const) {
         'Slider',
       ]);
 
-      const imageDiff = page.getByTestId('test-result-image-mismatch');
-      await test.step('Diff', async () => {
-        await expect(imageDiff.locator('img')).toHaveAttribute('alt', 'Diff');
-      });
+      for (const testId of ['test-results-image-diff', 'test-screenshot-error-view']) {
+        await test.step(testId, async () => {
+          const imageDiff = page.getByTestId(testId).getByTestId('test-result-image-mismatch');
+          await test.step('Diff', async () => {
+            await expect(imageDiff.locator('img')).toHaveAttribute('alt', 'Diff');
+          });
 
-      await test.step('Actual', async () => {
-        await imageDiff.getByText('Actual', { exact: true }).click();
-        await expect(imageDiff.locator('img')).toHaveAttribute('alt', 'Actual');
-      });
+          await test.step('Actual', async () => {
+            await imageDiff.getByText('Actual', { exact: true }).click();
+            await expect(imageDiff.locator('img')).toHaveAttribute('alt', 'Actual');
+          });
 
-      await test.step('Expected', async () => {
-        await imageDiff.getByText('Expected', { exact: true }).click();
-        await expect(imageDiff.locator('img')).toHaveAttribute('alt', 'Expected');
-      });
+          await test.step('Expected', async () => {
+            await imageDiff.getByText('Expected', { exact: true }).click();
+            await expect(imageDiff.locator('img')).toHaveAttribute('alt', 'Expected');
+          });
 
-      await test.step('Side by side', async () => {
-        await imageDiff.getByText('Side by side').click();
-        await expect(imageDiff.locator('img')).toHaveCount(2);
-        await expect(imageDiff.locator('img').first()).toHaveAttribute('alt', 'Expected');
-        await expect(imageDiff.locator('img').last()).toHaveAttribute('alt', 'Actual');
-        await imageDiff.locator('img').last().click();
-        await expect(imageDiff.locator('img').last()).toHaveAttribute('alt', 'Diff');
-      });
+          await test.step('Side by side', async () => {
+            await imageDiff.getByText('Side by side').click();
+            await expect(imageDiff.locator('img')).toHaveCount(2);
+            await expect(imageDiff.locator('img').first()).toHaveAttribute('alt', 'Expected');
+            await expect(imageDiff.locator('img').last()).toHaveAttribute('alt', 'Actual');
+            await imageDiff.locator('img').last().click();
+            await expect(imageDiff.locator('img').last()).toHaveAttribute('alt', 'Diff');
+          });
 
-      await test.step('Slider', async () => {
-        await imageDiff.getByText('Slider', { exact: true }).click();
-        await expect(imageDiff.locator('img')).toHaveCount(2);
-        await expect(imageDiff.locator('img').first()).toHaveAttribute('alt', 'Expected');
-        await expect(imageDiff.locator('img').last()).toHaveAttribute('alt', 'Actual');
-      });
+          await test.step('Slider', async () => {
+            await imageDiff.getByText('Slider', { exact: true }).click();
+            await expect(imageDiff.locator('img')).toHaveCount(2);
+            await expect(imageDiff.locator('img').first()).toHaveAttribute('alt', 'Expected');
+            await expect(imageDiff.locator('img').last()).toHaveAttribute('alt', 'Actual');
+          });
+        });
+      }
     });
 
     test('should include multiple image diffs', async ({ runInlineTest, page, showReport }) => {
@@ -285,8 +289,14 @@ for (const useIntermediateMergeReport of [false] as const) {
 
       await showReport();
       await page.click('text=fails');
-      await expect(page.locator('data-testid=test-result-image-mismatch')).toHaveCount(3);
-      await expect(page.locator('text=Image mismatch:')).toHaveText([
+      await expect(page.getByTestId('test-screenshot-error-view').getByTestId('error-suffix')).toContainText([
+        `> 6 |             await expect.soft(screenshot).toMatchSnapshot('expected.png');`,
+        `>  7 |             await expect.soft(screenshot).toMatchSnapshot('expected.png');`,
+        `>  8 |             await expect.soft(screenshot).toMatchSnapshot('expected.png');`,
+      ]);
+      const imageDiffs = page.getByTestId('test-results-image-diff');
+      await expect(imageDiffs.getByTestId('test-result-image-mismatch')).toHaveCount(3);
+      await expect(imageDiffs.getByText('Image mismatch:')).toHaveText([
         'Image mismatch: expected.png',
         'Image mismatch: expected-1.png',
         'Image mismatch: expected-2.png',
@@ -294,6 +304,7 @@ for (const useIntermediateMergeReport of [false] as const) {
     });
 
     test('should include image diff when screenshot failed to generate due to animation', async ({ runInlineTest, page, showReport }) => {
+      test.skip(process.env.PW_CLOCK === 'frozen', 'Assumes Date.now() changes');
       const result = await runInlineTest({
         'playwright.config.ts': `
           module.exports = { use: { viewport: { width: 200, height: 200 }} };
@@ -319,10 +330,12 @@ for (const useIntermediateMergeReport of [false] as const) {
       await expect(page.locator('text=Image mismatch')).toHaveCount(1);
       await expect(page.locator('text=Snapshot mismatch')).toHaveCount(0);
       await expect(page.locator('.chip-header', { hasText: 'Screenshots' })).toHaveCount(0);
-      await expect(page.getByTestId('test-result-image-mismatch-tabs').locator('div')).toHaveText([
+      const errorChip = page.getByTestId('test-screenshot-error-view');
+      await expect(errorChip).toContainText('Failed to take two consecutive stable screenshots.');
+      await expect(errorChip.getByTestId('test-result-image-mismatch-tabs').locator('div')).toHaveText([
         'Diff',
         'Actual',
-        'Expected',
+        'Previous',
         'Side by side',
         'Slider',
       ]);
@@ -459,7 +472,7 @@ for (const useIntermediateMergeReport of [false] as const) {
 
       await showReport();
       await page.click('text=fails');
-      await expect(page.locator('.test-error-message span:has-text("received")').nth(1)).toHaveCSS('color', 'rgb(204, 0, 0)');
+      await expect(page.locator('.test-error-view span:has-text("true")').first()).toHaveCSS('color', 'rgb(205, 49, 49)');
     });
 
     test('should show trace source', async ({ runInlineTest, page, showReport }) => {
@@ -601,7 +614,7 @@ for (const useIntermediateMergeReport of [false] as const) {
             ]);
           });
         `,
-      }, { reporter: 'html' }, { PLAYWRIGHT_HTML_OPEN: 'never' });
+      }, { reporter: 'html,dot' }, { PLAYWRIGHT_HTML_OPEN: 'never' });
       expect(result.exitCode).toBe(0);
       expect(result.passed).toBe(1);
 
@@ -716,6 +729,61 @@ for (const useIntermediateMergeReport of [false] as const) {
       ]);
     });
 
+    test('should show step snippets from non-root', async ({ runInlineTest, page, showReport }) => {
+      const result = await runInlineTest({
+        'playwright.config.js': `
+          export default { testDir: './tests' };
+        `,
+        'tests/a.test.ts': `
+          import { test, expect } from '@playwright/test';
+
+          test('example', async ({}) => {
+            await test.step('step title', async () => {
+              expect(1).toBe(1);
+            });
+          });
+        `,
+      }, { reporter: 'dot,html' }, { PLAYWRIGHT_HTML_OPEN: 'never' });
+      expect(result.exitCode).toBe(0);
+      expect(result.passed).toBe(1);
+
+      await showReport();
+      await page.click('text=example');
+      await page.click('text=step title');
+      await page.click('text=expect.toBe');
+      await expect(page.getByTestId('test-snippet')).toContainText([
+        `await test.step('step title', async () => {`,
+        'expect(1).toBe(1);',
+      ]);
+    });
+
+    test('should show skipped step snippets', async ({ runInlineTest, page, showReport }) => {
+      const result = await runInlineTest({
+        'playwright.config.js': `
+          export default { testDir: './tests' };
+        `,
+        'tests/a.test.ts': `
+          import { test, expect } from '@playwright/test';
+
+          test('example', async ({}) => {
+            await test.step.skip('skipped step title', async () => {
+              expect(1).toBe(1);
+              await test.step('inner step', async () => {
+                expect(1).toBe(1);
+              });
+            });
+          });
+        `,
+      }, { reporter: 'dot,html' }, { PLAYWRIGHT_HTML_OPEN: 'never' });
+      expect(result.exitCode).toBe(0);
+      expect(result.passed).toBe(1);
+
+      await showReport();
+      await page.click('text=example');
+      await page.click('text=skipped step title');
+      await expect(page.getByTestId('test-snippet')).toContainText(`await test.step.skip('skipped step title', async () => {`);
+    });
+
     test('should render annotations', async ({ runInlineTest, page, showReport }) => {
       const result = await runInlineTest({
         'playwright.config.js': `
@@ -801,6 +869,32 @@ for (const useIntermediateMergeReport of [false] as const) {
       await expect(page.locator('.attachment-body')).toHaveText(['foo', '{"foo":1}', 'utf16 encoded']);
     });
 
+    test('should have link for opening HTML attachments in new tab', async ({ runInlineTest, page, showReport }) => {
+      const result = await runInlineTest({
+        'a.test.js': `
+          import { test, expect } from '@playwright/test';
+          test('passing', async ({ page }, testInfo) => {
+            await testInfo.attach('axe-report.html', {
+              contentType: 'text/html',
+              body: '<h1>Axe Report</h1>',
+            });
+          });
+        `,
+      }, { reporter: 'dot,html' }, { PLAYWRIGHT_HTML_OPEN: 'never' });
+      expect(result.exitCode).toBe(0);
+
+      await showReport();
+      await page.getByText('passing', { exact: true }).click();
+
+      const [newTab] = await Promise.all([
+        page.waitForEvent('popup'),
+        page.getByText('axe-report.html', { exact: true }).click(),
+      ]);
+
+      await expect(newTab).toHaveURL(/^blob:/);
+      await expect(newTab.getByText('Axe Report')).toBeVisible();
+    });
+
     test('should use file-browser friendly extensions for buffer attachments based on contentType', async ({ runInlineTest, showReport, page }, testInfo) => {
       const result = await runInlineTest({
         'a.test.js': `
@@ -849,7 +943,60 @@ for (const useIntermediateMergeReport of [false] as const) {
       ]));
     });
 
-    test('should strikethrough textual diff', async ({ runInlineTest, showReport, page }) => {
+    test('should link from attach step to attachment view', async ({ runInlineTest, page, showReport }) => {
+      const result = await runInlineTest({
+        'a.test.js': `
+          import { test, expect } from '@playwright/test';
+          test('passing', async ({ page }, testInfo) => {
+            for (let i = 0; i < 100; i++)
+              await testInfo.attach('foo-1', { body: 'bar' });
+            await testInfo.attach('foo-2', { body: 'bar' });
+          });
+        `,
+      }, { reporter: 'dot,html' }, { PLAYWRIGHT_HTML_OPEN: 'never' });
+      expect(result.exitCode).toBe(0);
+
+      await showReport();
+      await page.getByRole('link', { name: 'passing' }).click();
+
+      const attachment = page.getByTestId('attachments').getByText('foo-2', { exact: true });
+      await expect(attachment).not.toBeInViewport();
+      await page.getByLabel('attach "foo-2"').click();
+      await page.getByTitle('see "foo-2"').click();
+      await expect(attachment).toBeInViewport();
+
+      await page.reload();
+      await expect(attachment).toBeInViewport();
+    });
+
+    test('steps with internal attachments have links', async ({ runInlineTest, page, showReport }) => {
+      const result = await runInlineTest({
+        'a.test.js': `
+          import { test, expect } from '@playwright/test';
+          test('passing', async ({ page }, testInfo) => {
+            for (let i = 0; i < 100; i++)
+              await testInfo.attach('spacer', { body: 'content' });
+
+            await test.step('step', async () => {
+              testInfo.attachments.push({ name: 'attachment', body: 'content', contentType: 'text/plain' });
+            }) 
+            
+          });
+        `,
+      }, { reporter: 'dot,html' }, { PLAYWRIGHT_HTML_OPEN: 'never' });
+      expect(result.exitCode).toBe(0);
+
+      await showReport();
+      await page.getByRole('link', { name: 'passing' }).click();
+
+      const attachment = page.getByTestId('attachments').getByText('attachment', { exact: true });
+      await expect(attachment).not.toBeInViewport();
+      await page.getByLabel('step').click();
+      await page.getByTitle('see "attachment"').click();
+      await expect(attachment).toBeInViewport();
+    });
+
+    test('should highlight textual diff', async ({ runInlineTest, showReport, page }) => {
       const result = await runInlineTest({
         'helper.ts': `
           import { test as base } from '@playwright/test';
@@ -872,35 +1019,32 @@ for (const useIntermediateMergeReport of [false] as const) {
       expect(result.exitCode).toBe(1);
       await showReport();
       await page.click('text="is a test"');
-      const stricken = await page.locator('css=strike').innerText();
-      expect(stricken).toBe('old');
+
+      await expect(page.locator('.test-error-view').getByText('-old')).toHaveCSS('color', 'rgb(205, 49, 49)');
+      await expect(page.locator('.test-error-view').getByText('+new', { exact: true })).toHaveCSS('color', 'rgb(0, 188, 0)');
     });
 
-    test('should strikethrough textual diff with commonalities', async ({ runInlineTest, showReport, page }) => {
+    test('should highlight inline textual diff in toHaveText', async ({ runInlineTest, showReport, page }) => {
       const result = await runInlineTest({
-        'helper.ts': `
-          import { test as base } from '@playwright/test';
-          export * from '@playwright/test';
-          export const test = base.extend({
-            auto: [ async ({}, run, testInfo) => {
-              testInfo.snapshotSuffix = '';
-              await run();
-            }, { auto: true } ]
-          });
-        `,
-        'a.spec.js-snapshots/snapshot.txt': `oldcommon`,
-        'a.spec.js': `
-          const { test, expect } = require('./helper');
-          test('is a test', ({}) => {
-            expect('newcommon').toMatchSnapshot('snapshot.txt');
+        'a.spec.ts': `
+          import { test, expect } from '@playwright/test';
+          test('is a test', async ({ page }) => {
+            await page.setContent('<div>begin inner end</div>');
+            await expect(page.locator('div')).toHaveText('inner', { timeout: 500 });
           });
         `
       }, { reporter: 'dot,html' }, { PLAYWRIGHT_HTML_OPEN: 'never' });
       expect(result.exitCode).toBe(1);
       await showReport();
       await page.click('text="is a test"');
-      const stricken = await page.locator('css=strike').innerText();
-      expect(stricken).toBe('old');
+      await expect(page.locator('.test-error-view').getByText('begin ', { exact: true })).toHaveCSS('color', 'rgb(246, 248, 250)');
+      await expect(page.locator('.test-error-view').getByText('begin ', { exact: true })).toHaveCSS('background-color', 'rgb(205, 49, 49)');
+
+      await expect(page.locator('.test-error-view').getByText('inner', { exact: true })).toHaveCSS('color', 'rgb(205, 49, 49)');
+      await expect(page.locator('.test-error-view').getByText('inner', { exact: true })).toHaveCSS('background-color', 'rgb(246, 248, 250)');
+
+      await expect(page.locator('.test-error-view').getByText('end ', { exact: true })).toHaveCSS('color', 'rgb(246, 248, 250)');
+      await expect(page.locator('.test-error-view').getByText('end ', { exact: true })).toHaveCSS('background-color', 'rgb(205, 49, 49)');
     });
 
     test('should differentiate repeat-each test cases', async ({ runInlineTest, showReport, page }) => {
@@ -917,13 +1061,13 @@ for (const useIntermediateMergeReport of [false] as const) {
       expect(result.exitCode).toBe(1);
       await showReport();
 
-      await page.locator('text=sample').first().click();
-      await expect(page.locator('text=ouch')).toHaveCount(1);
-      await page.locator('text=All').first().click();
+      await page.getByText('sample').first().click();
+      await expect(page.getByText('ouch')).toHaveCount(2);
+      await page.getByText('All').first().click();
 
-      await page.locator('text=sample').nth(1).click();
-      await expect(page.locator('text=Before Hooks')).toBeVisible();
-      await expect(page.locator('text=ouch')).toBeHidden();
+      await page.getByText('sample').nth(1).click();
+      await expect(page.getByText('Before Hooks')).toBeVisible();
+      await expect(page.getByText('ouch')).toBeHidden();
     });
 
     test('should group similar / loop steps', async ({ runInlineTest, showReport, page }) => {
@@ -946,6 +1090,38 @@ for (const useIntermediateMergeReport of [false] as const) {
       await expect(page.locator('.tree-item-title')).toContainText([
         /expect\.toBe.*10/,
         /expect\.toEqual.*20/,
+      ]);
+    });
+
+    test('show custom fixture titles', async ({ runInlineTest, showReport, page }) => {
+      const result = await runInlineTest({
+        'a.spec.js': `
+          import { test as base, expect } from '@playwright/test';
+          
+          const test = base.extend({
+            fixture1: [async ({}, use) => {
+              await use();
+            }, { title: 'custom fixture name' }],
+            fixture2: async ({}, use) => {
+              await use();
+            },
+          });
+
+          test('sample', ({ fixture1, fixture2 }) => {
+            // Empty test using both fixtures
+          });
+        `
+      }, { 'reporter': 'dot,html' }, { PLAYWRIGHT_HTML_OPEN: 'never' });
+      expect(result.exitCode).toBe(0);
+      await showReport();
+      await page.getByRole('link', { name: 'sample' }).click();
+      await page.getByText('Before Hooks').click();
+      await expect(page.getByText('fixture: custom fixture name')).toBeVisible();
+      await expect(page.locator('.tree-item-title')).toHaveText([
+        /Before Hooks/,
+        /fixture: custom fixture/,
+        /fixture: fixture2/,
+        /After Hooks/,
       ]);
     });
 
@@ -2231,10 +2407,19 @@ for (const useIntermediateMergeReport of [false] as const) {
 
       const searchInput = page.locator('.subnav-search-input');
 
-      await searchInput.fill('annot:key=value');
-      await expect(page.getByText('a.test.js', { exact: true })).toBeVisible();
-      await expect(page.getByText('non-annotated test')).not.toBeVisible();
-      await expect(page.getByText('annotated test')).toBeVisible();
+      await test.step('filter by type and value', async () => {
+        await searchInput.fill('annot:key=value');
+        await expect(page.getByText('a.test.js', { exact: true })).toBeVisible();
+        await expect(page.getByText('non-annotated test')).not.toBeVisible();
+        await expect(page.getByText('annotated test')).toBeVisible();
+      });
+
+      await test.step('filter by type', async () => {
+        await searchInput.fill('annot:key');
+        await expect(page.getByText('a.test.js', { exact: true })).toBeVisible();
+        await expect(page.getByText('non-annotated test')).not.toBeVisible();
+        await expect(page.getByText('annotated test')).toBeVisible();
+      });
     });
 
     test('tests should filter by fileName:line/column', async ({ runInlineTest, showReport, page }) => {
@@ -2435,6 +2620,77 @@ for (const useIntermediateMergeReport of [false] as const) {
 
       await testFilePathLink.click();
       await expect(page.locator('.test-case-path')).toHaveText('Root describe');
+    });
+
+    test('should print a user-friendly warning when opening a trace via file:// protocol', async ({ runInlineTest, showReport, page }) => {
+      await runInlineTest({
+        'playwright.config.ts': `
+          module.exports = {
+            projects: [{
+              name: 'chromium',
+              use: {
+                browserName: 'chromium',
+                trace: 'on',
+              }
+            }]
+          };
+        `,
+        'a.test.js': `
+          import { test } from '@playwright/test';
+          test('passes', ({ page }) => {});
+        `,
+      }, { reporter: 'dot,html' }, { PLAYWRIGHT_HTML_OPEN: 'never' });
+
+      const reportPath = path.join(test.info().outputPath(), 'playwright-report');
+      await page.goto(url.pathToFileURL(path.join(reportPath, 'index.html')).toString());
+      await page.getByRole('link', { name: 'View trace' }).click();
+      await expect(page.locator('#fallback-error')).toContainText('The Playwright Trace Viewer must be loaded over the http:// or https:// protocols.');
+      await expect(page.locator('#fallback-error')).toContainText(`npx playwright show-report ${reportPath.replace(/\\/g, '\\\\')}`);
+    });
+
+    test('should not collate identical file names in different project directories', async ({ runInlineTest, page }) => {
+      await runInlineTest({
+        'playwright.config.ts': `
+          export default {
+            projects: [
+              { name: 'a', testDir: './tests/a' },
+              { name: 'b', testDir: './tests/b' },
+            ],
+          }
+        `,
+        'tests/a/test.spec.ts': `
+          import { test } from '@playwright/test';
+          test('passes', ({ page }) => {});
+        `,
+        'tests/b/test.spec.ts': `
+          import { test } from '@playwright/test';
+          test('passes', ({ page }) => {});
+        `,
+      }, { reporter: 'dot,html' }, { PLAYWRIGHT_HTML_OPEN: 'never' });
+      const reportPath = path.join(test.info().outputPath(), 'playwright-report', 'index.html');
+      await page.goto(url.pathToFileURL(reportPath).toString());
+      await expect(page.getByRole('main')).toMatchAriaSnapshot(`
+        - button "tests/a/test.spec.ts"
+        - button "tests/b/test.spec.ts"
+      `);
+    });
+
+    test('execSync doesnt produce a second stdout attachment', { annotation: { type: 'issue', description: 'https://github.com/microsoft/playwright/issues/33886' } }, async ({ runInlineTest, showReport, page }) => {
+      await runInlineTest({
+        'a.test.js': `
+          const { test, expect } = require('@playwright/test');
+          const { execSync } = require('node:child_process');
+          test('my test', async ({}) => {
+            console.log('foo');
+            execSync('echo bar', { stdio: 'inherit' });
+            console.log('baz');
+          });
+        `,
+      }, { reporter: 'dot,html' });
+
+      await showReport();
+      await page.getByText('my test').click();
+      await expect(page.locator('.tree-item', { hasText: 'stdout' })).toHaveCount(1);
     });
   });
 }

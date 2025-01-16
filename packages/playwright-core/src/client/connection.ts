@@ -21,7 +21,7 @@ import { ChannelOwner } from './channelOwner';
 import { ElementHandle } from './elementHandle';
 import { Frame } from './frame';
 import { JSHandle } from './jsHandle';
-import { Request, Response, Route, WebSocket } from './network';
+import { Request, Response, Route, WebSocket, WebSocketRoute } from './network';
 import { Page, BindingCall } from './page';
 import { Worker } from './worker';
 import { Dialog } from './dialog';
@@ -78,9 +78,9 @@ export class Connection extends EventEmitter {
 
   constructor(localUtils: LocalUtils | undefined, instrumentation: ClientInstrumentation | undefined) {
     super();
-    this._rootObject = new Root(this);
-    this._localUtils = localUtils;
     this._instrumentation = instrumentation || createInstrumentation();
+    this._localUtils = localUtils;
+    this._rootObject = new Root(this);
   }
 
   markAsRemote() {
@@ -138,7 +138,7 @@ export class Connection extends EventEmitter {
       this._localUtils?._channel.addStackToTracingNoReply({ callData: { stack: frames, id } }).catch(() => {});
     // We need to exit zones before calling into the server, otherwise
     // when we receive events from the server, we would be in an API zone.
-    zones.exitZones(() => this.onmessage({ ...message, metadata }));
+    zones.empty().run(() => this.onmessage({ ...message, metadata }));
     return await new Promise((resolve, reject) => this._callbacks.set(id, { resolve, reject, apiName, type, method }));
   }
 
@@ -194,6 +194,8 @@ export class Connection extends EventEmitter {
   }
 
   close(cause?: string) {
+    if (this._closedError)
+      return;
     this._closedError = new TargetClosedError(cause);
     for (const callback of this._callbacks.values())
       callback.reject(this._closedError);
@@ -306,6 +308,9 @@ export class Connection extends EventEmitter {
         break;
       case 'WebSocket':
         result = new WebSocket(parent, type, guid, initializer);
+        break;
+      case 'WebSocketRoute':
+        result = new WebSocketRoute(parent, type, guid, initializer);
         break;
       case 'Worker':
         result = new Worker(parent, type, guid, initializer);

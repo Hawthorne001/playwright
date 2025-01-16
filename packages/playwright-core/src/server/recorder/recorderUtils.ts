@@ -16,6 +16,11 @@
 
 import type { CallMetadata } from '../instrumentation';
 import type { CallLog, CallLogStatus } from '@recorder/recorderTypes';
+import type { Page } from '../page';
+import type { Frame } from '../frames';
+import type * as actions from '@recorder/actions';
+import { createGuid } from '../../utils';
+import { buildFullSelector, traceParamsForAction } from '../../utils/isomorphic/recorderUtils';
 
 export function metadataToCallLog(metadata: CallMetadata, status: CallLogStatus): CallLog {
   let title = metadata.apiName || metadata.method;
@@ -43,4 +48,62 @@ export function metadataToCallLog(metadata: CallMetadata, status: CallLogStatus)
     duration,
   };
   return callLog;
+}
+
+export function mainFrameForAction(pageAliases: Map<Page, string>, actionInContext: actions.ActionInContext): Frame {
+  const pageAlias = actionInContext.frame.pageAlias;
+  const page = [...pageAliases.entries()].find(([, alias]) => pageAlias === alias)?.[0];
+  if (!page)
+    throw new Error(`Internal error: page ${pageAlias} not found in [${[...pageAliases.values()]}]`);
+  return page.mainFrame();
+}
+
+export async function frameForAction(pageAliases: Map<Page, string>, actionInContext: actions.ActionInContext, action: actions.ActionWithSelector): Promise<Frame> {
+  const pageAlias = actionInContext.frame.pageAlias;
+  const page = [...pageAliases.entries()].find(([, alias]) => pageAlias === alias)?.[0];
+  if (!page)
+    throw new Error('Internal error: page not found');
+  const fullSelector = buildFullSelector(actionInContext.frame.framePath, action.selector);
+  const result = await page.mainFrame().selectors.resolveFrameForSelector(fullSelector);
+  if (!result)
+    throw new Error('Internal error: frame not found');
+  return result.frame;
+}
+
+export function callMetadataForAction(pageAliases: Map<Page, string>, actionInContext: actions.ActionInContext): { callMetadata: CallMetadata, mainFrame: Frame } {
+  const mainFrame = mainFrameForAction(pageAliases, actionInContext);
+  const { method, apiName, params } = traceParamsForAction(actionInContext);
+
+  const callMetadata: CallMetadata = {
+    id: `call@${createGuid()}`,
+    apiName,
+    objectId: mainFrame.guid,
+    pageId: mainFrame._page.guid,
+    frameId: mainFrame.guid,
+    startTime: actionInContext.startTime,
+    endTime: 0,
+    type: 'Frame',
+    method,
+    params,
+    log: [],
+  };
+  return { callMetadata, mainFrame };
+}
+
+export function collapseActions(actions: actions.ActionInContext[]): actions.ActionInContext[] {
+  const result: actions.ActionInContext[] = [];
+  for (const action of actions) {
+    const lastAction = result[result.length - 1];
+    const isSameAction = lastAction && lastAction.action.name === action.action.name && lastAction.frame.pageAlias === action.frame.pageAlias && lastAction.frame.framePath.join('|') === action.frame.framePath.join('|');
+    const isSameSelector = lastAction && 'selector' in lastAction.action && 'selector' in action.action && action.action.selector === lastAction.action.selector;
+    const shouldMerge = isSameAction && (action.action.name === 'navigate' || (action.action.name === 'fill' && isSameSelector));
+    if (!shouldMerge) {
+      result.push(action);
+      continue;
+    }
+    const startTime = result[result.length - 1].startTime;
+    result[result.length - 1] = action;
+    result[result.length - 1].startTime = startTime;
+  }
+  return result;
 }

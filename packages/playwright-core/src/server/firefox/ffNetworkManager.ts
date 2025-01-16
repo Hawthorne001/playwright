@@ -183,7 +183,7 @@ const causeToResourceType: {[key: string]: string} = {
   TYPE_XSLT: 'other',
   TYPE_BEACON: 'other',
   TYPE_FETCH: 'fetch',
-  TYPE_IMAGESET: 'images',
+  TYPE_IMAGESET: 'image',
   TYPE_WEB_MANIFEST: 'manifest',
 };
 
@@ -226,7 +226,7 @@ class FFRouteImpl implements network.RouteDelegate {
     this._request = request;
   }
 
-  async continue(request: network.Request, overrides: types.NormalizedContinueOverrides) {
+  async continue(overrides: types.NormalizedContinueOverrides) {
     await this._session.sendMayFail('Network.resumeInterceptedRequest', {
       requestId: this._request._id,
       url: overrides.url,
