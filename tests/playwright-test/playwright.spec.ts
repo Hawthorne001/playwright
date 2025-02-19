@@ -485,7 +485,7 @@ test('should work with video: retain-on-failure', async ({ runInlineTest }) => {
 test('should work with video: on-first-retry', async ({ runInlineTest }) => {
   const result = await runInlineTest({
     'playwright.config.ts': `
-      module.exports = { use: { video: 'on-first-retry' }, retries: 1, name: 'chromium' };
+      module.exports = { use: { video: 'on-first-retry', pageSnapshot: 'off' }, retries: 1, name: 'chromium' };
     `,
     'a.test.ts': `
       import { test, expect } from '@playwright/test';
@@ -871,4 +871,26 @@ test('should allow dynamic import in evaluate', async ({ runInlineTest, server }
   }, { workers: 1 });
   expect(result.exitCode).toBe(0);
   expect(result.passed).toBe(1);
+});
+
+test('page.pause() should disable test timeout', async ({ runInlineTest }) => {
+  const result = await runInlineTest({
+    'a.test.ts': `
+      import { test, expect } from '@playwright/test';
+
+      test('test', async ({ page }) => {
+        test.setTimeout(2000);
+
+        await Promise.race([
+          page.pause(),
+          new Promise(f => setTimeout(f, 3000)),
+        ]);
+
+        console.log('success!');
+      });
+    `,
+  }, { headed: true });
+  expect(result.exitCode).toBe(0);
+  expect(result.passed).toBe(1);
+  expect(result.output).toContain('success!');
 });

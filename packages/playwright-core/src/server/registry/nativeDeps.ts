@@ -329,7 +329,7 @@ export const deps: any = {
       'libgstreamer-gl1.0-0',
       'libgstreamer-plugins-base1.0-0',
       'libgstreamer1.0-0',
-      'libgtk-3-0',
+      'libgtk-4-1',
       'libgudev-1.0-0',
       'libharfbuzz-icu0',
       'libharfbuzz0b',
@@ -359,8 +359,10 @@ export const deps: any = {
       'libx264-163',
       'libatomic1',
       'libevent-2.1-7',
+      'libavif13',
     ],
     lib2package: {
+      'libavif.so.13': 'libavif13',
       'libsoup-3.0.so.0': 'libsoup-3.0-0',
       'libasound.so.2': 'libasound2',
       'libatk-1.0.so.0': 'libatk1.0-0',
@@ -398,6 +400,7 @@ export const deps: any = {
       'libgsttag-1.0.so.0': 'libgstreamer-plugins-base1.0-0',
       'libgstvideo-1.0.so.0': 'libgstreamer-plugins-base1.0-0',
       'libgtk-3.so.0': 'libgtk-3-0',
+      'libgtk-4.so.1': 'libgtk-4-1',
       'libgudev-1.0.so.0': 'libgudev-1.0-0',
       'libharfbuzz-icu.so.0': 'libharfbuzz-icu0',
       'libharfbuzz.so.0': 'libharfbuzz0b',
@@ -542,7 +545,7 @@ export const deps: any = {
       'libgstreamer-plugins-bad1.0-0',
       'libgstreamer-plugins-base1.0-0',
       'libgstreamer1.0-0',
-      'libgtk-3-0t64',
+      'libgtk-4-1',
       'libharfbuzz-icu0',
       'libharfbuzz0b',
       'libhyphen0',
@@ -566,9 +569,11 @@ export const deps: any = {
       'libxkbcommon0',
       'libxml2',
       'libxslt1.1',
-      'libx264-164'
+      'libx264-164',
+      'libavif16',
     ],
     lib2package: {
+      'libavif.so.16': 'libavif16',
       'libasound.so.2': 'libasound2t64',
       'libatk-1.0.so.0': 'libatk1.0-0t64',
       'libatk-bridge-2.0.so.0': 'libatk-bridge2.0-0t64',
@@ -617,6 +622,7 @@ export const deps: any = {
       'libgsttag-1.0.so.0': 'libgstreamer-plugins-base1.0-0',
       'libgstvideo-1.0.so.0': 'libgstreamer-plugins-base1.0-0',
       'libgtk-3.so.0': 'libgtk-3-0t64',
+      'libgtk-4.so.1': 'libgtk-4-1',
       'libharfbuzz-icu.so.0': 'libharfbuzz-icu0',
       'libharfbuzz.so.0': 'libharfbuzz0b',
       'libhyphen.so.0': 'libhyphen0',
@@ -963,7 +969,7 @@ export const deps: any = {
       'libgstreamer-gl1.0-0',
       'libgstreamer-plugins-base1.0-0',
       'libgstreamer1.0-0',
-      'libgtk-3-0',
+      'libgtk-4-1',
       'libgudev-1.0-0',
       'libharfbuzz-icu0',
       'libharfbuzz0b',
@@ -994,8 +1000,10 @@ export const deps: any = {
       'libxslt1.1',
       'libatomic1',
       'libevent-2.1-7',
+      'libavif15',
     ],
     lib2package: {
+      'libavif.so.15': 'libavif15',
       'libsoup-3.0.so.0': 'libsoup-3.0-0',
       'libasound.so.2': 'libasound2',
       'libatk-1.0.so.0': 'libatk1.0-0',
@@ -1022,6 +1030,7 @@ export const deps: any = {
       'libXfixes.so.3': 'libxfixes3',
       'libxkbcommon.so.0': 'libxkbcommon0',
       'libXrandr.so.2': 'libxrandr2',
+      'libgtk-4.so.1': 'libgtk-4-1',
     }
   },
 };
@@ -1095,4 +1104,3 @@ deps['debian12-arm64'] = {
     ...deps['debian12-x64'].lib2package,
   },
 };
-

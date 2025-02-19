@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-import type { EnvProducedPayload, ProcessInitParams } from './ipc';
 import { startProfiling, stopProfiling } from 'playwright-core/lib/utils';
-import type { TestInfoError } from '../../types/test';
+
 import { serializeError } from '../util';
 import { registerESMLoader } from './esmLoaderHost';
 import { execArgvWithoutExperimentalLoaderOptions } from '../transform/esmUtils';
+
+import type { EnvProducedPayload, ProcessInitParams, TestInfoErrorImpl } from './ipc';
 
 export type ProtocolRequest = {
   id: number;
@@ -29,7 +30,7 @@ export type ProtocolRequest = {
 
 export type ProtocolResponse = {
   id?: number;
-  error?: TestInfoError;
+  error?: TestInfoErrorImpl;
   method?: string;
   params?: any;
   result?: any;

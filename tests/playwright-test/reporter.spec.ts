@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import type { Reporter, TestCase, TestResult, TestStep } from '../../packages/playwright-test/reporter';
 import { test, expect } from './playwright-test-fixtures';
 
 const smallReporterJS = `
@@ -702,4 +703,100 @@ onTestEnd: [passed]  > a.spec.ts > test2; retry #1
 onEnd
 onExit
 `);
+});
+
+test('step attachments are referentially equal to result attachments', async ({ runInlineTest }) => {
+  class TestReporter implements Reporter {
+    onStepEnd(test: TestCase, result: TestResult, step: TestStep) {
+      console.log('%%%', JSON.stringify({
+        title: step.title,
+        attachments: step.attachments.map(a => result.attachments.indexOf(a)),
+      }));
+    }
+  }
+  const result = await runInlineTest({
+    'reporter.ts': `module.exports = ${TestReporter.toString()}`,
+    'playwright.config.ts': `module.exports = { reporter: './reporter' };`,
+    'a.spec.ts': `
+      import { test, expect } from '@playwright/test';
+      test('test', async ({}, testInfo) => {
+        await test.step('step', async () => {
+          testInfo.attachments.push({ name: 'attachment', body: Buffer.from('content') });
+        });
+      });
+    `,
+  }, { 'reporter': '', 'workers': 1 });
+
+  const steps = result.outputLines.map(line => JSON.parse(line));
+  expect(steps).toEqual([
+    { title: 'Before Hooks', attachments: [] },
+    { title: 'step', attachments: [0] },
+    { title: 'After Hooks', attachments: [] },
+  ]);
+});
+
+test('step.attach attachments are reported on right steps', async ({ runInlineTest }) => {
+  class TestReporter implements Reporter {
+    onStepEnd(test: TestCase, result: TestResult, step: TestStep) {
+      console.log('%%%', JSON.stringify({
+        title: step.title,
+        attachments: step.attachments.map(a => ({ ...a, body: a.body.toString('utf8') })),
+      }));
+    }
+  }
+  const result = await runInlineTest({
+    'reporter.ts': `module.exports = ${TestReporter.toString()}`,
+    'playwright.config.ts': `module.exports = { reporter: './reporter' };`,
+    'a.spec.ts': `
+      import { test, expect } from '@playwright/test';
+      test.beforeAll(async () => {
+        await test.step('step in beforeAll', async (step) => {
+          await step.attach('attachment1', { body: 'content1' });
+        });
+      });
+      test('test', async () => {
+        await test.step('step', async (step) => {
+          await step.attach('attachment2', { body: 'content2' });
+        });
+      });
+    `,
+  }, { 'reporter': '', 'workers': 1 });
+
+  const steps = result.outputLines.map(line => JSON.parse(line));
+  expect(steps).toEqual([
+    { title: 'step in beforeAll', attachments: [{ body: 'content1', contentType: 'text/plain', name: 'attachment1' }] },
+    { title: 'beforeAll hook', attachments: [] },
+    { title: 'Before Hooks', attachments: [] },
+    { title: 'step', attachments: [{ body: 'content2', contentType: 'text/plain', name: 'attachment2' }] },
+    { title: 'After Hooks', attachments: [] },
+  ]);
+});
+
+test('attachments are reported in onStepEnd', { annotation: { type: 'issue', description: 'https://github.com/microsoft/playwright/issues/14364' } }, async ({ runInlineTest }) => {
+  class TestReporter implements Reporter {
+    onStepEnd(test: TestCase, result: TestResult, step: TestStep) {
+      console.log(`%%${step.title}: ${result.attachments.length} attachments in result`);
+    }
+  }
+  const result = await runInlineTest({
+    'reporter.ts': `module.exports = ${TestReporter.toString()}`,
+    'playwright.config.ts': `module.exports = { reporter: './reporter' };`,
+    'a.spec.ts': `
+      import { test, expect } from '@playwright/test';
+      test('test', async ({}, testInfo) => {
+        await test.step('step', async () => {
+          testInfo.attachments.push({ name: 'attachment', body: Buffer.from('content') });
+        });
+
+        await testInfo.attach('4', {body:'444'})
+      });
+    `,
+  }, { 'reporter': '', 'workers': 1 });
+
+  expect(result.outputLines).toEqual([
+    'Before Hooks: 0 attachments in result',
+    'step: 1 attachments in result',
+    'attach "4": 2 attachments in result',
+    'After Hooks: 2 attachments in result',
+  ]);
 });

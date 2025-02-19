@@ -1138,6 +1138,57 @@ Optional description that will be reflected in a test report.
 
 
 
+## method: Test.fail.only
+* since: v1.49
+
+You can use `test.fail.only` to focus on a specific test that is expected to fail. This is particularly useful when debugging a failing test or working on a specific issue.
+
+To declare a focused "failing" test:
+* `test.fail.only(title, body)`
+* `test.fail.only(title, details, body)`
+
+**Usage**
+
+You can declare a focused failing test, so that Playwright runs only this test and ensures it actually fails.
+
+```js
+import { test, expect } from '@playwright/test';
+
+test.fail.only('focused failing test', async ({ page }) => {
+  // This test is expected to fail
+});
+test('not in the focused group', async ({ page }) => {
+  // This test will not run
+});
+```
+
+### param: Test.fail.only.title
+* since: v1.49
+
+- `title` ?<[string]>
+
+Test title.
+
+### param: Test.fail.only.details
+* since: v1.49
+
+- `details` ?<[Object]>
+  - `tag` ?<[string]|[Array]<[string]>>
+  - `annotation` ?<[Object]|[Array]<[Object]>>
+    - `type` <[string]>
+    - `description` ?<[string]>
+
+See [`method: Test.describe`] for test details description.
+
+### param: Test.fail.only.body
+* since: v1.49
+
+- `body` ?<[function]\([Fixtures], [TestInfo]\)>
+
+Test body that takes one or two arguments: an object with fixtures and optional [TestInfo].
+
+
+
 ## method: Test.fixme
 * since: v1.10
 
@@ -1319,7 +1370,7 @@ Timeout for the currently running test is available through [`property: TestInfo
   });
   ```
 
-* Changing timeout from a slow `beforeEach` or `afterEach` hook. Note that this affects the test timeout that is shared with `beforeEach`/`afterEach` hooks.
+* Changing timeout from a slow `beforeEach` hook. Note that this affects the test timeout that is shared with `beforeEach` hooks.
 
   ```js
   test.beforeEach(async ({ page }, testInfo) => {
@@ -1700,7 +1751,7 @@ Step name.
 
 ### param: Test.step.body
 * since: v1.10
-- `body` <[function]\(\):[Promise]<[any]>>
+- `body` <[function]\([TestStepInfo]\):[Promise]<[any]>>
 
 Step body.
 
@@ -1709,6 +1760,69 @@ Step body.
 - `box` <boolean>
 
 Whether to box the step in the report. Defaults to `false`. When the step is boxed, errors thrown from the step internals point to the step call site. See below for more details.
+
+### option: Test.step.location
+* since: v1.48
+- `location` <[Location]>
+
+Specifies a custom location for the step to be shown in test reports and trace viewer. By default, location of the [`method: Test.step`] call is shown.
+
+## async method: Test.step.skip
+* since: v1.50
+- returns: <[void]>
+
+Mark a test step as "skip" to temporarily disable its execution, useful for steps that are currently failing and planned for a near-term fix. Playwright will not run the step.
+
+**Usage**
+
+You can declare a skipped step, and Playwright will not run it.
+
+```js
+import { test, expect } from '@playwright/test';
+
+test('my test', async ({ page }) => {
+  // ...
+  await test.step.skip('not yet ready', async () => {
+    // ...
+  });
+});
+```
+
+### param: Test.step.skip.title
+* since: v1.50
+- `title` <[string]>
+
+Step name.
+
+### param: Test.step.skip.body
+* since: v1.50
+- `body` <[function]\(\):[Promise]<[any]>>
+
+Step body.
+
+### option: Test.step.skip.box
+* since: v1.50
+- `box` <boolean>
+
+Whether to box the step in the report. Defaults to `false`. When the step is boxed, errors thrown from the step internals point to the step call site. See below for more details.
+
+### option: Test.step.skip.location
+* since: v1.50
+- `location` <[Location]>
+
+Specifies a custom location for the step to be shown in test reports and trace viewer. By default, location of the [`method: Test.step`] call is shown.
+
+### option: Test.step.skip.timeout
+* since: v1.50
+- `timeout` <[float]>
+
+Maximum time in milliseconds for the step to finish. Defaults to `0` (no timeout).
+
+### option: Test.step.timeout
+* since: v1.50
+- `timeout` <[float]>
+
+The maximum time, in milliseconds, allowed for the step to complete. If the step does not complete within the specified timeout, the [`method: Test.step`] method will throw a [TimeoutError]. Defaults to `0` (no timeout).
 
 ## method: Test.use
 * since: v1.10

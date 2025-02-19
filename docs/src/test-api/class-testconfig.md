@@ -41,13 +41,16 @@ export default defineConfig({
 - type: ?<[Object]>
   - `timeout` ?<[int]> Default timeout for async expect matchers in milliseconds, defaults to 5000ms.
   - `toHaveScreenshot` ?<[Object]> Configuration for the [`method: PageAssertions.toHaveScreenshot#1`] method.
-    - `animations` ?<[ScreenshotAnimations]<"allow"|"disabled">> See [`option: animations`] in [`method: Page.screenshot`]. Defaults to `"disabled"`.
-    - `caret` ?<[ScreenshotCaret]<"hide"|"initial">> See [`option: caret`] in [`method: Page.screenshot`]. Defaults to `"hide"`.
+    - `animations` ?<[ScreenshotAnimations]<"allow"|"disabled">> See [`option: Page.screenshot.animations`] in [`method: Page.screenshot`]. Defaults to `"disabled"`.
+    - `caret` ?<[ScreenshotCaret]<"hide"|"initial">> See [`option: Page.screenshot.caret`] in [`method: Page.screenshot`]. Defaults to `"hide"`.
     - `maxDiffPixels` ?<[int]> An acceptable amount of pixels that could be different, unset by default.
     - `maxDiffPixelRatio` ?<[float]> An acceptable ratio of pixels that are different to the total amount of pixels, between `0` and `1` , unset by default.
-    - `scale` ?<[ScreenshotScale]<"css"|"device">> See [`option: scale`] in [`method: Page.screenshot`]. Defaults to `"css"`.
-    - `stylePath` ?<[string]|[Array]<[string]>> See [`option: style`] in [`method: Page.screenshot`].
+    - `scale` ?<[ScreenshotScale]<"css"|"device">> See [`option: Page.screenshot.scale`] in [`method: Page.screenshot`]. Defaults to `"css"`.
+    - `stylePath` ?<[string]|[Array]<[string]>> See [`option: Page.screenshot.style`] in [`method: Page.screenshot`].
     - `threshold` ?<[float]> An acceptable perceived color difference between the same pixel in compared images, ranging from `0` (strict) and `1` (lax). `"pixelmatch"` comparator computes color difference in [YIQ color space](https://en.wikipedia.org/wiki/YIQ) and defaults `threshold` value to `0.2`.
+    - `pathTemplate` ?<[string]> A template controlling location of the screenshots. See [`property: TestConfig.snapshotPathTemplate`] for details.
+  - `toMatchAriaSnapshot` ?<[Object]> Configuration for the [`method: LocatorAssertions.toMatchAriaSnapshot#2`] method.
+    - `pathTemplate` ?<[string]> A template controlling location of the aria snapshots. See [`property: TestConfig.snapshotPathTemplate`] for details.
   - `toMatchSnapshot` ?<[Object]> Configuration for the [`method: SnapshotAssertions.toMatchSnapshot#1`] method.
     - `maxDiffPixels` ?<[int]> An acceptable amount of pixels that could be different, unset by default.
     - `maxDiffPixelRatio` ?<[float]> An acceptable ratio of pixels that are different to the total amount of pixels, between `0` and `1` , unset by default.
@@ -110,9 +113,9 @@ export default defineConfig({
 
 ## property: TestConfig.globalSetup
 * since: v1.10
-- type: ?<[string]>
+- type: ?<[string]|[Array]<[string]>>
 
-Path to the global setup file. This file will be required and run before all the tests. It must export a single function that takes a [FullConfig] argument.
+Path to the global setup file. This file will be required and run before all the tests. It must export a single function that takes a [FullConfig] argument. Pass an array of paths to specify multiple global setup files.
 
 Learn more about [global setup and teardown](../test-global-setup-teardown.md).
 
@@ -128,9 +131,9 @@ export default defineConfig({
 
 ## property: TestConfig.globalTeardown
 * since: v1.10
-- type: ?<[string]>
+- type: ?<[string]|[Array]<[string]>>
 
-Path to the global teardown file. This file will be required and run after all the tests. It must export a single function. See also [`property: TestConfig.globalSetup`].
+Path to the global teardown file. This file will be required and run after all the tests. It must export a single function. See also [`property: TestConfig.globalSetup`]. Pass an array of paths to specify multiple global teardown files.
 
 Learn more about [global setup and teardown](../test-global-setup-teardown.md).
 
@@ -234,7 +237,9 @@ export default defineConfig({
 * since: v1.10
 - type: ?<[Metadata]>
 
-Metadata that will be put directly to the test report serialized as JSON.
+Metadata contains key-value pairs to be included in the report. For example, HTML report will display it as key-value pairs, and JSON report will include metadata serialized as json.
+
+See also [`property: TestConfig.populateGitInfo`] that populates metadata.
 
 **Usage**
 
@@ -242,7 +247,7 @@ Metadata that will be put directly to the test report serialized as JSON.
 import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
-  metadata: 'acceptance tests',
+  metadata: { title: 'acceptance tests' },
 });
 ```
 
@@ -320,6 +325,26 @@ This path will serve as the base directory for each test file snapshot directory
 
 ## property: TestConfig.snapshotPathTemplate = %%-test-config-snapshot-path-template-%%
 * since: v1.28
+
+## property: TestConfig.populateGitInfo
+* since: v1.51
+- type: ?<[boolean]>
+
+Whether to populate `'git.commit.info'` field of the [`property: TestConfig.metadata`] with Git commit info and CI/CD information.
+
+This information will appear in the HTML and JSON reports and is available in the Reporter API.
+
+On Github Actions, this feature is enabled by default.
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  populateGitInfo: !!process.env.CI,
+});
+```
 
 ## property: TestConfig.preserveOutput
 * since: v1.10
@@ -552,14 +577,31 @@ export default defineConfig({
 });
 ```
 
+## property: TestConfig.tsconfig
+* since: v1.49
+- type: ?<[string]>
+
+Path to a single `tsconfig` applicable to all imported files. By default, `tsconfig` for each imported file is looked up separately. Note that `tsconfig` property has no effect while the configuration file or any of its dependencies are loaded. Ignored when `--tsconfig` command line option is specified.
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  tsconfig: './tsconfig.test.json',
+});
+```
+
 ## property: TestConfig.updateSnapshots
 * since: v1.10
-- type: ?<[UpdateSnapshots]<"all"|"none"|"missing">>
+- type: ?<[UpdateSnapshots]<"all"|"changed"|"missing"|"none">>
 
 Whether to update expected snapshots with the actual results produced by the test run. Defaults to `'missing'`.
-* `'all'` - All tests that are executed will update snapshots that did not match. Matching snapshots will not be updated.
-* `'none'` - No snapshots are updated.
+* `'all'` - All tests that are executed will update snapshots.
+* `'changed'` - All tests that are executed will update snapshots that did not match. Matching snapshots will not be updated.
 * `'missing'` - Missing snapshots are created, for example when authoring a new test and running it for the first time. This is the default.
+* `'none'` - No snapshots are updated.
 
 Learn more about [snapshots](../test-snapshots.md).
 
@@ -572,6 +614,15 @@ export default defineConfig({
   updateSnapshots: 'missing',
 });
 ```
+
+## property: TestConfig.updateSourceMethod
+* since: v1.50
+- type: ?<[UpdateSourceMethod]<"overwrite"|"3way"|"patch">>
+
+Defines how to update snapshots in the source code.
+* `'patch'` - Create a unified diff file that can be used to update the source code later. This is the default.
+* `'3way'` - Generate merge conflict markers in source code. This allows user to manually pick relevant changes, as if they are resolving a merge conflict in the IDE.
+* `'overwrite'` - Overwrite the source code with the new snapshot values.
 
 ## property: TestConfig.use
 * since: v1.10
@@ -603,6 +654,9 @@ export default defineConfig({
   - `stdout` ?<["pipe"|"ignore"]> If `"pipe"`, it will pipe the stdout of the command to the process stdout. If `"ignore"`, it will ignore the stdout of the command. Default to `"ignore"`.
   - `stderr` ?<["pipe"|"ignore"]> Whether to pipe the stderr of the command to the process stderr or ignore it. Defaults to `"pipe"`.
   - `timeout` ?<[int]> How long to wait for the process to start up and be available in milliseconds. Defaults to 60000.
+  - `gracefulShutdown` ?<[Object]> How to shut down the process. If unspecified, the process group is forcefully `SIGKILL`ed. If set to `{ signal: 'SIGTERM', timeout: 500 }`, the process group is sent a `SIGTERM` signal, followed by `SIGKILL` if it doesn't exit within 500ms. You can also use `SIGINT` as the signal instead. A `0` timeout means no `SIGKILL` will be sent. Windows doesn't support `SIGTERM` and `SIGINT` signals, so this option is ignored on Windows. Note that shutting down a Docker container requires `SIGTERM`.
+    - `signal` <["SIGINT"|"SIGTERM"]>
+    - `timeout` <[int]>
   - `url` ?<[string]> The url on your http server that is expected to return a 2xx, 3xx, 400, 401, 402, or 403 status code when the server is ready to accept connections. Redirects (3xx status codes) are being followed and the new location is checked. Either `port` or `url` should be specified.
 
 Launch a development web server (or multiple) during the tests.

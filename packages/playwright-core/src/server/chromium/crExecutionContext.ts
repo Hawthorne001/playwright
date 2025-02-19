@@ -15,13 +15,14 @@
  * limitations under the License.
  */
 
-import type { CRSession } from './crConnection';
 import { getExceptionMessage, releaseObject } from './crProtocolHelper';
-import type { Protocol } from './protocol';
-import * as js from '../javascript';
-import { rewriteErrorMessage } from '../../utils/stackTrace';
+import { rewriteErrorMessage } from '../../utils/isomorphic/stackTrace';
 import { parseEvaluationResultValue } from '../isomorphic/utilityScriptSerializers';
+import * as js from '../javascript';
 import { isSessionClosedError } from '../protocolError';
+
+import type { CRSession } from './crConnection';
+import type { Protocol } from './protocol';
 
 export class CRExecutionContext implements js.ExecutionContextDelegate {
   _client: CRSession;
@@ -51,16 +52,6 @@ export class CRExecutionContext implements js.ExecutionContextDelegate {
     if (exceptionDetails)
       throw new js.JavaScriptErrorInEvaluate(getExceptionMessage(exceptionDetails));
     return remoteObject.objectId!;
-  }
-
-  rawCallFunctionNoReply(func: Function, ...args: any[]) {
-    this._client.send('Runtime.callFunctionOn', {
-      functionDeclaration: func.toString(),
-      arguments: args.map(a => a instanceof js.JSHandle ? { objectId: a._objectId } : { value: a }),
-      returnByValue: true,
-      executionContextId: this._contextId,
-      userGesture: true
-    }).catch(() => {});
   }
 
   async evaluateWithArguments(expression: string, returnByValue: boolean, utilityScript: js.JSHandle<any>, values: any[], objectIds: string[]): Promise<any> {
@@ -102,19 +93,11 @@ export class CRExecutionContext implements js.ExecutionContextDelegate {
   async releaseHandle(objectId: js.ObjectId): Promise<void> {
     await releaseObject(this._client, objectId);
   }
-
-  async objectCount(objectId: js.ObjectId): Promise<number> {
-    const result = await this._client.send('Runtime.queryObjects', {
-      prototypeObjectId: objectId
-    });
-    const match = result.objects.description!.match(/Array\((\d+)\)/)!;
-    return +match[1];
-  }
 }
 
 function rewriteError(error: Error): Protocol.Runtime.evaluateReturnValue {
   if (error.message.includes('Object reference chain is too long'))
-    return { result: { type: 'undefined' } };
+    throw new Error('Cannot serialize result: object reference chain is too long.');
   if (error.message.includes('Object couldn\'t be returned by value'))
     return { result: { type: 'undefined' } };
 

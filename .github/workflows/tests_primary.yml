@@ -215,11 +215,17 @@ jobs:
     - uses: actions/checkout@v4
     - run: npm install -g yarn@1
     - run: npm install -g pnpm@8
+    - name: Setup Ubuntu Binary Installation # TODO: Remove when https://github.com/electron/electron/issues/42510 is fixed
+      if: ${{ runner.os == 'Linux' }}
+      run: |
+        if grep -q "Ubuntu 24" /etc/os-release; then
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+        fi
+      shell: bash
     - uses: ./.github/actions/run-test
       with:
         command: npm run itest
         bot-name: "package-installations-${{ matrix.os }}"
-        # TODO: figure out why itest fails with 'bash' on Windows.
         shell: ${{ matrix.os == 'windows-latest' && 'pwsh' || 'bash' }}
         flakiness-client-id: ${{ secrets.AZURE_FLAKINESS_DASHBOARD_CLIENT_ID }}
         flakiness-tenant-id: ${{ secrets.AZURE_FLAKINESS_DASHBOARD_TENANT_ID }}

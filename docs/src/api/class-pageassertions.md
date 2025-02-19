@@ -14,14 +14,14 @@ test('navigates to login', async ({ page }) => {
 ```
 
 ```java
-...
+// ...
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 
 public class TestPage {
-  ...
+  // ...
   @Test
   void navigatesToLoginPage() {
-    ...
+    // ...
     page.getByText("Sign in").click();
     assertThat(page).hasURL(Pattern.compile(".*/login"));
   }
@@ -59,7 +59,7 @@ namespace PlaywrightTests;
 public class ExampleTests : PageTest
 {
     [TestMethod]
-    public async Task NavigatetoLoginPage()
+    public async Task NavigateToLoginPage()
     {
         await Page.GetByRole(AriaRole.Button, new() { Name = "Sign In" }).ClickAsync();
         await Expect(Page).ToHaveURLAsync(new Regex(".*/login"));
@@ -83,7 +83,7 @@ assertThat(page).not().hasURL("error");
 ```
 
 ```csharp
-await Expect(Page).Not.ToHaveURL("error");
+await Expect(Page).Not.ToHaveURLAsync("error");
 ```
 
 ## async method: PageAssertions.NotToHaveTitle
@@ -271,7 +271,7 @@ expect(page).to_have_title(re.compile(r".*checkout"))
 ```
 
 ```csharp
-await Expect(Page).ToHaveTitle("Playwright");
+await Expect(Page).ToHaveTitleAsync("Playwright");
 ```
 
 ### param: PageAssertions.toHaveTitle.titleOrRegExp
@@ -320,20 +320,21 @@ expect(page).to_have_url(re.compile(".*checkout"))
 ```
 
 ```csharp
-await Expect(Page).ToHaveURL(new Regex(".*checkout"));
+await Expect(Page).ToHaveURLAsync(new Regex(".*checkout"));
 ```
 
-### param: PageAssertions.toHaveURL.urlOrRegExp
+### param: PageAssertions.toHaveURL.url
 * since: v1.18
-- `urlOrRegExp` <[string]|[RegExp]>
+- `url` <[string]|[RegExp]|[function]\([URL]\):[boolean]>
 
-Expected URL string or RegExp.
+Expected URL string, RegExp, or predicate receiving [URL] to match.
+When a [`option: Browser.newContext.baseURL`] via the context options was provided and the passed URL is a path, it gets merged via the [`new URL()`](https://developer.mozilla.org/en-US/docs/Web/API/URL/URL) constructor.
 
 ### option: PageAssertions.toHaveURL.ignoreCase
 * since: v1.44
 - `ignoreCase` <[boolean]>
 
-Whether to perform case-insensitive match. [`option: ignoreCase`] option takes precedence over the corresponding regular expression flag if specified.
+Whether to perform case-insensitive match. [`option: ignoreCase`] option takes precedence over the corresponding regular expression parameter if specified. A provided predicate ignores this flag.
 
 ### option: PageAssertions.toHaveURL.timeout = %%-js-assertions-timeout-%%
 * since: v1.18

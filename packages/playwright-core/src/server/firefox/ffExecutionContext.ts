@@ -15,12 +15,13 @@
  * limitations under the License.
  */
 
+import { rewriteErrorMessage } from '../../utils/isomorphic/stackTrace';
+import { parseEvaluationResultValue } from '../isomorphic/utilityScriptSerializers';
 import * as js from '../javascript';
+import { isSessionClosedError } from '../protocolError';
+
 import type { FFSession } from './ffConnection';
 import type { Protocol } from './protocol';
-import { rewriteErrorMessage } from '../../utils/stackTrace';
-import { parseEvaluationResultValue } from '../isomorphic/utilityScriptSerializers';
-import { isSessionClosedError } from '../protocolError';
 
 export class FFExecutionContext implements js.ExecutionContextDelegate {
   _session: FFSession;
@@ -49,15 +50,6 @@ export class FFExecutionContext implements js.ExecutionContextDelegate {
     }).catch(rewriteError);
     checkException(payload.exceptionDetails);
     return payload.result!.objectId!;
-  }
-
-  rawCallFunctionNoReply(func: Function, ...args: any[]) {
-    this._session.send('Runtime.callFunction', {
-      functionDeclaration: func.toString(),
-      args: args.map(a => a instanceof js.JSHandle ? { objectId: a._objectId } : { value: a }) as any,
-      returnByValue: true,
-      executionContextId: this._executionContextId
-    }).catch(() => {});
   }
 
   async evaluateWithArguments(expression: string, returnByValue: boolean, utilityScript: js.JSHandle<any>, values: any[], objectIds: string[]): Promise<any> {
@@ -97,10 +89,6 @@ export class FFExecutionContext implements js.ExecutionContextDelegate {
       executionContextId: this._executionContextId,
       objectId
     });
-  }
-
-  objectCount(objectId: js.ObjectId): Promise<number> {
-    throw new Error('Method not implemented in Firefox.');
   }
 }
 

@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-import type { ByRoleOptions } from '../../utils/isomorphic/locatorUtils';
+import { asLocator } from '../../utils/isomorphic/locatorGenerators';
 import { getByAltTextSelector, getByLabelSelector, getByPlaceholderSelector, getByRoleSelector, getByTestIdSelector, getByTextSelector, getByTitleSelector } from '../../utils/isomorphic/locatorUtils';
 import { escapeForTextSelector } from '../../utils/isomorphic/stringUtils';
-import { asLocator } from '../../utils/isomorphic/locatorGenerators';
-import type { Language } from '../../utils/isomorphic/locatorGenerators';
+
 import type { InjectedScript } from './injectedScript';
+import type { Language } from '../../utils/isomorphic/locatorGenerators';
+import type { ByRoleOptions } from '../../utils/isomorphic/locatorUtils';
 
 const selectorSymbol = Symbol('selector');
 
@@ -85,6 +86,9 @@ class ConsoleAPI {
       inspect: (selector: string) => this._inspect(selector),
       selector: (element: Element) => this._selector(element),
       generateLocator: (element: Element, language?: Language) => this._generateLocator(element, language),
+      ariaSnapshot: (element?: Element, options?: { id?: boolean }) => {
+        return this._injectedScript.ariaSnapshot(element || this._injectedScript.document.body, options);
+      },
       resume: () => this._resume(),
       ...new Locator(injectedScript, ''),
     };

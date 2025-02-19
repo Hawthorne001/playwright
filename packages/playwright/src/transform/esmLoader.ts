@@ -16,9 +16,10 @@
 
 import fs from 'fs';
 import url from 'url';
+
 import { addToCompilationCache, currentFileDepsCollector, serializeCompilationCache, startCollectingFileDeps, stopCollectingFileDeps } from './compilationCache';
-import { transformHook, resolveHook, setTransformConfig, shouldTransform } from './transform';
 import { PortTransport } from './portTransport';
+import { resolveHook, setSingleTSConfig, setTransformConfig, shouldTransform, transformHook } from './transform';
 import { fileIsModule } from '../util';
 
 // Node < 18.6: defaultResolve takes 3 arguments.
@@ -89,6 +90,11 @@ function initialize(data: { port: MessagePort }) {
 
 function createTransport(port: MessagePort) {
   return new PortTransport(port, async (method, params) => {
+    if (method === 'setSingleTSConfig') {
+      setSingleTSConfig(params.tsconfig);
+      return;
+    }
+
     if (method === 'setTransformConfig') {
       setTransformConfig(params.config);
       return;
@@ -115,4 +121,4 @@ function createTransport(port: MessagePort) {
 }
 
 
-module.exports = { resolve, load, globalPreload, initialize };
+module.exports = { globalPreload, initialize, load, resolve };

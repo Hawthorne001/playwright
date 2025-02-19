@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-import type { Annotation } from '../common/config';
 import type { Metadata } from '../../types/test';
 import type * as reporterTypes from '../../types/testReporter';
+import type { Annotation } from '../common/config';
 import type { ReporterV2 } from '../reporters/reporterV2';
-
-// -- Reuse boundary -- Everything below this line is reused in the vscode extension.
 
 export type StringIntern = (s: string) => string;
 export type JsonLocation = reporterTypes.Location;
@@ -54,6 +52,7 @@ export type JsonProject = {
   testIgnore: JsonPattern[];
   testMatch: JsonPattern[];
   timeout: number;
+  use: { [key: string]: any };
 };
 
 export type JsonSuite = {
@@ -110,6 +109,8 @@ export type JsonTestStepEnd = {
   id: string;
   duration: number;
   error?: reporterTypes.TestError;
+  attachments?: number[]; // index of JsonTestResultEnd.attachments
+  annotations?: Annotation[];
 };
 
 export type JsonFullResult = {
@@ -135,12 +136,12 @@ export class TeleReporterReceiver {
   public isListing = false;
   private _rootSuite: TeleSuite;
   private _options: TeleReporterReceiverOptions;
-  private _reporter: Partial<ReporterV2>;
+  private _reporter: ReporterV2;
   private _tests = new Map<string, TeleTestCase>();
   private _rootDir!: string;
   private _config!: reporterTypes.FullConfig;
 
-  constructor(reporter: Partial<ReporterV2>, options: TeleReporterReceiverOptions = {}) {
+  constructor(reporter: ReporterV2, options: TeleReporterReceiverOptions = {}) {
     this._rootSuite = new TeleSuite('', 'root');
     this._options = options;
     this._reporter = reporter;
@@ -251,7 +252,7 @@ export class TeleReporterReceiver {
     const parentStep = payload.parentStepId ? result._stepMap.get(payload.parentStepId) : undefined;
 
     const location = this._absoluteLocation(payload.location);
-    const step = new TeleTestStep(payload, parentStep, location);
+    const step = new TeleTestStep(payload, parentStep, location, result);
     if (parentStep)
       parentStep.steps.push(step);
     else
@@ -264,6 +265,7 @@ export class TeleReporterReceiver {
     const test = this._tests.get(testId)!;
     const result = test.results.find(r => r._id === resultId)!;
     const step = result._stepMap.get(payload.id)!;
+    step._endPayload = payload;
     step.duration = payload.duration;
     step.error = payload.error;
     this._reporter.onStepEnd?.(test, result, step);
@@ -325,7 +327,7 @@ export class TeleReporterReceiver {
       dependencies: project.dependencies,
       teardown: project.teardown,
       snapshotDir: this._absolutePath(project.snapshotDir),
-      use: {},
+      use: project.use,
     };
   }
 
@@ -514,15 +516,20 @@ class TeleTestStep implements reporterTypes.TestStep {
   parent: reporterTypes.TestStep | undefined;
   duration: number = -1;
   steps: reporterTypes.TestStep[] = [];
+  error: reporterTypes.TestError | undefined;
+
+  private _result: TeleTestResult;
+  _endPayload?: JsonTestStepEnd;
 
   private _startTime: number = 0;
 
-  constructor(payload: JsonTestStepStart, parentStep: reporterTypes.TestStep | undefined, location: reporterTypes.Location | undefined) {
+  constructor(payload: JsonTestStepStart, parentStep: reporterTypes.TestStep | undefined, location: reporterTypes.Location | undefined, result: TeleTestResult) {
     this.title = payload.title;
     this.category = payload.category;
     this.location = location;
     this.parent = parentStep;
     this._startTime = payload.startTime;
+    this._result = result;
   }
 
   titlePath() {
@@ -536,6 +543,14 @@ class TeleTestStep implements reporterTypes.TestStep {
 
   set startTime(value: Date) {
     this._startTime = +value;
+  }
+
+  get attachments() {
+    return this._endPayload?.attachments?.map(index => this._result.attachments[index]) ?? [];
+  }
+
+  get annotations() {
+    return this._endPayload?.annotations ?? [];
   }
 }
 
@@ -552,7 +567,7 @@ export class TeleTestResult implements reporterTypes.TestResult {
   errors: reporterTypes.TestResult['errors'] = [];
   error: reporterTypes.TestResult['error'];
 
-  _stepMap: Map<string, reporterTypes.TestStep> = new Map();
+  _stepMap = new Map<string, TeleTestStep>();
   _id: string;
 
   private _startTime: number = 0;
@@ -596,6 +611,7 @@ export const baseFullConfig: reporterTypes.FullConfig = {
   quiet: false,
   shard: null,
   updateSnapshots: 'missing',
+  updateSourceMethod: 'patch',
   version: '',
   workers: 0,
   webServer: null,
@@ -613,7 +629,7 @@ export function serializeRegexPatterns(patterns: string | RegExp | (string | Reg
 
 export function parseRegexPatterns(patterns: JsonPattern[]): (string | RegExp)[] {
   return patterns.map(p => {
-    if (p.s)
+    if (p.s !== undefined)
       return p.s;
     return new RegExp(p.r!.source, p.r!.flags);
   });

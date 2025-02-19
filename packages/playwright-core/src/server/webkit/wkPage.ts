@@ -16,37 +16,40 @@
  */
 
 import path from 'path';
-import os from 'os';
+
+import { assert } from '../../utils';
+import { headersArrayToObject } from '../../utils/isomorphic/headers';
+import { createGuid } from '../utils/crypto';
+import { eventsHelper } from '../utils/eventsHelper';
+import { hostPlatform } from '../utils/hostPlatform';
+import { splitErrorMessage } from '../../utils/isomorphic/stackTrace';
 import { PNG, jpegjs } from '../../utilsBundle';
-import { splitErrorMessage } from '../../utils/stackTrace';
-import { assert, createGuid, debugAssert, headersArrayToObject } from '../../utils';
-import { hostPlatform } from '../../utils/hostPlatform';
-import type * as accessibility from '../accessibility';
+import { BrowserContext } from '../browserContext';
 import * as dialog from '../dialog';
 import * as dom from '../dom';
-import type * as frames from '../frames';
-import type { RegisteredListener } from '../../utils/eventsHelper';
-import { eventsHelper } from '../../utils/eventsHelper';
+import { TargetClosedError } from '../errors';
 import { helper } from '../helper';
-import type { JSHandle } from '../javascript';
 import * as network from '../network';
-import type { PageBinding, PageDelegate } from '../page';
+import {  PageBinding  } from '../page';
 import { Page } from '../page';
-import type { Progress } from '../progress';
-import type * as types from '../types';
-import type { Protocol } from './protocol';
 import { getAccessibilityTree } from './wkAccessibility';
-import type { WKBrowserContext } from './wkBrowser';
 import { WKSession } from './wkConnection';
 import { WKExecutionContext } from './wkExecutionContext';
 import { RawKeyboardImpl, RawMouseImpl, RawTouchscreenImpl } from './wkInput';
 import { WKInterceptableRequest, WKRouteImpl } from './wkInterceptableRequest';
 import { WKProvisionalPage } from './wkProvisionalPage';
 import { WKWorkers } from './wkWorkers';
-import { debugLogger } from '../../utils/debugLogger';
-import { ManualPromise } from '../../utils/manualPromise';
-import { BrowserContext } from '../browserContext';
-import { TargetClosedError } from '../errors';
+import { debugLogger } from '../utils/debugLogger';
+
+import type { Protocol } from './protocol';
+import type { WKBrowserContext } from './wkBrowser';
+import type { RegisteredListener } from '../utils/eventsHelper';
+import type * as accessibility from '../accessibility';
+import type * as frames from '../frames';
+import type { JSHandle } from '../javascript';
+import type { InitScript, PageDelegate } from '../page';
+import type { Progress } from '../progress';
+import type * as types from '../types';
 
 const UTILITY_WORLD_NAME = '__playwright_utility_world__';
 
@@ -57,7 +60,6 @@ export class WKPage implements PageDelegate {
   _session: WKSession;
   private _provisionalPage: WKProvisionalPage | null = null;
   readonly _page: Page;
-  private readonly _pagePromise = new ManualPromise<Page | Error>();
   private readonly _pageProxySession: WKSession;
   readonly _opener: WKPage | null;
   private readonly _requestIdToRequest = new Map<string, WKInterceptableRequest>();
@@ -67,7 +69,6 @@ export class WKPage implements PageDelegate {
   private _sessionListeners: RegisteredListener[] = [];
   private _eventListeners: RegisteredListener[];
   readonly _browserContext: WKBrowserContext;
-  _initializedPage: Page | null = null;
   private _firstNonInitialNavigationCommittedPromise: Promise<void>;
   private _firstNonInitialNavigationCommittedFulfill = () => {};
   _firstNonInitialNavigationCommittedReject = (e: Error) => {};
@@ -110,10 +111,6 @@ export class WKPage implements PageDelegate {
       if (viewportSize)
         this._page._emulatedSize = { viewport: viewportSize, screen: viewportSize };
     }
-  }
-
-  potentiallyUninitializedPage(): Page {
-    return this._page;
   }
 
   private async _initializePageProxySession() {
@@ -179,6 +176,7 @@ export class WKPage implements PageDelegate {
     const promises: Promise<any>[] = [
       // Resource tree should be received before first execution context.
       session.send('Runtime.enable'),
+      session.send('Runtime.addBinding', { name: PageBinding.kPlaywrightBinding }),
       session.send('Page.createUserWorld', { name: UTILITY_WORLD_NAME }).catch(_ => {}),  // Worlds are per-process
       session.send('Console.enable'),
       session.send('Network.enable'),
@@ -198,10 +196,8 @@ export class WKPage implements PageDelegate {
     if (contextOptions.userAgent)
       promises.push(this.updateUserAgent());
     const emulatedMedia = this._page.emulatedMedia();
-    if (emulatedMedia.media || emulatedMedia.colorScheme || emulatedMedia.reducedMotion || emulatedMedia.forcedColors)
-      promises.push(WKPage._setEmulateMedia(session, emulatedMedia.media, emulatedMedia.colorScheme, emulatedMedia.reducedMotion, emulatedMedia.forcedColors));
-    for (const binding of this._page.allBindings())
-      promises.push(session.send('Runtime.addBinding', { name: binding.name }));
+    if (emulatedMedia.media || emulatedMedia.colorScheme || emulatedMedia.reducedMotion || emulatedMedia.forcedColors || emulatedMedia.contrast)
+      promises.push(WKPage._setEmulateMedia(session, emulatedMedia.media, emulatedMedia.colorScheme, emulatedMedia.reducedMotion, emulatedMedia.forcedColors, emulatedMedia.contrast));
     const bootstrapScript = this._calculateBootstrapScript();
     if (bootstrapScript.length)
       promises.push(session.send('Page.setBootstrapScript', { source: bootstrapScript }));
@@ -232,6 +228,7 @@ export class WKPage implements PageDelegate {
     promises.push(session.send('Page.overrideSetting', { setting: 'PointerLockEnabled', value: !contextOptions.isMobile }));
     promises.push(session.send('Page.overrideSetting', { setting: 'InputTypeMonthEnabled', value: contextOptions.isMobile }));
     promises.push(session.send('Page.overrideSetting', { setting: 'InputTypeWeekEnabled', value: contextOptions.isMobile }));
+    promises.push(session.send('Page.overrideSetting', { setting: 'FixedBackgroundsPaintRelativeToDocument', value: contextOptions.isMobile }));
     await Promise.all(promises);
   }
 
@@ -250,6 +247,7 @@ export class WKPage implements PageDelegate {
   private _onTargetDestroyed(event: Protocol.Target.targetDestroyedPayload) {
     const { targetId, crashed } = event;
     if (this._provisionalPage && this._provisionalPage._session.sessionId === targetId) {
+      this._maybeCancelCoopNavigationRequest(this._provisionalPage);
       this._provisionalPage._session.dispose();
       this._provisionalPage.dispose();
       this._provisionalPage = null;
@@ -283,7 +281,7 @@ export class WKPage implements PageDelegate {
   }
 
   handleProvisionalLoadFailed(event: Protocol.Playwright.provisionalLoadFailedPayload) {
-    if (!this._initializedPage) {
+    if (!this._page.initializedOrUndefined()) {
       this._firstNonInitialNavigationCommittedReject(new Error('Initial load failed'));
       return;
     }
@@ -296,12 +294,7 @@ export class WKPage implements PageDelegate {
   }
 
   handleWindowOpen(event: Protocol.Playwright.windowOpenPayload) {
-    debugAssert(!this._nextWindowOpenPopupFeatures);
     this._nextWindowOpenPopupFeatures = event.windowFeatures;
-  }
-
-  async pageOrError(): Promise<Page | Error> {
-    return this._pagePromise;
   }
 
   private async _onTargetCreated(event: Protocol.Target.targetCreatedPayload) {
@@ -316,7 +309,7 @@ export class WKPage implements PageDelegate {
     assert(targetInfo.type === 'page', 'Only page targets are expected in WebKit, received: ' + targetInfo.type);
 
     if (!targetInfo.isProvisional) {
-      assert(!this._initializedPage);
+      assert(!this._page.initializedOrUndefined());
       let pageOrError: Page | Error;
       try {
         this._setSession(session);
@@ -343,12 +336,7 @@ export class WKPage implements PageDelegate {
         // Avoid rejection on disconnect.
         this._firstNonInitialNavigationCommittedPromise.catch(() => {});
       }
-      await this._page.initOpener(this._opener);
-      // Note: it is important to call |reportAsNew| before resolving pageOrError promise,
-      // so that anyone who awaits pageOrError got a ready and reported page.
-      this._initializedPage = pageOrError instanceof Page ? pageOrError : null;
-      this._page.reportAsNew(pageOrError instanceof Page ? undefined : pageOrError);
-      this._pagePromise.resolve(pageOrError);
+      this._page.reportAsNew(this._opener?._page, pageOrError instanceof Page ? undefined : pageOrError);
     } else {
       assert(targetInfo.isProvisional);
       assert(!this._provisionalPage);
@@ -515,7 +503,7 @@ export class WKPage implements PageDelegate {
   }
 
   private async _onBindingCalled(contextId: Protocol.Runtime.ExecutionContextId, argument: string) {
-    const pageOrError = await this.pageOrError();
+    const pageOrError = await this._page.waitForInitializedOrError();
     if (!(pageOrError instanceof Error)) {
       const context = this._contextIdToContext.get(contextId);
       if (context)
@@ -611,6 +599,9 @@ export class WKPage implements PageDelegate {
         event.type as dialog.DialogType,
         event.message,
         async (accept: boolean, promptText?: string) => {
+          // TODO: this should actually be a RDP event that notifies about a cancelled navigation attempt.
+          if (event.type === 'beforeunload' && !accept)
+            this._page._frameManager.frameAbortedNavigation(this._page.mainFrame()._id, 'navigation cancelled by beforeunload dialog');
           await this._pageProxySession.send('Dialog.handleJavaScriptDialog', { accept, promptText });
         },
         event.defaultPrompt));
@@ -628,7 +619,7 @@ export class WKPage implements PageDelegate {
     await this._page._onFileChooserOpened(handle);
   }
 
-  private static async _setEmulateMedia(session: WKSession, mediaType: types.MediaType, colorScheme: types.ColorScheme, reducedMotion: types.ReducedMotion, forcedColors: types.ForcedColors): Promise<void> {
+  private static async _setEmulateMedia(session: WKSession, mediaType: types.MediaType, colorScheme: types.ColorScheme, reducedMotion: types.ReducedMotion, forcedColors: types.ForcedColors, contrast: types.Contrast): Promise<void> {
     const promises = [];
     promises.push(session.send('Page.setEmulatedMedia', { media: mediaType === 'no-override' ? '' : mediaType }));
     let appearance: any = undefined;
@@ -652,6 +643,13 @@ export class WKPage implements PageDelegate {
       case 'no-override': forcedColorsWk = undefined; break;
     }
     promises.push(session.send('Page.setForcedColors', { forcedColors: forcedColorsWk }));
+    let contrastWk: any = undefined;
+    switch (contrast) {
+      case 'more': contrastWk = 'More'; break;
+      case 'no-preference': contrastWk = 'NoPreference'; break;
+      case 'no-override': contrastWk = undefined; break;
+    }
+    promises.push(session.send('Page.overrideUserPreference', { name: 'PrefersContrast', value: contrastWk }));
     await Promise.all(promises);
   }
 
@@ -674,7 +672,8 @@ export class WKPage implements PageDelegate {
     const colorScheme = emulatedMedia.colorScheme;
     const reducedMotion = emulatedMedia.reducedMotion;
     const forcedColors = emulatedMedia.forcedColors;
-    await this._forAllSessions(session => WKPage._setEmulateMedia(session, emulatedMedia.media, colorScheme, reducedMotion, forcedColors));
+    const contrast = emulatedMedia.contrast;
+    await this._forAllSessions(session => WKPage._setEmulateMedia(session, emulatedMedia.media, colorScheme, reducedMotion, forcedColors, contrast));
   }
 
   async updateEmulatedViewportSize(): Promise<void> {
@@ -714,12 +713,7 @@ export class WKPage implements PageDelegate {
     ];
     if (options.isMobile) {
       const angle = viewportSize.width > viewportSize.height ? 90 : 0;
-      // Special handling for macOS 12.
-      const useLegacySetOrientationOverrideMethod = os.platform() === 'darwin' && parseInt(os.release().split('.')[0], 10) <= 21;
-      if (useLegacySetOrientationOverrideMethod)
-        promises.push(this._session.send('Page.setOrientationOverride' as any, { angle }));
-      else
-        promises.push(this._pageProxySession.send('Emulation.setOrientationOverride', { angle }));
+      promises.push(this._pageProxySession.send('Emulation.setOrientationOverride', { angle }));
     }
     await Promise.all(promises);
   }
@@ -767,21 +761,15 @@ export class WKPage implements PageDelegate {
     });
   }
 
-  async exposeBinding(binding: PageBinding): Promise<void> {
-    this._session.send('Runtime.addBinding', { name: binding.name });
-    await this._updateBootstrapScript();
-    await Promise.all(this._page.frames().map(frame => frame.evaluateExpression(binding.source).catch(e => {})));
+  async requestGC(): Promise<void> {
+    await this._session.send('Heap.gc');
   }
 
-  async removeExposedBindings(): Promise<void> {
+  async addInitScript(initScript: InitScript): Promise<void> {
     await this._updateBootstrapScript();
   }
 
-  async addInitScript(script: string): Promise<void> {
-    await this._updateBootstrapScript();
-  }
-
-  async removeInitScripts() {
+  async removeNonInternalInitScripts() {
     await this._updateBootstrapScript();
   }
 
@@ -794,11 +782,7 @@ export class WKPage implements PageDelegate {
     }
     scripts.push('if (!window.safari) window.safari = { pushNotification: { toString() { return "[object SafariRemoteNotification]"; } } };');
     scripts.push('if (!window.GestureEvent) window.GestureEvent = function GestureEvent() {};');
-
-    for (const binding of this._page.allBindings())
-      scripts.push(binding.source);
-    scripts.push(...this._browserContext.initScripts);
-    scripts.push(...this._page.initScripts);
+    scripts.push(...this._page.allInitScripts().map(script => script.source));
     return scripts.join(';\n');
   }
 
@@ -833,7 +817,7 @@ export class WKPage implements PageDelegate {
       toolbarHeight: this._toolbarHeight()
     });
     this._recordingVideoFile = options.outputFile;
-    this._browserContext._browser._videoStarted(this._browserContext, screencastId, options.outputFile, this.pageOrError());
+    this._browserContext._browser._videoStarted(this._browserContext, screencastId, options.outputFile, this._page.waitForInitializedOrError());
   }
 
   async _stopVideo(): Promise<void> {
@@ -861,7 +845,7 @@ export class WKPage implements PageDelegate {
     this.validateScreenshotDimension(rect.height, omitDeviceScaleFactor);
     const result = await this._session.send('Page.snapshotRect', { ...rect, coordinateSystem: documentRect ? 'Page' : 'Viewport', omitDeviceScaleFactor });
     const prefix = 'data:image/png;base64,';
-    let buffer = Buffer.from(result.dataURL.substr(prefix.length), 'base64');
+    let buffer: Buffer = Buffer.from(result.dataURL.substr(prefix.length), 'base64');
     if (format === 'jpeg')
       buffer = jpegjs.encode(PNG.sync.read(buffer), quality).data;
     return buffer;
@@ -962,16 +946,6 @@ export class WKPage implements PageDelegate {
     ]);
   }
 
-  async setInputFiles(handle: dom.ElementHandle<HTMLInputElement>, files: types.FilePayload[]): Promise<void> {
-    const objectId = handle._objectId;
-    const protocolFiles = files.map(file => ({
-      name: file.name,
-      type: file.mimeType,
-      data: file.buffer,
-    }));
-    await this._session.send('DOM.setInputFiles', { objectId, files: protocolFiles });
-  }
-
   async setInputFilePaths(handle: dom.ElementHandle<HTMLInputElement>, paths: string[]): Promise<void> {
     const pageProxyId = this._pageProxySession.sessionId;
     const objectId = handle._objectId;
@@ -1015,6 +989,33 @@ export class WKPage implements PageDelegate {
     return context.createHandle(result.object) as dom.ElementHandle;
   }
 
+  private _maybeCancelCoopNavigationRequest(provisionalPage: WKProvisionalPage) {
+    const navigationRequest = provisionalPage.coopNavigationRequest();
+    for (const [requestId, request] of this._requestIdToRequest) {
+      if (request.request === navigationRequest) {
+        // Make sure the request completes if the provisional navigation is canceled.
+        this._onLoadingFailed(provisionalPage._session, {
+          requestId: requestId,
+          errorText: 'Provisiolal navigation canceled.',
+          timestamp: request._timestamp,
+          canceled: true,
+        });
+        return;
+      }
+    }
+  }
+
+  _adoptRequestFromNewProcess(navigationRequest: network.Request, newSession: WKSession, newRequestId: string) {
+    for (const [requestId, request] of this._requestIdToRequest) {
+      if (request.request === navigationRequest) {
+        this._requestIdToRequest.delete(requestId);
+        request.adoptRequestFromNewProcess(newSession, newRequestId);
+        this._requestIdToRequest.set(newRequestId, request);
+        return;
+      }
+    }
+  }
+
   _onRequestWillBeSent(session: WKSession, event: Protocol.Network.requestWillBeSentPayload) {
     if (event.request.url.startsWith('data:'))
       return;
@@ -1032,7 +1033,7 @@ export class WKPage implements PageDelegate {
       const request = this._requestIdToRequest.get(event.requestId);
       // If we connect late to the target, we could have missed the requestWillBeSent event.
       if (request) {
-        this._handleRequestRedirect(request, event.redirectResponse, event.timestamp);
+        this._handleRequestRedirect(request, event.requestId, event.redirectResponse, event.timestamp);
         redirectedFrom = request;
       }
     }
@@ -1048,7 +1049,7 @@ export class WKPage implements PageDelegate {
     const request = new WKInterceptableRequest(session, frame, event, redirectedFrom, documentId);
     let route;
     if (intercepted) {
-      route = new WKRouteImpl(session, request._requestId);
+      route = new WKRouteImpl(session, event.requestId);
       // There is no point in waiting for the raw headers in Network.responseReceived when intercepting.
       // Use provisional headers as raw headers, so that client can call allHeaders() from the route handler.
       request.request.setRawRequestHeaders(null);
@@ -1057,14 +1058,14 @@ export class WKPage implements PageDelegate {
     this._page._frameManager.requestStarted(request.request, route);
   }
 
-  private _handleRequestRedirect(request: WKInterceptableRequest, responsePayload: Protocol.Network.Response, timestamp: number) {
+  private _handleRequestRedirect(request: WKInterceptableRequest, requestId: string, responsePayload: Protocol.Network.Response, timestamp: number) {
     const response = request.createResponse(responsePayload);
     response._securityDetailsFinished();
     response._serverAddrFinished();
     response.setResponseHeadersSize(null);
     response.setEncodedBodySize(null);
     response._requestFinished(responsePayload.timing ? helper.secondsToRoundishMillis(timestamp - request._timestamp) : -1);
-    this._requestIdToRequest.delete(request._requestId);
+    this._requestIdToRequest.delete(requestId);
     this._page._frameManager.requestReceivedResponse(response);
     this._page._frameManager.reportRequestFinished(request.request, response);
   }
@@ -1094,11 +1095,11 @@ export class WKPage implements PageDelegate {
     if (!request)
       return;
 
-    this._requestIdToResponseReceivedPayloadEvent.set(request._requestId, event);
+    this._requestIdToResponseReceivedPayloadEvent.set(event.requestId, event);
     const response = request.createResponse(event.response);
     this._page._frameManager.requestReceivedResponse(response);
 
-    if (response.status() === 204) {
+    if (response.status() === 204 && request.request.isNavigationRequest()) {
       this._onLoadingFailed(session, {
         requestId: event.requestId,
         errorText: 'Aborted: 204 No Content',
@@ -1118,7 +1119,7 @@ export class WKPage implements PageDelegate {
     // event from protocol. @see https://crbug.com/883475
     const response = request.request._existingResponse();
     if (response) {
-      const responseReceivedPayload = this._requestIdToResponseReceivedPayloadEvent.get(request._requestId);
+      const responseReceivedPayload = this._requestIdToResponseReceivedPayloadEvent.get(event.requestId);
       response._serverAddrFinished(parseRemoteAddress(event?.metrics?.remoteAddress));
       response._securityDetailsFinished({
         protocol: isLoadedSecurely(response.url(), response.timing()) ? event.metrics?.securityConnection?.protocol : undefined,
@@ -1137,8 +1138,8 @@ export class WKPage implements PageDelegate {
       request.request.setRawRequestHeaders(null);
     }
 
-    this._requestIdToResponseReceivedPayloadEvent.delete(request._requestId);
-    this._requestIdToRequest.delete(request._requestId);
+    this._requestIdToResponseReceivedPayloadEvent.delete(event.requestId);
+    this._requestIdToRequest.delete(event.requestId);
     this._page._frameManager.reportRequestFinished(request.request, response);
   }
 
@@ -1168,7 +1169,7 @@ export class WKPage implements PageDelegate {
       // Use provisional headers if we didn't have the response with raw headers.
       request.request.setRawRequestHeaders(null);
     }
-    this._requestIdToRequest.delete(request._requestId);
+    this._requestIdToRequest.delete(event.requestId);
     request.request._setFailureText(event.errorText);
     this._page._frameManager.requestFailed(request.request, event.errorText.includes('cancelled'));
   }
@@ -1176,6 +1177,7 @@ export class WKPage implements PageDelegate {
   async _grantPermissions(origin: string, permissions: string[]) {
     const webPermissionToProtocol = new Map<string, string>([
       ['geolocation', 'geolocation'],
+      ['notifications', 'notifications'],
       ['clipboard-read', 'clipboard-read'],
     ]);
     const filtered = permissions.map(permission => {

@@ -322,6 +322,12 @@ const Browser = {
         enabled: t.Boolean,
       },
     },
+    'setCacheDisabled': {
+      params: {
+        browserContextId: t.Optional(t.String),
+        cacheDisabled: t.Boolean,
+      },
+    },
     'setGeolocationOverride': {
       params: {
         browserContextId: t.Optional(t.String),
@@ -386,12 +392,6 @@ const Browser = {
       params: {
         browserContextId: t.Optional(t.String),
         viewport: t.Nullable(pageTypes.Viewport),
-      }
-    },
-    'setScrollbarsHidden': {
-      params: {
-        browserContextId: t.Optional(t.String),
-        hidden: t.Boolean,
       }
     },
     'setInitScripts': {
@@ -478,6 +478,17 @@ const Browser = {
         uuid: t.Optional(t.String),
       }
     }
+  },
+};
+
+const Heap = {
+  targets: ['page'],
+  types: {},
+  events: {},
+  methods: {
+    'collectGarbage': {
+      params: {},
+    },
   },
 };
 
@@ -996,7 +1007,7 @@ const Accessibility = {
 }
 
 this.protocol = {
-  domains: {Browser, Page, Runtime, Network, Accessibility},
+  domains: {Browser, Heap, Page, Runtime, Network, Accessibility},
 };
 this.checkScheme = checkScheme;
 this.EXPORTED_SYMBOLS = ['protocol', 'checkScheme'];
