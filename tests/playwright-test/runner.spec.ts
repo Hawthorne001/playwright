@@ -145,13 +145,13 @@ test('should ignore subprocess creation error because of SIGINT', async ({ inter
   process.kill(-testProcess.process.pid!, 'SIGINT');
 
   const { exitCode } = await testProcess.exited;
-  expect(exitCode).toBe(130);
+  expect.soft(exitCode).toBe(130);
 
   const result = parseTestRunnerOutput(testProcess.output);
-  expect(result.passed).toBe(0);
-  expect(result.failed).toBe(0);
-  expect(result.didNotRun).toBe(2);
-  expect(result.output).not.toContain('worker process exited unexpectedly');
+  expect.soft(result.passed).toBe(0);
+  expect.soft(result.failed).toBe(0);
+  expect.soft(result.didNotRun).toBe(2);
+  expect.soft(result.output).not.toContain('worker process exited unexpectedly');
 });
 
 test('sigint should stop workers', async ({ interactWithTestRunner }) => {
@@ -442,7 +442,7 @@ test('sigint should stop global setup', async ({ interactWithTestRunner }) => {
   const result = parseTestRunnerOutput(testProcess.output);
   expect(result.passed).toBe(0);
   expect(result.output).toContain('Global setup');
-  expect(result.output).not.toContain('Global teardown');
+  expect(result.output).toContain('Global teardown');
 });
 
 test('sigint should stop plugins', async ({ interactWithTestRunner }) => {
@@ -840,4 +840,36 @@ test('should run last failed tests', async ({ runInlineTest }) => {
   expect(result2.exitCode).toBe(1);
   expect(result2.passed).toBe(0);
   expect(result2.failed).toBe(1);
+});
+
+test('should run last failed tests in a shard', async ({ runInlineTest }) => {
+  const workspace = {
+    'a.spec.js': `
+      import { test, expect } from '@playwright/test';
+      test('pass-a', async () => {});
+      test('fail-a', async () => {
+        expect(1).toBe(2);
+      });
+    `,
+    'b.spec.js': `
+      import { test, expect } from '@playwright/test';
+      test('pass-b', async () => {});
+      test('fail-b', async () => {
+        expect(1).toBe(2);
+      });
+    `,
+  };
+  const result1 = await runInlineTest(workspace, { shard: '2/2' });
+  expect(result1.exitCode).toBe(1);
+  expect(result1.passed).toBe(1);
+  expect(result1.failed).toBe(1);
+  expect(result1.output).toContain('b.spec.js:3:11 › pass-b');
+  expect(result1.output).toContain('b.spec.js:4:11 › fail-b');
+
+  const result2 = await runInlineTest(workspace, { shard: '2/2' }, {}, { additionalArgs: ['--last-failed'] });
+  expect(result2.exitCode).toBe(1);
+  expect(result2.passed).toBe(0);
+  expect(result2.failed).toBe(1);
+  expect(result2.output).not.toContain('b.spec.js:3:11 › pass-b');
+  expect(result2.output).toContain('b.spec.js:4:11 › fail-b');
 });

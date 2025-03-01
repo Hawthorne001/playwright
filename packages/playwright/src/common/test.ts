@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-import type { FixturePool } from './fixtures';
-import type * as reporterTypes from '../../types/testReporter';
-import type { TestTypeImpl } from './testType';
 import { rootTestType } from './testType';
-import type { Annotation, FixturesWithLocation, FullProjectInternal } from './config';
-import type { Location, FullProject } from '../../types/testReporter';
 import { computeTestCaseOutcome } from '../isomorphic/teleReceiver';
+
+import type { Annotation, FixturesWithLocation, FullProjectInternal } from './config';
+import type { FixturePool } from './fixtures';
+import type { TestTypeImpl } from './testType';
+import type * as reporterTypes from '../../types/testReporter';
+import type { FullProject, Location } from '../../types/testReporter';
+
 
 class Base {
   title: string;
@@ -56,12 +58,10 @@ export class Suite extends Base {
   _fullProject: FullProjectInternal | undefined;
   _fileId: string | undefined;
   readonly _type: 'root' | 'project' | 'file' | 'describe';
-  readonly _testTypeImpl: TestTypeImpl | undefined;
 
-  constructor(title: string, type: 'root' | 'project' | 'file' | 'describe', testTypeImpl?: TestTypeImpl) {
+  constructor(title: string, type: 'root' | 'project' | 'file' | 'describe') {
     super(title);
     this._type = type;
-    this._testTypeImpl = testTypeImpl;
   }
 
   get type(): 'root' | 'project' | 'file' | 'describe' {

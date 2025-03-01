@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import type { Point, SerializedError, StackFrame } from '@protocol/channels';
-import type { Language } from '../../playwright-core/src/utils/isomorphic/locatorGenerators';
 import type { FrameSnapshot, ResourceSnapshot } from './snapshot';
+import type { Language } from '../../playwright-core/src/utils/isomorphic/locatorGenerators';
+import type { Point, SerializedError, StackFrame } from '@protocol/channels';
 
 export type Size = { width: number, height: number };
 
@@ -24,6 +24,7 @@ export type Size = { width: number, height: number };
 export type VERSION = 7;
 
 export type BrowserContextEventOptions = {
+  baseURL?: string,
   viewport?: Size,
   deviceScaleFactor?: number,
   isMobile?: boolean,
@@ -43,6 +44,7 @@ export type ContextCreatedTraceEvent = {
   options: BrowserContextEventOptions,
   sdkLanguage?: Language,
   testIdAttributeName?: string,
+  contextId?: string,
 };
 
 export type ScreencastFrameTraceEvent = {
@@ -52,6 +54,7 @@ export type ScreencastFrameTraceEvent = {
   width: number,
   height: number,
   timestamp: number,
+  frameSwapWallTime?: number,
 };
 
 export type BeforeActionTraceEvent = {
@@ -84,6 +87,11 @@ export type AfterActionTraceEventAttachment = {
   base64?: string;
 };
 
+export type AfterActionTraceEventAnnotation = {
+  type: string,
+  description?: string
+};
+
 export type AfterActionTraceEvent = {
   type: 'after',
   callId: string;
@@ -91,6 +99,7 @@ export type AfterActionTraceEvent = {
   afterSnapshot?: string;
   error?: SerializedError['error'];
   attachments?: AfterActionTraceEventAttachment[];
+  annotations?: AfterActionTraceEventAnnotation[];
   result?: any;
   point?: Point;
 };

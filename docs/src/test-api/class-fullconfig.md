@@ -93,8 +93,8 @@ See [`property: TestConfig.reporter`].
 ## property: FullConfig.reportSlowTests
 * since: v1.10
 - type: <[null]|[Object]>
-  - `max` <[int]> The maximum number of slow test files to report. Defaults to `5`.
-  - `threshold` <[float]> Test duration in milliseconds that is considered slow. Defaults to 15 seconds.
+  - `max` <[int]> The maximum number of slow test files to report.
+  - `threshold` <[float]> Test file duration in milliseconds that is considered slow.
 
 See [`property: TestConfig.reportSlowTests`].
 
@@ -114,9 +114,15 @@ See [`property: TestConfig.shard`].
 
 ## property: FullConfig.updateSnapshots
 * since: v1.10
-- type: <[UpdateSnapshots]<"all"|"none"|"missing">>
+- type: <[UpdateSnapshots]<"all"|"changed"|"missing"|"none">>
 
 See [`property: TestConfig.updateSnapshots`].
+
+## property: FullConfig.updateSourceMethod
+* since: v1.50
+- type: <[UpdateSourceMethod]<"overwrite"|"3way"|"patch">>
+
+See [`property: TestConfig.updateSourceMethod`].
 
 ## property: FullConfig.version
 * since: v1.20

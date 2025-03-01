@@ -11,8 +11,6 @@ Playwright and Browser instances can be reused between tests for better performa
 recommend running each test case in a new BrowserContext, this way browser state will be
 isolated between the tests.
 
-<!-- TOC -->
-
 ## JUnit
 
 In [JUnit](https://junit.org/junit5/) you can initialize [Playwright] and [Browser] in [@BeforeAll](https://junit.org/junit5/docs/current/api/org.junit.jupiter.api/org/junit/jupiter/api/BeforeAll.html) method and
@@ -204,7 +202,7 @@ You can use a Gradle build configuration script, written in Groovy or Kotlin.
 }>
 <TabItem value="gradle">
 
-```java
+```groovy
 plugins {
   application
   id 'java'
@@ -236,7 +234,7 @@ test {
 </TabItem>
 <TabItem value="gradle-kotlin">
 
-```java
+```groovy
 plugins {
   application
   id("java")

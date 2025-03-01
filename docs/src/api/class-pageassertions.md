@@ -14,14 +14,14 @@ test('navigates to login', async ({ page }) => {
 ```
 
 ```java
-...
+// ...
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 
 public class TestPage {
-  ...
+  // ...
   @Test
   void navigatesToLoginPage() {
-    ...
+    // ...
     page.getByText("Sign in").click();
     assertThat(page).hasURL(Pattern.compile(".*/login"));
   }
@@ -59,7 +59,7 @@ namespace PlaywrightTests;
 public class ExampleTests : PageTest
 {
     [TestMethod]
-    public async Task NavigatetoLoginPage()
+    public async Task NavigateToLoginPage()
     {
         await Page.GetByRole(AriaRole.Button, new() { Name = "Sign In" }).ClickAsync();
         await Expect(Page).ToHaveURLAsync(new Regex(".*/login"));
@@ -83,7 +83,7 @@ assertThat(page).not().hasURL("error");
 ```
 
 ```csharp
-await Expect(Page).Not.ToHaveURL("error");
+await Expect(Page).Not.ToHaveURLAsync("error");
 ```
 
 ## async method: PageAssertions.NotToHaveTitle
@@ -271,7 +271,7 @@ expect(page).to_have_title(re.compile(r".*checkout"))
 ```
 
 ```csharp
-await Expect(Page).ToHaveTitle("Playwright");
+await Expect(Page).ToHaveTitleAsync("Playwright");
 ```
 
 ### param: PageAssertions.toHaveTitle.titleOrRegExp
@@ -296,7 +296,18 @@ Ensures the page is navigated to the given URL.
 **Usage**
 
 ```js
-await expect(page).toHaveURL(/.*checkout/);
+// Check for the page URL to be 'https://playwright.dev/docs/intro' (including query string)
+await expect(page).toHaveURL('https://playwright.dev/docs/intro');
+
+// Check for the page URL to contain 'doc', followed by an optional 's', followed by '/'
+await expect(page).toHaveURL(/docs?\//);
+
+// Check for the predicate to be satisfied
+// For example: verify query strings
+await expect(page).toHaveURL(url => {
+  const params = url.searchParams;
+  return params.has('search') && params.has('options') && params.get('id') === '5';
+});
 ```
 
 ```java
@@ -320,20 +331,21 @@ expect(page).to_have_url(re.compile(".*checkout"))
 ```
 
 ```csharp
-await Expect(Page).ToHaveURL(new Regex(".*checkout"));
+await Expect(Page).ToHaveURLAsync(new Regex(".*checkout"));
 ```
 
-### param: PageAssertions.toHaveURL.urlOrRegExp
+### param: PageAssertions.toHaveURL.url
 * since: v1.18
-- `urlOrRegExp` <[string]|[RegExp]>
+- `url` <[string]|[RegExp]|[function]\([URL]\):[boolean]>
 
-Expected URL string or RegExp.
+Expected URL string, RegExp, or predicate receiving [URL] to match.
+When [`option: Browser.newContext.baseURL`] is provided via the context options and the `url` argument is a string, the two values are merged via the [`new URL()`](https://developer.mozilla.org/en-US/docs/Web/API/URL/URL) constructor and used for the comparison against the current browser URL.
 
 ### option: PageAssertions.toHaveURL.ignoreCase
 * since: v1.44
 - `ignoreCase` <[boolean]>
 
-Whether to perform case-insensitive match. [`option: ignoreCase`] option takes precedence over the corresponding regular expression flag if specified.
+Whether to perform case-insensitive match. [`option: ignoreCase`] option takes precedence over the corresponding regular expression parameter if specified. A provided predicate ignores this flag.
 
 ### option: PageAssertions.toHaveURL.timeout = %%-js-assertions-timeout-%%
 * since: v1.18

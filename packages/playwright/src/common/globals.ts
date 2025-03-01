@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import type { TestInfoImpl } from '../worker/testInfo';
 import type { Suite } from './test';
+import type { TestInfoImpl } from '../worker/testInfo';
 
 let currentTestInfoValue: TestInfoImpl | null = null;
 export function setCurrentTestInfo(testInfo: TestInfoImpl | null) {
@@ -41,20 +41,4 @@ export function setIsWorkerProcess() {
 
 export function isWorkerProcess() {
   return _isWorkerProcess;
-}
-
-export interface TestLifecycleInstrumentation {
-  onTestBegin?(): Promise<void>;
-  onTestFunctionEnd?(): Promise<void>;
-  onTestEnd?(): Promise<void>;
-}
-
-let _testLifecycleInstrumentation: TestLifecycleInstrumentation | undefined;
-
-export function setTestLifecycleInstrumentation(instrumentation: TestLifecycleInstrumentation | undefined) {
-  _testLifecycleInstrumentation = instrumentation;
-}
-
-export function testLifecycleInstrumentation() {
-  return _testLifecycleInstrumentation;
 }

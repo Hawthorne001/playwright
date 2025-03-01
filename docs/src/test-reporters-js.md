@@ -102,7 +102,7 @@ List report supports the following configuration options and environment variabl
 | Environment Variable Name | Reporter Config Option| Description | Default
 |---|---|---|---|
 | `PLAYWRIGHT_LIST_PRINT_STEPS` | `printSteps` | Whether to print each step on its own line. | `false`
-| `PLAYWRIGHT_FORCE_TTY` | | Whether to produce output suitable for a live terminal. | `true` when terminal is in TTY mode, `false` otherwise.
+| `PLAYWRIGHT_FORCE_TTY` | | Whether to produce output suitable for a live terminal. If a number is specified, it will also be used as the terminal width.  | `true` when terminal is in TTY mode, `false` otherwise.
 | `FORCE_COLOR` | | Whether to produce colored output. | `true` when terminal is in TTY mode, `false` otherwise.
 
 
@@ -140,7 +140,7 @@ Line report supports the following configuration options and environment variabl
 
 | Environment Variable Name | Reporter Config Option| Description | Default
 |---|---|---|---|
-| `PLAYWRIGHT_FORCE_TTY` | | Whether to produce output suitable for a live terminal. | `true` when terminal is in TTY mode, `false` otherwise.
+| `PLAYWRIGHT_FORCE_TTY` | | Whether to produce output suitable for a live terminal. If a number is specified, it will also be used as the terminal width.  | `true` when terminal is in TTY mode, `false` otherwise.
 | `FORCE_COLOR` | | Whether to produce colored output. | `true` when terminal is in TTY mode, `false` otherwise.
 
 
@@ -182,7 +182,7 @@ Dot report supports the following configuration options and environment variable
 
 | Environment Variable Name | Reporter Config Option| Description | Default
 |---|---|---|---|
-| `PLAYWRIGHT_FORCE_TTY` | | Whether to produce output suitable for a live terminal. | `true` when terminal is in TTY mode, `false` otherwise.
+| `PLAYWRIGHT_FORCE_TTY` | | Whether to produce output suitable for a live terminal. If a number is specified, it will also be used as the terminal width.  | `true` when terminal is in TTY mode, `false` otherwise.
 | `FORCE_COLOR` | | Whether to produce colored output. | `true` when terminal is in TTY mode, `false` otherwise.
 
 ### HTML reporter
@@ -422,16 +422,10 @@ Or just pass the reporter file path as `--reporter` command line option:
 npx playwright test --reporter="./myreporter/my-awesome-reporter.ts"
 ```
 
-## Third party reporter showcase
+Here's a short list of open source reporter implementations that you can take a look at when writing your own reporter:
 
-* [Allure](https://www.npmjs.com/package/allure-playwright)
-* [Argos Visual Testing](https://argos-ci.com/docs/playwright)
-* [Currents](https://www.npmjs.com/package/@currents/playwright)
-* [GitHub Actions Reporter](https://www.npmjs.com/package/@estruyf/github-actions-reporter)
-* [GitHub Pull Request Comment](https://github.com/marketplace/actions/playwright-report-comment)
-* [Monocart](https://github.com/cenfun/monocart-reporter)
+* [Allure Reporter](https://github.com/allure-framework/allure-js/tree/main/packages/allure-playwright)
+* [Github Actions Reporter](https://github.com/estruyf/playwright-github-actions-reporter)
+* [Mail Reporter](https://github.com/estruyf/playwright-mail-reporter)
 * [ReportPortal](https://github.com/reportportal/agent-js-playwright)
-* [Serenity/JS](https://serenity-js.org/handbook/test-runners/playwright-test)
-* [Testmo](https://github.com/jonasclaes/playwright-testmo-reporter)
-* [Testomat.io](https://github.com/testomatio/reporter/blob/master/docs/frameworks.md#playwright)
-* [Tesults](https://www.tesults.com/docs/playwright)
+* [Monocart](https://github.com/cenfun/monocart-reporter)

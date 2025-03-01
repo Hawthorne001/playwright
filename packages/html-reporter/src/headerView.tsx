@@ -20,7 +20,7 @@ import './colors.css';
 import './common.css';
 import './headerView.css';
 import * as icons from './icons';
-import { Link, navigate } from './links';
+import { Link, navigate, SearchParamsContext } from './links';
 import { statusIcon } from './statusIcon';
 import { filterWithToken } from './filter';
 
@@ -49,12 +49,14 @@ export const HeaderView: React.FC<React.PropsWithChildren<{
       <form className='subnav-search' onSubmit={
         event => {
           event.preventDefault();
-          navigate(`#?q=${filterText ? encodeURIComponent(filterText) : ''}`);
+          const url = new URL(window.location.href);
+          url.hash = filterText ? '?' + new URLSearchParams({ q: filterText }) : '';
+          navigate(url);
         }
       }>
         {icons.search()}
         {/* Use navigationId to reset defaultValue */}
-        <input type='search' spellCheck={false} className='form-control subnav-search-input input-contrast width-full' value={filterText} onChange={e => {
+        <input spellCheck={false} className='form-control subnav-search-input input-contrast width-full' value={filterText} onChange={e => {
           setFilterText(e.target.value);
         }}></input>
       </form>
@@ -65,7 +67,7 @@ export const HeaderView: React.FC<React.PropsWithChildren<{
 const StatsNavView: React.FC<{
   stats: Stats
 }> = ({ stats }) => {
-  const searchParams = new URLSearchParams(window.location.hash.slice(1));
+  const searchParams = React.useContext(SearchParamsContext);
   const q = searchParams.get('q')?.toString() || '';
   const tokens = q.split(' ');
   return <nav>

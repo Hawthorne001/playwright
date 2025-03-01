@@ -151,8 +151,10 @@ test('should work with screenshot: on', async ({ runInlineTest }, testInfo) => {
     '  test-finished-1.png',
     'artifacts-shared-shared-failing',
     '  test-failed-1.png',
+    '  test-failed-2.png',
     'artifacts-shared-shared-passing',
     '  test-finished-1.png',
+    '  test-finished-2.png',
     'artifacts-two-contexts',
     '  test-finished-1.png',
     '  test-finished-2.png',
@@ -183,9 +185,37 @@ test('should work with screenshot: only-on-failure', async ({ runInlineTest }, t
     '  test-failed-1.png',
     'artifacts-shared-shared-failing',
     '  test-failed-1.png',
+    '  test-failed-2.png',
     'artifacts-two-contexts-failing',
     '  test-failed-1.png',
     '  test-failed-2.png',
+  ]);
+});
+
+test('should work with screenshot: on-first-failure', async ({ runInlineTest }, testInfo) => {
+  const result = await runInlineTest({
+    'a.spec.ts': `
+      import { test, expect } from '@playwright/test';
+      test('fails', async ({ page }) => {
+        await page.setContent('I am the page');
+        expect(1).toBe(2);
+      });
+    `,
+    'playwright.config.ts': `
+      module.exports = {
+        retries: 1,
+        use: { screenshot: 'on-first-failure' }
+      };
+    `,
+  }, { workers: 1 });
+
+  expect(result.exitCode).toBe(1);
+  expect(result.passed).toBe(0);
+  expect(result.failed).toBe(1);
+  expect(listFiles(testInfo.outputPath('test-results'))).toEqual([
+    '.last-run.json',
+    'a-fails',
+    '  test-failed-1.png',
   ]);
 });
 
@@ -389,4 +419,41 @@ test('should take screenshot when page is closed in afterEach', async ({ runInli
   expect(result.exitCode).toBe(1);
   expect(result.failed).toBe(1);
   expect(fs.existsSync(testInfo.outputPath('test-results', 'a-fails', 'test-failed-1.png'))).toBeTruthy();
+});
+
+test('should attach pageSnapshot with PLAYWRIGHT_COPY_PROMPT', async ({ runInlineTest }, testInfo) => {
+  const result = await runInlineTest({
+    ...testFiles,
+  }, { workers: 1 }, { PLAYWRIGHT_COPY_PROMPT: '1' });
+
+  expect(result.exitCode).toBe(1);
+  expect(result.passed).toBe(5);
+  expect(result.failed).toBe(5);
+  expect(listFiles(testInfo.outputPath('test-results'))).toEqual([
+    '.last-run.json',
+    'artifacts-failing',
+    '  test-failed-1.aria.yml',
+    'artifacts-own-context-failing',
+    '  test-failed-1.aria.yml',
+    'artifacts-own-context-passing',
+    '  test-finished-1.aria.yml',
+    'artifacts-passing',
+    '  test-finished-1.aria.yml',
+    'artifacts-persistent-failing',
+    '  test-failed-1.aria.yml',
+    'artifacts-persistent-passing',
+    '  test-finished-1.aria.yml',
+    'artifacts-shared-shared-failing',
+    '  test-failed-1.aria.yml',
+    '  test-failed-2.aria.yml',
+    'artifacts-shared-shared-passing',
+    '  test-finished-1.aria.yml',
+    '  test-finished-2.aria.yml',
+    'artifacts-two-contexts',
+    '  test-finished-1.aria.yml',
+    '  test-finished-2.aria.yml',
+    'artifacts-two-contexts-failing',
+    '  test-failed-1.aria.yml',
+    '  test-failed-2.aria.yml',
+  ]);
 });

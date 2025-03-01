@@ -16,45 +16,51 @@
 
 import fs from 'fs';
 import path from 'path';
-import type { FullConfig, TestCase, Suite, TestResult, TestError, TestStep, FullResult, Location, JSONReport, JSONReportSuite, JSONReportSpec, JSONReportTest, JSONReportTestResult, JSONReportTestStep, JSONReportError } from '../../types/testReporter';
-import { formatError, prepareErrorStack, resolveOutputFile } from './base';
-import { MultiMap, toPosixPath } from 'playwright-core/lib/utils';
+
+import { toPosixPath, MultiMap } from 'playwright-core/lib/utils';
+
+import { formatError, nonTerminalScreen, prepareErrorStack, resolveOutputFile } from './base';
 import { getProjectId } from '../common/config';
-import EmptyReporter from './empty';
+
+import type { ReporterV2 } from './reporterV2';
+import type { FullConfig, FullResult, JSONReport, JSONReportError, JSONReportSpec, JSONReportSuite, JSONReportTest, JSONReportTestResult, JSONReportTestStep, Location, Suite, TestCase, TestError, TestResult, TestStep } from '../../types/testReporter';
 
 type JSONOptions = {
   outputFile?: string,
   configDir: string,
 };
 
-class JSONReporter extends EmptyReporter {
+class JSONReporter implements ReporterV2 {
   config!: FullConfig;
   suite!: Suite;
   private _errors: TestError[] = [];
   private _resolvedOutputFile: string | undefined;
 
   constructor(options: JSONOptions) {
-    super();
     this._resolvedOutputFile = resolveOutputFile('JSON', options)?.outputFile;
   }
 
-  override printsToStdio() {
+  version(): 'v2' {
+    return 'v2';
+  }
+
+  printsToStdio() {
     return !this._resolvedOutputFile;
   }
 
-  override onConfigure(config: FullConfig) {
+  onConfigure(config: FullConfig) {
     this.config = config;
   }
 
-  override onBegin(suite: Suite) {
+  onBegin(suite: Suite) {
     this.suite = suite;
   }
 
-  override onError(error: TestError): void {
+  onError(error: TestError): void {
     this._errors.push(error);
   }
 
-  override async onEnd(result: FullResult) {
+  async onEnd(result: FullResult) {
     await outputReport(this._serializeReport(result), this._resolvedOutputFile);
   }
 
@@ -197,6 +203,7 @@ class JSONReporter extends EmptyReporter {
     const steps = result.steps.filter(s => s.category === 'test.step');
     const jsonResult: JSONReportTestResult = {
       workerIndex: result.workerIndex,
+      parallelIndex: result.parallelIndex,
       status: result.status,
       duration: result.duration,
       error: result.error,
@@ -219,7 +226,7 @@ class JSONReporter extends EmptyReporter {
   }
 
   private _serializeError(error: TestError): JSONReportError {
-    return formatError(error, true);
+    return formatError(nonTerminalScreen, error);
   }
 
   private _serializeTestStep(step: TestStep): JSONReportTestStep {

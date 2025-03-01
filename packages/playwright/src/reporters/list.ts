@@ -14,17 +14,19 @@
  * limitations under the License.
  */
 
-import { ms as milliseconds } from 'playwright-core/lib/utilsBundle';
-import { colors, BaseReporter, formatError, formatTestTitle, isTTY, stepSuffix, stripAnsiEscapes, ttyWidth } from './base';
-import type { FullResult, Suite, TestCase, TestError, TestResult, TestStep } from '../../types/testReporter';
 import { getAsBooleanFromENV } from 'playwright-core/lib/utils';
+import { ms as milliseconds } from 'playwright-core/lib/utilsBundle';
+
+import { TerminalReporter, stepSuffix, stripAnsiEscapes } from './base';
+
+import type { FullResult, Suite, TestCase, TestError, TestResult, TestStep } from '../../types/testReporter';
 
 // Allow it in the Visual Studio Code Terminal and the new Windows Terminal
 const DOES_NOT_SUPPORT_UTF8_IN_TERMINAL = process.platform === 'win32' && process.env.TERM_PROGRAM !== 'vscode' && !process.env.WT_SESSION;
 const POSITIVE_STATUS_MARK = DOES_NOT_SUPPORT_UTF8_IN_TERMINAL ? 'ok' : '✓';
 const NEGATIVE_STATUS_MARK = DOES_NOT_SUPPORT_UTF8_IN_TERMINAL ? 'x' : '✘';
 
-class ListReporter extends BaseReporter {
+class ListReporter extends TerminalReporter {
   private _lastRow = 0;
   private _lastColumn = 0;
   private _testRows = new Map<TestCase, number>();
@@ -36,11 +38,7 @@ class ListReporter extends BaseReporter {
 
   constructor(options: { printSteps?: boolean } = {}) {
     super();
-    this._printSteps = isTTY && getAsBooleanFromENV('PLAYWRIGHT_LIST_PRINT_STEPS', options.printSteps);
-  }
-
-  override printsToStdio() {
-    return true;
+    this._printSteps = getAsBooleanFromENV('PLAYWRIGHT_LIST_PRINT_STEPS', options.printSteps);
   }
 
   override onBegin(suite: Suite) {
@@ -52,16 +50,16 @@ class ListReporter extends BaseReporter {
     }
   }
 
-  override onTestBegin(test: TestCase, result: TestResult) {
-    super.onTestBegin(test, result);
-    if (!isTTY)
-      return;
-    this._maybeWriteNewLine();
+  onTestBegin(test: TestCase, result: TestResult) {
     const index = String(this._resultIndex.size + 1);
     this._resultIndex.set(result, index);
+
+    if (!this.screen.isTTY)
+      return;
+    this._maybeWriteNewLine();
     this._testRows.set(test, this._lastRow);
     const prefix = this._testPrefix(index, '');
-    const line = colors.dim(formatTestTitle(this.config, test)) + this._retrySuffix(result);
+    const line = this.screen.colors.dim(this.formatTestTitle(test)) + this._retrySuffix(result);
     this._appendLine(line, prefix);
   }
 
@@ -75,52 +73,56 @@ class ListReporter extends BaseReporter {
     this._dumpToStdio(test, chunk, process.stderr);
   }
 
-  override onStepBegin(test: TestCase, result: TestResult, step: TestStep) {
-    super.onStepBegin(test, result, step);
-    if (step.category !== 'test.step')
-      return;
-    const testIndex = this._resultIndex.get(result) || '';
-    if (!this._printSteps) {
-      if (isTTY)
-        this._updateLine(this._testRows.get(test)!, colors.dim(formatTestTitle(this.config, test, step)) + this._retrySuffix(result), this._testPrefix(testIndex, ''));
-      return;
-    }
+  private getStepIndex(testIndex: string, result: TestResult, step: TestStep): string {
+    if (this._stepIndex.has(step))
+      return this._stepIndex.get(step)!;
 
     const ordinal = ((result as any)[lastStepOrdinalSymbol] || 0) + 1;
     (result as any)[lastStepOrdinalSymbol] = ordinal;
     const stepIndex = `${testIndex}.${ordinal}`;
     this._stepIndex.set(step, stepIndex);
+    return stepIndex;
+  }
 
-    if (isTTY) {
+  onStepBegin(test: TestCase, result: TestResult, step: TestStep) {
+    if (step.category !== 'test.step')
+      return;
+    const testIndex = this._resultIndex.get(result) || '';
+
+    if (!this.screen.isTTY)
+      return;
+
+    if (this._printSteps) {
       this._maybeWriteNewLine();
       this._stepRows.set(step, this._lastRow);
-      const prefix = this._testPrefix(stepIndex, '');
-      const line = test.title + colors.dim(stepSuffix(step));
+      const prefix = this._testPrefix(this.getStepIndex(testIndex, result, step), '');
+      const line = test.title + this.screen.colors.dim(stepSuffix(step));
       this._appendLine(line, prefix);
+    } else {
+      this._updateLine(this._testRows.get(test)!, this.screen.colors.dim(this.formatTestTitle(test, step)) + this._retrySuffix(result), this._testPrefix(testIndex, ''));
     }
   }
 
-  override onStepEnd(test: TestCase, result: TestResult, step: TestStep) {
-    super.onStepEnd(test, result, step);
+  onStepEnd(test: TestCase, result: TestResult, step: TestStep) {
     if (step.category !== 'test.step')
       return;
 
     const testIndex = this._resultIndex.get(result) || '';
     if (!this._printSteps) {
-      if (isTTY)
-        this._updateLine(this._testRows.get(test)!, colors.dim(formatTestTitle(this.config, test, step.parent)) + this._retrySuffix(result), this._testPrefix(testIndex, ''));
+      if (this.screen.isTTY)
+        this._updateLine(this._testRows.get(test)!, this.screen.colors.dim(this.formatTestTitle(test, step.parent)) + this._retrySuffix(result), this._testPrefix(testIndex, ''));
       return;
     }
 
-    const index = this._stepIndex.get(step)!;
-    const title = test.title + colors.dim(stepSuffix(step));
+    const index = this.getStepIndex(testIndex, result, step);
+    const title = this.screen.isTTY ? test.title + this.screen.colors.dim(stepSuffix(step)) : this.formatTestTitle(test, step);
     const prefix = this._testPrefix(index, '');
     let text = '';
     if (step.error)
-      text = colors.red(title);
+      text = this.screen.colors.red(title);
     else
       text = title;
-    text += colors.dim(` (${milliseconds(step.duration)})`);
+    text += this.screen.colors.dim(` (${milliseconds(step.duration)})`);
 
     this._updateOrAppendLine(this._stepRows.get(step)!, text, prefix);
   }
@@ -129,12 +131,14 @@ class ListReporter extends BaseReporter {
     if (this._needNewLine) {
       this._needNewLine = false;
       process.stdout.write('\n');
+      ++this._lastRow;
+      this._lastColumn = 0;
     }
   }
 
   private _updateLineCountAndNewLineFlagForOutput(text: string) {
     this._needNewLine = text[text.length - 1] !== '\n';
-    if (!ttyWidth)
+    if (!this.screen.ttyWidth)
       return;
     for (const ch of text) {
       if (ch === '\n') {
@@ -143,7 +147,7 @@ class ListReporter extends BaseReporter {
         continue;
       }
       ++this._lastColumn;
-      if (this._lastColumn > ttyWidth) {
+      if (this._lastColumn > this.screen.ttyWidth) {
         this._lastColumn = 0;
         ++this._lastRow;
       }
@@ -161,7 +165,7 @@ class ListReporter extends BaseReporter {
   override onTestEnd(test: TestCase, result: TestResult) {
     super.onTestEnd(test, result);
 
-    const title = formatTestTitle(this.config, test);
+    const title = this.formatTestTitle(test);
     let prefix = '';
     let text = '';
 
@@ -174,26 +178,26 @@ class ListReporter extends BaseReporter {
     }
 
     if (result.status === 'skipped') {
-      prefix = this._testPrefix(index, colors.green('-'));
+      prefix = this._testPrefix(index, this.screen.colors.green('-'));
       // Do not show duration for skipped.
-      text = colors.cyan(title) + this._retrySuffix(result);
+      text = this.screen.colors.cyan(title) + this._retrySuffix(result);
     } else {
       const statusMark = result.status === 'passed' ? POSITIVE_STATUS_MARK : NEGATIVE_STATUS_MARK;
       if (result.status === test.expectedStatus) {
-        prefix = this._testPrefix(index, colors.green(statusMark));
+        prefix = this._testPrefix(index, this.screen.colors.green(statusMark));
         text = title;
       } else {
-        prefix = this._testPrefix(index, colors.red(statusMark));
-        text = colors.red(title);
+        prefix = this._testPrefix(index, this.screen.colors.red(statusMark));
+        text = this.screen.colors.red(title);
       }
-      text += this._retrySuffix(result) + colors.dim(` (${milliseconds(result.duration)})`);
+      text += this._retrySuffix(result) + this.screen.colors.dim(` (${milliseconds(result.duration)})`);
     }
 
     this._updateOrAppendLine(this._testRows.get(test)!, text, prefix);
   }
 
   private _updateOrAppendLine(row: number, text: string, prefix: string) {
-    if (isTTY) {
+    if (this.screen.isTTY) {
       this._updateLine(row, text, prefix);
     } else {
       this._maybeWriteNewLine();
@@ -204,18 +208,19 @@ class ListReporter extends BaseReporter {
   private _appendLine(text: string, prefix: string) {
     const line = prefix + this.fitToScreen(text, prefix);
     if (process.env.PW_TEST_DEBUG_REPORTERS) {
-      process.stdout.write(this._lastRow + ' : ' + line + '\n');
+      process.stdout.write('#' + this._lastRow + ' : ' + line + '\n');
     } else {
       process.stdout.write(line);
       process.stdout.write('\n');
     }
     ++this._lastRow;
+    this._lastColumn = 0;
   }
 
   private _updateLine(row: number, text: string, prefix: string) {
     const line = prefix + this.fitToScreen(text, prefix);
     if (process.env.PW_TEST_DEBUG_REPORTERS)
-      process.stdout.write(row + ' : ' + line + '\n');
+      process.stdout.write('#' + row + ' : ' + line + '\n');
     else
       this._updateLineForTTY(row, line);
   }
@@ -234,17 +239,17 @@ class ListReporter extends BaseReporter {
 
   private _testPrefix(index: string, statusMark: string) {
     const statusMarkLength = stripAnsiEscapes(statusMark).length;
-    return '  ' + statusMark + ' '.repeat(3 - statusMarkLength) + colors.dim(index + ' ');
+    return '  ' + statusMark + ' '.repeat(3 - statusMarkLength) + this.screen.colors.dim(index + ' ');
   }
 
   private _retrySuffix(result: TestResult) {
-    return (result.retry ? colors.yellow(` (retry #${result.retry})`) : '');
+    return (result.retry ? this.screen.colors.yellow(` (retry #${result.retry})`) : '');
   }
 
   override onError(error: TestError): void {
     super.onError(error);
     this._maybeWriteNewLine();
-    const message = formatError(error, colors.enabled).message + '\n';
+    const message = this.formatError(error).message + '\n';
     this._updateLineCountAndNewLineFlagForOutput(message);
     process.stdout.write(message);
   }

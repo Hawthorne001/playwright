@@ -112,7 +112,7 @@ export module Protocol {
 - from 'checked' to 'selected': states which apply to widgets
 - from 'activedescendant' to 'owns' - relationships between elements other than parent/child/sibling.
      */
-    export type AXPropertyName = "busy"|"disabled"|"editable"|"focusable"|"focused"|"hidden"|"hiddenRoot"|"invalid"|"keyshortcuts"|"settable"|"roledescription"|"live"|"atomic"|"relevant"|"root"|"autocomplete"|"hasPopup"|"level"|"multiselectable"|"orientation"|"multiline"|"readonly"|"required"|"valuemin"|"valuemax"|"valuetext"|"checked"|"expanded"|"modal"|"pressed"|"selected"|"activedescendant"|"controls"|"describedby"|"details"|"errormessage"|"flowto"|"labelledby"|"owns";
+    export type AXPropertyName = "actions"|"busy"|"disabled"|"editable"|"focusable"|"focused"|"hidden"|"hiddenRoot"|"invalid"|"keyshortcuts"|"settable"|"roledescription"|"live"|"atomic"|"relevant"|"root"|"autocomplete"|"hasPopup"|"level"|"multiselectable"|"orientation"|"multiline"|"readonly"|"required"|"valuemin"|"valuemax"|"valuetext"|"checked"|"expanded"|"modal"|"pressed"|"selected"|"activedescendant"|"controls"|"describedby"|"details"|"errormessage"|"flowto"|"labelledby"|"owns"|"url";
     /**
      * A node in the accessibility tree.
      */
@@ -685,8 +685,8 @@ percentage [0 - 100] for scroll driven animations
       /**
        * The unique request id.
        */
-      requestId: Network.RequestId;
-      url?: string;
+      requestId?: Network.RequestId;
+      url: string;
     }
     /**
      * Information about the frame affected by an inspector issue.
@@ -694,9 +694,23 @@ percentage [0 - 100] for scroll driven animations
     export interface AffectedFrame {
       frameId: Page.FrameId;
     }
-    export type CookieExclusionReason = "ExcludeSameSiteUnspecifiedTreatedAsLax"|"ExcludeSameSiteNoneInsecure"|"ExcludeSameSiteLax"|"ExcludeSameSiteStrict"|"ExcludeInvalidSameParty"|"ExcludeSamePartyCrossPartyContext"|"ExcludeDomainNonASCII"|"ExcludeThirdPartyCookieBlockedInFirstPartySet"|"ExcludeThirdPartyPhaseout";
-    export type CookieWarningReason = "WarnSameSiteUnspecifiedCrossSiteContext"|"WarnSameSiteNoneInsecure"|"WarnSameSiteUnspecifiedLaxAllowUnsafe"|"WarnSameSiteStrictLaxDowngradeStrict"|"WarnSameSiteStrictCrossDowngradeStrict"|"WarnSameSiteStrictCrossDowngradeLax"|"WarnSameSiteLaxCrossDowngradeStrict"|"WarnSameSiteLaxCrossDowngradeLax"|"WarnAttributeValueExceedsMaxSize"|"WarnDomainNonASCII"|"WarnThirdPartyPhaseout"|"WarnCrossSiteRedirectDowngradeChangesInclusion";
+    export type CookieExclusionReason = "ExcludeSameSiteUnspecifiedTreatedAsLax"|"ExcludeSameSiteNoneInsecure"|"ExcludeSameSiteLax"|"ExcludeSameSiteStrict"|"ExcludeInvalidSameParty"|"ExcludeSamePartyCrossPartyContext"|"ExcludeDomainNonASCII"|"ExcludeThirdPartyCookieBlockedInFirstPartySet"|"ExcludeThirdPartyPhaseout"|"ExcludePortMismatch"|"ExcludeSchemeMismatch";
+    export type CookieWarningReason = "WarnSameSiteUnspecifiedCrossSiteContext"|"WarnSameSiteNoneInsecure"|"WarnSameSiteUnspecifiedLaxAllowUnsafe"|"WarnSameSiteStrictLaxDowngradeStrict"|"WarnSameSiteStrictCrossDowngradeStrict"|"WarnSameSiteStrictCrossDowngradeLax"|"WarnSameSiteLaxCrossDowngradeStrict"|"WarnSameSiteLaxCrossDowngradeLax"|"WarnAttributeValueExceedsMaxSize"|"WarnDomainNonASCII"|"WarnThirdPartyPhaseout"|"WarnCrossSiteRedirectDowngradeChangesInclusion"|"WarnDeprecationTrialMetadata"|"WarnThirdPartyCookieHeuristic";
     export type CookieOperation = "SetCookie"|"ReadCookie";
+    /**
+     * Represents the category of insight that a cookie issue falls under.
+     */
+    export type InsightType = "GitHubResource"|"GracePeriod"|"Heuristics";
+    /**
+     * Information about the suggested solution to a cookie issue.
+     */
+    export interface CookieIssueInsight {
+      type: InsightType;
+      /**
+       * Link to table entry in third-party cookie migration readiness list.
+       */
+      tableEntryUrl?: string;
+    }
     /**
      * This information is currently necessary, as the front-end has a difficult
 time finding a specific cookie. With this, we can convey specific error
@@ -721,6 +735,10 @@ may be used by the front-end as additional context.
       siteForCookies?: string;
       cookieUrl?: string;
       request?: AffectedRequest;
+      /**
+       * The recommended solution to the issue.
+       */
+      insight?: CookieIssueInsight;
     }
     export type MixedContentResolutionStatus = "MixedContentBlocked"|"MixedContentAutomaticallyUpgraded"|"MixedContentWarning";
     export type MixedContentResourceType = "AttributionSrc"|"Audio"|"Beacon"|"CSPReport"|"Download"|"EventSource"|"Favicon"|"Font"|"Form"|"Frame"|"Image"|"Import"|"JSON"|"Manifest"|"Ping"|"PluginData"|"PluginResource"|"Prefetch"|"Resource"|"Script"|"ServiceWorker"|"SharedWorker"|"SpeculationRules"|"Stylesheet"|"Track"|"Video"|"Worker"|"XMLHttpRequest"|"XSLT";
@@ -758,7 +776,7 @@ Does not always exist (e.g. for unsafe form submission urls).
      * Enum indicating the reason a response has been blocked. These reasons are
 refinements of the net error BLOCKED_BY_RESPONSE.
      */
-    export type BlockedByResponseReason = "CoepFrameResourceNeedsCoepHeader"|"CoopSandboxedIFrameCannotNavigateToCoopPage"|"CorpNotSameOrigin"|"CorpNotSameOriginAfterDefaultedToSameOriginByCoep"|"CorpNotSameOriginAfterDefaultedToSameOriginByDip"|"CorpNotSameOriginAfterDefaultedToSameOriginByCoepAndDip"|"CorpNotSameSite";
+    export type BlockedByResponseReason = "CoepFrameResourceNeedsCoepHeader"|"CoopSandboxedIFrameCannotNavigateToCoopPage"|"CorpNotSameOrigin"|"CorpNotSameOriginAfterDefaultedToSameOriginByCoep"|"CorpNotSameOriginAfterDefaultedToSameOriginByDip"|"CorpNotSameOriginAfterDefaultedToSameOriginByCoepAndDip"|"CorpNotSameSite"|"SRIMessageSignatureMismatch";
     /**
      * Details for a request that has been blocked with the BLOCKED_BY_RESPONSE
 code. Currently only used for COEP/COOP, but may be extended to include
@@ -840,7 +858,7 @@ CORS RFC1918 enforcement.
       resourceIPAddressSpace?: Network.IPAddressSpace;
       clientSecurityState?: Network.ClientSecurityState;
     }
-    export type AttributionReportingIssueType = "PermissionPolicyDisabled"|"UntrustworthyReportingOrigin"|"InsecureContext"|"InvalidHeader"|"InvalidRegisterTriggerHeader"|"SourceAndTriggerHeaders"|"SourceIgnored"|"TriggerIgnored"|"OsSourceIgnored"|"OsTriggerIgnored"|"InvalidRegisterOsSourceHeader"|"InvalidRegisterOsTriggerHeader"|"WebAndOsHeaders"|"NoWebOrOsSupport"|"NavigationRegistrationWithoutTransientUserActivation"|"InvalidInfoHeader"|"NoRegisterSourceHeader"|"NoRegisterTriggerHeader"|"NoRegisterOsSourceHeader"|"NoRegisterOsTriggerHeader";
+    export type AttributionReportingIssueType = "PermissionPolicyDisabled"|"UntrustworthyReportingOrigin"|"InsecureContext"|"InvalidHeader"|"InvalidRegisterTriggerHeader"|"SourceAndTriggerHeaders"|"SourceIgnored"|"TriggerIgnored"|"OsSourceIgnored"|"OsTriggerIgnored"|"InvalidRegisterOsSourceHeader"|"InvalidRegisterOsTriggerHeader"|"WebAndOsHeaders"|"NoWebOrOsSupport"|"NavigationRegistrationWithoutTransientUserActivation"|"InvalidInfoHeader"|"NoRegisterSourceHeader"|"NoRegisterTriggerHeader"|"NoRegisterOsSourceHeader"|"NoRegisterOsTriggerHeader"|"NavigationRegistrationUniqueScopeAlreadySet";
     export type SharedDictionaryError = "UseErrorCrossOriginNoCorsRequest"|"UseErrorDictionaryLoadFailure"|"UseErrorMatchingDictionaryNotUsed"|"UseErrorUnexpectedContentDictionaryHeader"|"WriteErrorCossOriginNoCorsRequest"|"WriteErrorDisallowedBySettings"|"WriteErrorExpiredResponse"|"WriteErrorFeatureDisabled"|"WriteErrorInsufficientResources"|"WriteErrorInvalidMatchField"|"WriteErrorInvalidStructuredHeader"|"WriteErrorNavigationRequest"|"WriteErrorNoMatchField"|"WriteErrorNonListMatchDestField"|"WriteErrorNonSecureContext"|"WriteErrorNonStringIdField"|"WriteErrorNonStringInMatchDestList"|"WriteErrorNonStringMatchField"|"WriteErrorNonTokenTypeField"|"WriteErrorRequestAborted"|"WriteErrorShuttingDown"|"WriteErrorTooLongIdField"|"WriteErrorUnsupportedType";
     /**
      * Details for issues around "Attribution Reporting API" usage.
@@ -875,7 +893,7 @@ instead of "limited-quirks".
       sharedDictionaryError: SharedDictionaryError;
       request: AffectedRequest;
     }
-    export type GenericIssueErrorType = "CrossOriginPortalPostMessageError"|"FormLabelForNameError"|"FormDuplicateIdForInputError"|"FormInputWithNoLabelError"|"FormAutocompleteAttributeEmptyError"|"FormEmptyIdAndNameAttributesForInputError"|"FormAriaLabelledByToNonExistingId"|"FormInputAssignedAutocompleteValueToIdOrNameAttributeError"|"FormLabelHasNeitherForNorNestedInput"|"FormLabelForMatchesNonExistingIdError"|"FormInputHasWrongButWellIntendedAutocompleteValueError"|"ResponseWasBlockedByORB";
+    export type GenericIssueErrorType = "FormLabelForNameError"|"FormDuplicateIdForInputError"|"FormInputWithNoLabelError"|"FormAutocompleteAttributeEmptyError"|"FormEmptyIdAndNameAttributesForInputError"|"FormAriaLabelledByToNonExistingId"|"FormInputAssignedAutocompleteValueToIdOrNameAttributeError"|"FormLabelHasNeitherForNorNestedInput"|"FormLabelForMatchesNonExistingIdError"|"FormInputHasWrongButWellIntendedAutocompleteValueError"|"ResponseWasBlockedByORB";
     /**
      * Depending on the concrete errorType, different properties are set.
      */
@@ -934,7 +952,7 @@ Should be updated alongside RequestIdTokenStatus in
 third_party/blink/public/mojom/devtools/inspector_issue.mojom to include
 all cases except for success.
      */
-    export type FederatedAuthRequestIssueReason = "ShouldEmbargo"|"TooManyRequests"|"WellKnownHttpNotFound"|"WellKnownNoResponse"|"WellKnownInvalidResponse"|"WellKnownListEmpty"|"WellKnownInvalidContentType"|"ConfigNotInWellKnown"|"WellKnownTooBig"|"ConfigHttpNotFound"|"ConfigNoResponse"|"ConfigInvalidResponse"|"ConfigInvalidContentType"|"ClientMetadataHttpNotFound"|"ClientMetadataNoResponse"|"ClientMetadataInvalidResponse"|"ClientMetadataInvalidContentType"|"DisabledInSettings"|"ErrorFetchingSignin"|"InvalidSigninResponse"|"AccountsHttpNotFound"|"AccountsNoResponse"|"AccountsInvalidResponse"|"AccountsListEmpty"|"AccountsInvalidContentType"|"IdTokenHttpNotFound"|"IdTokenNoResponse"|"IdTokenInvalidResponse"|"IdTokenIdpErrorResponse"|"IdTokenCrossSiteIdpErrorResponse"|"IdTokenInvalidRequest"|"IdTokenInvalidContentType"|"ErrorIdToken"|"Canceled"|"RpPageNotVisible"|"SilentMediationFailure"|"ThirdPartyCookiesBlocked"|"NotSignedInWithIdp"|"MissingTransientUserActivation"|"ReplacedByButtonMode"|"RelyingPartyOriginIsOpaque"|"TypeNotMatching";
+    export type FederatedAuthRequestIssueReason = "ShouldEmbargo"|"TooManyRequests"|"WellKnownHttpNotFound"|"WellKnownNoResponse"|"WellKnownInvalidResponse"|"WellKnownListEmpty"|"WellKnownInvalidContentType"|"ConfigNotInWellKnown"|"WellKnownTooBig"|"ConfigHttpNotFound"|"ConfigNoResponse"|"ConfigInvalidResponse"|"ConfigInvalidContentType"|"ClientMetadataHttpNotFound"|"ClientMetadataNoResponse"|"ClientMetadataInvalidResponse"|"ClientMetadataInvalidContentType"|"IdpNotPotentiallyTrustworthy"|"DisabledInSettings"|"DisabledInFlags"|"ErrorFetchingSignin"|"InvalidSigninResponse"|"AccountsHttpNotFound"|"AccountsNoResponse"|"AccountsInvalidResponse"|"AccountsListEmpty"|"AccountsInvalidContentType"|"IdTokenHttpNotFound"|"IdTokenNoResponse"|"IdTokenInvalidResponse"|"IdTokenIdpErrorResponse"|"IdTokenCrossSiteIdpErrorResponse"|"IdTokenInvalidRequest"|"IdTokenInvalidContentType"|"ErrorIdToken"|"Canceled"|"RpPageNotVisible"|"SilentMediationFailure"|"ThirdPartyCookiesBlocked"|"NotSignedInWithIdp"|"MissingTransientUserActivation"|"ReplacedByActiveMode"|"InvalidFieldsSpecified"|"RelyingPartyOriginIsOpaque"|"TypeNotMatching"|"UiDismissedNoEmbargo";
     export interface FederatedAuthUserInfoRequestIssueDetails {
       federatedAuthUserInfoRequestIssueReason: FederatedAuthUserInfoRequestIssueReason;
     }
@@ -962,6 +980,15 @@ features, encourage the use of new ones, and provide general guidance.
        */
       failureMessage: string;
       requestId?: Network.RequestId;
+    }
+    export type SelectElementAccessibilityIssueReason = "DisallowedSelectChild"|"DisallowedOptGroupChild"|"NonPhrasingContentOptionChild"|"InteractiveContentOptionChild"|"InteractiveContentLegendChild";
+    /**
+     * This issue warns about errors in the select element content model.
+     */
+    export interface SelectElementAccessibilityIssueDetails {
+      nodeId: DOM.BackendNodeId;
+      selectElementAccessibilityIssueReason: SelectElementAccessibilityIssueReason;
+      hasDisallowedAttributes: boolean;
     }
     export type StyleSheetLoadingIssueReason = "LateImportRule"|"RequestFailed";
     /**
@@ -1005,7 +1032,7 @@ registrations being ignored.
 optional fields in InspectorIssueDetails to convey more specific
 information about the kind of issue.
      */
-    export type InspectorIssueCode = "CookieIssue"|"MixedContentIssue"|"BlockedByResponseIssue"|"HeavyAdIssue"|"ContentSecurityPolicyIssue"|"SharedArrayBufferIssue"|"LowTextContrastIssue"|"CorsIssue"|"AttributionReportingIssue"|"QuirksModeIssue"|"NavigatorUserAgentIssue"|"GenericIssue"|"DeprecationIssue"|"ClientHintIssue"|"FederatedAuthRequestIssue"|"BounceTrackingIssue"|"CookieDeprecationMetadataIssue"|"StylesheetLoadingIssue"|"FederatedAuthUserInfoRequestIssue"|"PropertyRuleIssue"|"SharedDictionaryIssue";
+    export type InspectorIssueCode = "CookieIssue"|"MixedContentIssue"|"BlockedByResponseIssue"|"HeavyAdIssue"|"ContentSecurityPolicyIssue"|"SharedArrayBufferIssue"|"LowTextContrastIssue"|"CorsIssue"|"AttributionReportingIssue"|"QuirksModeIssue"|"NavigatorUserAgentIssue"|"GenericIssue"|"DeprecationIssue"|"ClientHintIssue"|"FederatedAuthRequestIssue"|"BounceTrackingIssue"|"CookieDeprecationMetadataIssue"|"StylesheetLoadingIssue"|"FederatedAuthUserInfoRequestIssue"|"PropertyRuleIssue"|"SharedDictionaryIssue"|"SelectElementAccessibilityIssue";
     /**
      * This struct holds a list of optional fields with additional information
 specific to the kind of issue. When adding a new issue code, please also
@@ -1033,6 +1060,7 @@ add a new optional field to this type.
       propertyRuleIssueDetails?: PropertyRuleIssueDetails;
       federatedAuthUserInfoRequestIssueDetails?: FederatedAuthUserInfoRequestIssueDetails;
       sharedDictionaryIssueDetails?: SharedDictionaryIssueDetails;
+      selectElementAccessibilityIssueDetails?: SelectElementAccessibilityIssueDetails;
     }
     /**
      * A unique id for a DevTools inspector issue. Allows other entities (e.g.
@@ -1131,17 +1159,21 @@ using Audits.issueAdded event.
   }
   
   /**
-   * Defines commands and events for browser extensions. Available if the client
-is connected using the --remote-debugging-pipe flag and
-the --enable-unsafe-extension-debugging flag is set.
+   * Defines commands and events for browser extensions.
    */
   export module Extensions {
+    /**
+     * Storage areas.
+     */
+    export type StorageArea = "session"|"local"|"sync"|"managed";
     
     
     /**
      * Installs an unpacked extension from the filesystem similar to
 --load-extension CLI flags. Returns extension ID once the extension
-has been installed.
+has been installed. Available if the client is connected using the
+--remote-debugging-pipe flag and the --enable-unsafe-extension-debugging
+flag is set.
      */
     export type loadUnpackedParameters = {
       /**
@@ -1154,6 +1186,94 @@ has been installed.
        * Extension id.
        */
       id: string;
+    }
+    /**
+     * Uninstalls an unpacked extension (others not supported) from the profile.
+Available if the client is connected using the --remote-debugging-pipe flag
+and the --enable-unsafe-extension-debugging.
+     */
+    export type uninstallParameters = {
+      /**
+       * Extension id.
+       */
+      id: string;
+    }
+    export type uninstallReturnValue = {
+    }
+    /**
+     * Gets data from extension storage in the given `storageArea`. If `keys` is
+specified, these are used to filter the result.
+     */
+    export type getStorageItemsParameters = {
+      /**
+       * ID of extension.
+       */
+      id: string;
+      /**
+       * StorageArea to retrieve data from.
+       */
+      storageArea: StorageArea;
+      /**
+       * Keys to retrieve.
+       */
+      keys?: string[];
+    }
+    export type getStorageItemsReturnValue = {
+      data: { [key: string]: string };
+    }
+    /**
+     * Removes `keys` from extension storage in the given `storageArea`.
+     */
+    export type removeStorageItemsParameters = {
+      /**
+       * ID of extension.
+       */
+      id: string;
+      /**
+       * StorageArea to remove data from.
+       */
+      storageArea: StorageArea;
+      /**
+       * Keys to remove.
+       */
+      keys: string[];
+    }
+    export type removeStorageItemsReturnValue = {
+    }
+    /**
+     * Clears extension storage in the given `storageArea`.
+     */
+    export type clearStorageItemsParameters = {
+      /**
+       * ID of extension.
+       */
+      id: string;
+      /**
+       * StorageArea to remove data from.
+       */
+      storageArea: StorageArea;
+    }
+    export type clearStorageItemsReturnValue = {
+    }
+    /**
+     * Sets `values` in extension storage in the given `storageArea`. The provided `values`
+will be merged with existing values in the storage area.
+     */
+    export type setStorageItemsParameters = {
+      /**
+       * ID of extension.
+       */
+      id: string;
+      /**
+       * StorageArea to set data in.
+       */
+      storageArea: StorageArea;
+      /**
+       * Values to set.
+       */
+      values: { [key: string]: string };
+    }
+    export type setStorageItemsReturnValue = {
     }
   }
   
@@ -1455,7 +1575,7 @@ events afterwards if enabled and recording.
        */
       windowState?: WindowState;
     }
-    export type PermissionType = "accessibilityEvents"|"audioCapture"|"backgroundSync"|"backgroundFetch"|"capturedSurfaceControl"|"clipboardReadWrite"|"clipboardSanitizedWrite"|"displayCapture"|"durableStorage"|"flash"|"geolocation"|"idleDetection"|"localFonts"|"midi"|"midiSysex"|"nfc"|"notifications"|"paymentHandler"|"periodicBackgroundSync"|"protectedMediaIdentifier"|"sensors"|"storageAccess"|"speakerSelection"|"topLevelStorageAccess"|"videoCapture"|"videoCapturePanTiltZoom"|"wakeLockScreen"|"wakeLockSystem"|"windowManagement";
+    export type PermissionType = "ar"|"audioCapture"|"automaticFullscreen"|"backgroundFetch"|"backgroundSync"|"cameraPanTiltZoom"|"capturedSurfaceControl"|"clipboardReadWrite"|"clipboardSanitizedWrite"|"displayCapture"|"durableStorage"|"geolocation"|"handTracking"|"idleDetection"|"keyboardLock"|"localFonts"|"midi"|"midiSysex"|"nfc"|"notifications"|"paymentHandler"|"periodicBackgroundSync"|"pointerLock"|"protectedMediaIdentifier"|"sensors"|"smartCard"|"speakerSelection"|"storageAccess"|"topLevelStorageAccess"|"videoCapture"|"vr"|"wakeLockScreen"|"wakeLockSystem"|"webAppInstallation"|"webPrinting"|"windowManagement";
     export type PermissionSetting = "granted"|"denied"|"prompt";
     /**
      * Definition of PermissionDescriptor defined in the Permissions API:
@@ -1480,6 +1600,10 @@ Note that userVisibleOnly = true is the only currently supported type.
        * For "clipboard" permission, may specify allowWithoutSanitization.
        */
       allowWithoutSanitization?: boolean;
+      /**
+       * For "fullscreen" permission, must specify allowWithoutGesture:true.
+       */
+      allowWithoutGesture?: boolean;
       /**
        * For "camera" permission, may specify panTiltZoom.
        */
@@ -1879,6 +2003,19 @@ inspector" rules), "regular" for regular stylesheets.
       matches: RuleMatch[];
     }
     /**
+     * CSS style coming from animations with the name of the animation.
+     */
+    export interface CSSAnimationStyle {
+      /**
+       * The name of the animation.
+       */
+      name?: string;
+      /**
+       * The style coming from the animation.
+       */
+      style: CSSStyle;
+    }
+    /**
      * Inherited CSS rule collection from ancestor node.
      */
     export interface InheritedStyleEntry {
@@ -1890,6 +2027,19 @@ inspector" rules), "regular" for regular stylesheets.
        * Matches of CSS rules matching the ancestor node in the style inheritance chain.
        */
       matchedCSSRules: RuleMatch[];
+    }
+    /**
+     * Inherited CSS style collection for animated styles from ancestor node.
+     */
+    export interface InheritedAnimatedStyleEntry {
+      /**
+       * Styles coming from the animations of the ancestor, if any, in the style inheritance chain.
+       */
+      animationStyles?: CSSAnimationStyle[];
+      /**
+       * The style coming from the transitions of the ancestor, if any, in the style inheritance chain.
+       */
+      transitionsStyle?: CSSStyle;
     }
     /**
      * Inherited pseudo element matches from pseudos of an ancestor node.
@@ -2100,12 +2250,17 @@ The array enumerates @scope at-rules starting with the innermost one, going outw
        * The array keeps the types of ancestor CSSRules from the innermost going outwards.
        */
       ruleTypes?: CSSRuleType[];
+      /**
+       * @starting-style CSS at-rule array.
+The array enumerates @starting-style at-rules starting with the innermost one, going outwards.
+       */
+      startingStyles?: CSSStartingStyle[];
     }
     /**
      * Enum indicating the type of a CSS rule, used to represent the order of a style rule's ancestors.
 This list only contains rule types that are collected during the ancestor rule collection.
      */
-    export type CSSRuleType = "MediaRule"|"SupportsRule"|"ContainerRule"|"LayerRule"|"ScopeRule"|"StyleRule";
+    export type CSSRuleType = "MediaRule"|"SupportsRule"|"ContainerRule"|"LayerRule"|"ScopeRule"|"StyleRule"|"StartingStyleRule";
     /**
      * CSS coverage information.
      */
@@ -2341,6 +2496,10 @@ available).
        * Optional logical axes queried for the container.
        */
       logicalAxes?: DOM.LogicalAxes;
+      /**
+       * true if the query contains scroll-state() queries.
+       */
+      queriesScrollState?: boolean;
     }
     /**
      * CSS Supports at-rule descriptor.
@@ -2390,6 +2549,20 @@ available).
        * Layer name.
        */
       text: string;
+      /**
+       * The associated rule header range in the enclosing stylesheet (if
+available).
+       */
+      range?: SourceRange;
+      /**
+       * Identifier of the stylesheet containing this object (if exists).
+       */
+      styleSheetId?: StyleSheetId;
+    }
+    /**
+     * CSS Starting Style at-rule descriptor.
+     */
+    export interface CSSStartingStyle {
       /**
        * The associated rule header range in the enclosing stylesheet (if
 available).
@@ -2529,16 +2702,6 @@ stylesheet rules) this rule came from.
       style: CSSStyle;
     }
     /**
-     * CSS position-fallback rule representation.
-     */
-    export interface CSSPositionFallbackRule {
-      name: Value;
-      /**
-       * List of keyframes.
-       */
-      tryRules: CSSTryRule[];
-    }
-    /**
      * CSS @position-try rule representation.
      */
     export interface CSSPositionTryRule {
@@ -2559,6 +2722,7 @@ stylesheet rules) this rule came from.
        * Associated style declaration.
        */
       style: CSSStyle;
+      active: boolean;
     }
     /**
      * CSS keyframes rule representation.
@@ -2705,6 +2869,12 @@ resized.) The current implementation considers only viewport-dependent media fea
        */
       styleSheetId: StyleSheetId;
     }
+    export type computedStyleUpdatedPayload = {
+      /**
+       * The node id that has updated computed styles.
+       */
+      nodeId: DOM.NodeId;
+    }
     
     /**
      * Inserts a new rule with the given `ruleText` in a stylesheet with given `styleSheetId`, at the
@@ -2756,6 +2926,13 @@ incorrect results if the declaration contains a var() for example.
        * Identifier of the frame where "via-inspector" stylesheet should be created.
        */
       frameId: Page.FrameId;
+      /**
+       * If true, creates a new stylesheet for every call. If false,
+returns a stylesheet previously created by a call with force=false
+for the frame's document if it exists or creates a new stylesheet
+(default: false).
+       */
+      force?: boolean;
     }
     export type createStyleSheetReturnValue = {
       /**
@@ -2793,6 +2970,21 @@ the browser.
       forcedPseudoClasses: string[];
     }
     export type forcePseudoStateReturnValue = {
+    }
+    /**
+     * Ensures that the given node is in its starting-style state.
+     */
+    export type forceStartingStyleParameters = {
+      /**
+       * The element id for which to force the starting-style state.
+       */
+      nodeId: DOM.NodeId;
+      /**
+       * Boolean indicating if this is on or off.
+       */
+      forced: boolean;
+    }
+    export type forceStartingStyleReturnValue = {
     }
     export type getBackgroundColorsParameters = {
       /**
@@ -2832,6 +3024,46 @@ be ignored (as if the image had failed to load).
       computedStyle: CSSComputedStyleProperty[];
     }
     /**
+     * Resolve the specified values in the context of the provided element.
+For example, a value of '1em' is evaluated according to the computed
+'font-size' of the element and a value 'calc(1px + 2px)' will be
+resolved to '3px'.
+     */
+    export type resolveValuesParameters = {
+      /**
+       * Substitution functions (var()/env()/attr()) and cascade-dependent
+keywords (revert/revert-layer) do not work.
+       */
+      values: string[];
+      /**
+       * Id of the node in whose context the expression is evaluated
+       */
+      nodeId: DOM.NodeId;
+      /**
+       * Only longhands and custom property names are accepted.
+       */
+      propertyName?: string;
+      /**
+       * Pseudo element type, only works for pseudo elements that generate
+elements in the tree, such as ::before and ::after.
+       */
+      pseudoType?: DOM.PseudoType;
+      /**
+       * Pseudo element custom ident.
+       */
+      pseudoIdentifier?: string;
+    }
+    export type resolveValuesReturnValue = {
+      results: string[];
+    }
+    export type getLonghandPropertiesParameters = {
+      shorthandName: string;
+      value: string;
+    }
+    export type getLonghandPropertiesReturnValue = {
+      longhandProperties: CSSProperty[];
+    }
+    /**
      * Returns the styles defined inline (explicitly in the "style" attribute and implicitly, using DOM
 attributes) for a DOM node identified by `nodeId`.
      */
@@ -2847,6 +3079,28 @@ attributes) for a DOM node identified by `nodeId`.
        * Attribute-defined element style (e.g. resulting from "width=20 height=100%").
        */
       attributesStyle?: CSSStyle;
+    }
+    /**
+     * Returns the styles coming from animations & transitions
+including the animation & transition styles coming from inheritance chain.
+     */
+    export type getAnimatedStylesForNodeParameters = {
+      nodeId: DOM.NodeId;
+    }
+    export type getAnimatedStylesForNodeReturnValue = {
+      /**
+       * Styles coming from animations.
+       */
+      animationStyles?: CSSAnimationStyle[];
+      /**
+       * Style coming from transitions.
+       */
+      transitionsStyle?: CSSStyle;
+      /**
+       * Inherited style entries for animationsStyle and transitionsStyle from
+the inheritance chain of the element.
+       */
+      inherited?: InheritedAnimatedStyleEntry[];
     }
     /**
      * Returns requested styles for a DOM node identified by `nodeId`.
@@ -2884,13 +3138,14 @@ attributes) for a DOM node identified by `nodeId`.
        */
       cssKeyframesRules?: CSSKeyframesRule[];
       /**
-       * A list of CSS position fallbacks matching this node.
-       */
-      cssPositionFallbackRules?: CSSPositionFallbackRule[];
-      /**
-       * A list of CSS @position-try rules matching this node, based on the position-try-options property.
+       * A list of CSS @position-try rules matching this node, based on the position-try-fallbacks property.
        */
       cssPositionTryRules?: CSSPositionTryRule[];
+      /**
+       * Index of the active fallback in the applied position-try-fallback property,
+will not be set if there is no active position-try fallback.
+       */
+      activePositionFallbackIndex?: number;
       /**
        * A list of CSS at-property rules matching this node.
        */
@@ -2963,6 +3218,19 @@ returns an array of locations of the CSS selector in the style sheet.
     }
     export type getLocationForSelectorReturnValue = {
       ranges: SourceRange[];
+    }
+    /**
+     * Starts tracking the given node for the computed style updates
+and whenever the computed style is updated for node, it queues
+a `computedStyleUpdated` event with throttling.
+There can only be 1 node tracked for computed style updates
+so passing a new node id removes tracking from the previous node.
+Pass `undefined` to disable tracking.
+     */
+    export type trackComputedStyleUpdatesForNodeParameters = {
+      nodeId?: DOM.NodeId;
+    }
+    export type trackComputedStyleUpdatesForNodeReturnValue = {
     }
     /**
      * Starts tracking the given computed styles for updates. The specified array of properties
@@ -3486,7 +3754,7 @@ front-end.
     /**
      * Pseudo element type.
      */
-    export type PseudoType = "first-line"|"first-letter"|"before"|"after"|"marker"|"backdrop"|"selection"|"search-text"|"target-text"|"spelling-error"|"grammar-error"|"highlight"|"first-line-inherited"|"scroll-marker"|"scroll-marker-group"|"scrollbar"|"scrollbar-thumb"|"scrollbar-button"|"scrollbar-track"|"scrollbar-track-piece"|"scrollbar-corner"|"resizer"|"input-list-button"|"view-transition"|"view-transition-group"|"view-transition-image-pair"|"view-transition-old"|"view-transition-new";
+    export type PseudoType = "first-line"|"first-letter"|"checkmark"|"before"|"after"|"picker-icon"|"marker"|"backdrop"|"column"|"selection"|"search-text"|"target-text"|"spelling-error"|"grammar-error"|"highlight"|"first-line-inherited"|"scroll-marker"|"scroll-marker-group"|"scroll-button"|"scrollbar"|"scrollbar-thumb"|"scrollbar-button"|"scrollbar-track"|"scrollbar-track-piece"|"scrollbar-corner"|"resizer"|"input-list-button"|"view-transition"|"view-transition-group"|"view-transition-image-pair"|"view-transition-old"|"view-transition-new"|"placeholder"|"file-selector-button"|"details-content"|"picker";
     /**
      * Shadow root type.
      */
@@ -3635,6 +3903,14 @@ The property is always undefined now.
       isSVG?: boolean;
       compatibilityMode?: CompatibilityMode;
       assignedSlot?: BackendNode;
+      isScrollable?: boolean;
+    }
+    /**
+     * A structure to hold the top-level node of a detached tree and an array of its retained descendants.
+     */
+    export interface DetachedElementInfo {
+      treeNode: Node;
+      retainedNodeIds: NodeId[];
     }
     /**
      * A structure holding an RGBA color.
@@ -3872,6 +4148,19 @@ The property is always undefined now.
      * Called when top layer elements are changed.
      */
     export type topLayerElementsUpdatedPayload = void;
+    /**
+     * Fired when a node's scrollability state changes.
+     */
+    export type scrollableFlagUpdatedPayload = {
+      /**
+       * The id of the node.
+       */
+      nodeId: DOM.NodeId;
+      /**
+       * If the node is scrollable.
+       */
+      isScrollable: boolean;
+    }
     /**
      * Called when a pseudo element is removed from an element.
      */
@@ -4684,6 +4973,17 @@ File wrapper.
       path: string;
     }
     /**
+     * Returns list of detached nodes
+     */
+    export type getDetachedDomNodesParameters = {
+    }
+    export type getDetachedDomNodesReturnValue = {
+      /**
+       * The list of detached nodes
+       */
+      detachedNodes: DetachedElementInfo[];
+    }
+    /**
      * Enables console to refer to the node with given id via $x (see Command Line API for more details
 $x functions).
      */
@@ -4769,15 +5069,17 @@ $x functions).
     }
     /**
      * Returns the query container of the given node based on container query
-conditions: containerName, physical, and logical axes. If no axes are
-provided, the style container is returned, which is the direct parent or the
-closest element with a matching container-name.
+conditions: containerName, physical and logical axes, and whether it queries
+scroll-state. If no axes are provided and queriesScrollState is false, the
+style container is returned, which is the direct parent or the closest
+element with a matching container-name.
      */
     export type getContainerForNodeParameters = {
       nodeId: NodeId;
       containerName?: string;
       physicalAxes?: PhysicalAxes;
       logicalAxes?: LogicalAxes;
+      queriesScrollState?: boolean;
     }
     export type getContainerForNodeReturnValue = {
       /**
@@ -5692,81 +5994,6 @@ The final text color opacity is computed based on the opacity of all overlapping
     }
   }
   
-  export module Database {
-    /**
-     * Unique identifier of Database object.
-     */
-    export type DatabaseId = string;
-    /**
-     * Database object.
-     */
-    export interface Database {
-      /**
-       * Database ID.
-       */
-      id: DatabaseId;
-      /**
-       * Database domain.
-       */
-      domain: string;
-      /**
-       * Database name.
-       */
-      name: string;
-      /**
-       * Database version.
-       */
-      version: string;
-    }
-    /**
-     * Database error.
-     */
-    export interface Error {
-      /**
-       * Error message.
-       */
-      message: string;
-      /**
-       * Error code.
-       */
-      code: number;
-    }
-    
-    export type addDatabasePayload = {
-      database: Database;
-    }
-    
-    /**
-     * Disables database tracking, prevents database events from being sent to the client.
-     */
-    export type disableParameters = {
-    }
-    export type disableReturnValue = {
-    }
-    /**
-     * Enables database tracking, database events will now be delivered to the client.
-     */
-    export type enableParameters = {
-    }
-    export type enableReturnValue = {
-    }
-    export type executeSQLParameters = {
-      databaseId: DatabaseId;
-      query: string;
-    }
-    export type executeSQLReturnValue = {
-      columnNames?: string[];
-      values?: any[];
-      sqlError?: Error;
-    }
-    export type getDatabaseTableNamesParameters = {
-      databaseId: DatabaseId;
-    }
-    export type getDatabaseTableNamesReturnValue = {
-      tableNames: string[];
-    }
-  }
-  
   export module DeviceOrientation {
     
     
@@ -5882,7 +6109,7 @@ Missing optional values will be filled in by the target with what it would norma
      * Used to specify sensor types to emulate.
 See https://w3c.github.io/sensors/#automation for more information.
      */
-    export type SensorType = "absolute-orientation"|"accelerometer"|"ambient-light"|"gravity"|"gyroscope"|"linear-acceleration"|"magnetometer"|"proximity"|"relative-orientation";
+    export type SensorType = "absolute-orientation"|"accelerometer"|"ambient-light"|"gravity"|"gyroscope"|"linear-acceleration"|"magnetometer"|"relative-orientation";
     export interface SensorMetadata {
       available?: boolean;
       minimumFrequency?: number;
@@ -5906,6 +6133,11 @@ See https://w3c.github.io/sensors/#automation for more information.
       single?: SensorReadingSingle;
       xyz?: SensorReadingXYZ;
       quaternion?: SensorReadingQuaternion;
+    }
+    export type PressureSource = "cpu";
+    export type PressureState = "nominal"|"fair"|"serious"|"critical";
+    export interface PressureMetadata {
+      available?: boolean;
     }
     /**
      * Enum of image types that can be disabled.
@@ -6189,6 +6421,30 @@ by setSensorOverrideEnabled.
       reading: SensorReading;
     }
     export type setSensorOverrideReadingsReturnValue = {
+    }
+    /**
+     * Overrides a pressure source of a given type, as used by the Compute
+Pressure API, so that updates to PressureObserver.observe() are provided
+via setPressureStateOverride instead of being retrieved from
+platform-provided telemetry data.
+     */
+    export type setPressureSourceOverrideEnabledParameters = {
+      enabled: boolean;
+      source: PressureSource;
+      metadata?: PressureMetadata;
+    }
+    export type setPressureSourceOverrideEnabledReturnValue = {
+    }
+    /**
+     * Provides a given pressure state that will be processed and eventually be
+delivered to PressureObserver users. |source| must have been previously
+overridden by setPressureSourceOverrideEnabled.
+     */
+    export type setPressureStateOverrideParameters = {
+      source: PressureSource;
+      state: PressureState;
+    }
+    export type setPressureStateOverrideReturnValue = {
     }
     /**
      * Overrides the Idle state.
@@ -6530,6 +6786,54 @@ following the last read). Some types of streams may only support sequential read
        * UUID of the specified Blob.
        */
       uuid: string;
+    }
+  }
+  
+  export module FileSystem {
+    export interface File {
+      name: string;
+      /**
+       * Timestamp
+       */
+      lastModified: Network.TimeSinceEpoch;
+      /**
+       * Size in bytes
+       */
+      size: number;
+      type: string;
+    }
+    export interface Directory {
+      name: string;
+      nestedDirectories: string[];
+      /**
+       * Files that are directly nested under this directory.
+       */
+      nestedFiles: File[];
+    }
+    export interface BucketFileSystemLocator {
+      /**
+       * Storage key
+       */
+      storageKey: Storage.SerializedStorageKey;
+      /**
+       * Bucket name. Not passing a `bucketName` will retrieve the default Bucket. (https://developer.mozilla.org/en-US/docs/Web/API/Storage_API#storage_buckets)
+       */
+      bucketName?: string;
+      /**
+       * Path to the directory using each path component as an array item.
+       */
+      pathComponents: string[];
+    }
+    
+    
+    export type getDirectoryParameters = {
+      bucketFileSystemLocator: BucketFileSystemLocator;
+    }
+    export type getDirectoryReturnValue = {
+      /**
+       * Returns the directory object at the path.
+       */
+      directory: Directory;
     }
   }
   
@@ -7932,8 +8236,25 @@ or hexadecimal (0x prefixed) string.
        */
       size: number;
     }
+    /**
+     * DOM object counter data.
+     */
+    export interface DOMCounter {
+      /**
+       * Object name. Note: object names should be presumed volatile and clients should not expect
+the returned names to be consistent across runs.
+       */
+      name: string;
+      /**
+       * Object count.
+       */
+      count: number;
+    }
     
     
+    /**
+     * Retruns current DOM object counters.
+     */
     export type getDOMCountersParameters = {
     }
     export type getDOMCountersReturnValue = {
@@ -7941,6 +8262,21 @@ or hexadecimal (0x prefixed) string.
       nodes: number;
       jsEventListeners: number;
     }
+    /**
+     * Retruns DOM object counters after preparing renderer for leak detection.
+     */
+    export type getDOMCountersForLeakDetectionParameters = {
+    }
+    export type getDOMCountersForLeakDetectionReturnValue = {
+      /**
+       * DOM object counters.
+       */
+      counters: DOMCounter[];
+    }
+    /**
+     * Prepares for leak detection by terminating workers, stopping spellcheckers,
+dropping non-essential internal caches, running garbage collections, etc.
+     */
     export type prepareForLeakDetectionParameters = {
     }
     export type prepareForLeakDetectionReturnValue = {
@@ -8039,7 +8375,9 @@ file, data and other requests and responses, their headers, bodies, timing, etc.
      */
     export type LoaderId = string;
     /**
-     * Unique request identifier.
+     * Unique network request identifier.
+Note that this does not identify individual HTTP requests that are part of
+a network request.
      */
     export type RequestId = string;
     /**
@@ -8354,7 +8692,7 @@ applicable or not known.
     /**
      * The reason why request was blocked.
      */
-    export type BlockedReason = "other"|"csp"|"mixed-content"|"origin"|"inspector"|"subresource-filter"|"content-type"|"coep-frame-resource-needs-coep-header"|"coop-sandboxed-iframe-cannot-navigate-to-coop-page"|"corp-not-same-origin"|"corp-not-same-origin-after-defaulted-to-same-origin-by-coep"|"corp-not-same-origin-after-defaulted-to-same-origin-by-dip"|"corp-not-same-origin-after-defaulted-to-same-origin-by-coep-and-dip"|"corp-not-same-site";
+    export type BlockedReason = "other"|"csp"|"mixed-content"|"origin"|"inspector"|"subresource-filter"|"content-type"|"coep-frame-resource-needs-coep-header"|"coop-sandboxed-iframe-cannot-navigate-to-coop-page"|"corp-not-same-origin"|"corp-not-same-origin-after-defaulted-to-same-origin-by-coep"|"corp-not-same-origin-after-defaulted-to-same-origin-by-dip"|"corp-not-same-origin-after-defaulted-to-same-origin-by-coep-and-dip"|"corp-not-same-site"|"sri-message-signature-mismatch";
     /**
      * The reason why request was blocked.
      */
@@ -8614,6 +8952,7 @@ If the opcode isn't 1, then payloadData is a base64 encoded string representing 
       type: "parser"|"script"|"preload"|"SignedExchange"|"preflight"|"other";
       /**
        * Initiator JavaScript stack trace, set for Script only.
+Requires the Debugger domain to be enabled.
        */
       stack?: Runtime.StackTrace;
       /**
@@ -8728,11 +9067,11 @@ This is a temporary ability and it will be removed in the future.
     /**
      * Types of reasons why a cookie may not be sent with a request.
      */
-    export type CookieBlockedReason = "SecureOnly"|"NotOnPath"|"DomainMismatch"|"SameSiteStrict"|"SameSiteLax"|"SameSiteUnspecifiedTreatedAsLax"|"SameSiteNoneInsecure"|"UserPreferences"|"ThirdPartyPhaseout"|"ThirdPartyBlockedInFirstPartySet"|"UnknownError"|"SchemefulSameSiteStrict"|"SchemefulSameSiteLax"|"SchemefulSameSiteUnspecifiedTreatedAsLax"|"SamePartyFromCrossPartyContext"|"NameValuePairExceedsMaxSize";
+    export type CookieBlockedReason = "SecureOnly"|"NotOnPath"|"DomainMismatch"|"SameSiteStrict"|"SameSiteLax"|"SameSiteUnspecifiedTreatedAsLax"|"SameSiteNoneInsecure"|"UserPreferences"|"ThirdPartyPhaseout"|"ThirdPartyBlockedInFirstPartySet"|"UnknownError"|"SchemefulSameSiteStrict"|"SchemefulSameSiteLax"|"SchemefulSameSiteUnspecifiedTreatedAsLax"|"SamePartyFromCrossPartyContext"|"NameValuePairExceedsMaxSize"|"PortMismatch"|"SchemeMismatch";
     /**
      * Types of reasons why a cookie should have been blocked by 3PCD but is exempted for the request.
      */
-    export type CookieExemptionReason = "None"|"UserSetting"|"TPCDMetadata"|"TPCDDeprecationTrial"|"TPCDHeuristics"|"EnterprisePolicy"|"StorageAccess"|"TopLevelStorageAccess"|"CorsOptIn"|"Scheme";
+    export type CookieExemptionReason = "None"|"UserSetting"|"TPCDMetadata"|"TPCDDeprecationTrial"|"TopLevelTPCDDeprecationTrial"|"TPCDHeuristics"|"EnterprisePolicy"|"StorageAccess"|"TopLevelStorageAccess"|"Scheme"|"SameSiteNoneCookiesInSandbox";
     /**
      * A cookie which was not stored from a response with the corresponding reason.
      */
@@ -9048,7 +9387,7 @@ the same request (but not for redirected requests).
       initiatorIPAddressSpace: IPAddressSpace;
       privateNetworkRequestPolicy: PrivateNetworkRequestPolicy;
     }
-    export type CrossOriginOpenerPolicyValue = "SameOrigin"|"SameOriginAllowPopups"|"RestrictProperties"|"UnsafeNone"|"SameOriginPlusCoep"|"RestrictPropertiesPlusCoep";
+    export type CrossOriginOpenerPolicyValue = "SameOrigin"|"SameOriginAllowPopups"|"RestrictProperties"|"UnsafeNone"|"SameOriginPlusCoep"|"RestrictPropertiesPlusCoep"|"NoopenerAllowPopups";
     export interface CrossOriginOpenerPolicyStatus {
       value: CrossOriginOpenerPolicyValue;
       reportOnlyValue: CrossOriginOpenerPolicyValue;
@@ -9654,6 +9993,9 @@ are represented by the invalid cookie line string instead of a proper cookie.
       blockedCookies: BlockedSetCookieWithReason[];
       /**
        * Raw response headers as they were received over the wire.
+Duplicate headers in the response are represented as a single key with their values
+concatentated using `\n` as the separator.
+See also `headersText` that contains verbatim text for HTTP/1.*.
        */
       headers: Headers;
       /**
@@ -9699,6 +10041,9 @@ Only one responseReceivedEarlyHints may be fired for eached responseReceived eve
       requestId: RequestId;
       /**
        * Raw response headers as they were received over the wire.
+Duplicate headers in the response are represented as a single key with their values
+concatentated using `\n` as the separator.
+See also `headersText` that contains verbatim text for HTTP/1.*.
        */
       headers: Headers;
     }
@@ -9715,7 +10060,7 @@ or after the response was received.
 of the operation already exists und thus, the operation was abort
 preemptively (e.g. a cache hit).
        */
-      status: "Ok"|"InvalidArgument"|"MissingIssuerKeys"|"FailedPrecondition"|"ResourceExhausted"|"AlreadyExists"|"ResourceLimited"|"Unauthorized"|"BadResponse"|"InternalError"|"UnknownError"|"FulfilledLocally";
+      status: "Ok"|"InvalidArgument"|"MissingIssuerKeys"|"FailedPrecondition"|"ResourceExhausted"|"AlreadyExists"|"ResourceLimited"|"Unauthorized"|"BadResponse"|"InternalError"|"UnknownError"|"FulfilledLocally"|"SiteIssuerLimit";
       type: TrustTokenOperationType;
       requestId: RequestId;
       /**
@@ -9731,6 +10076,10 @@ preemptively (e.g. a cache hit).
        */
       issuedTokenCount?: number;
     }
+    /**
+     * Fired once security policy has been updated.
+     */
+    export type policyUpdatedPayload = void;
     /**
      * Fired once when parsing the .wbn file has succeeded.
 The event contains the information about the web bundle contents.
@@ -10404,6 +10753,26 @@ should be omitted for worker targets.
     }
     export type loadNetworkResourceReturnValue = {
       resource: LoadNetworkResourcePageResult;
+    }
+    /**
+     * Sets Controls for third-party cookie access
+Page reload is required before the new cookie bahavior will be observed
+     */
+    export type setCookieControlsParameters = {
+      /**
+       * Whether 3pc restriction is enabled.
+       */
+      enableThirdPartyCookieRestriction: boolean;
+      /**
+       * Whether 3pc grace period exception should be enabled; false by default.
+       */
+      disableThirdPartyCookieMetadata: boolean;
+      /**
+       * Whether 3pc heuristics exceptions should be enabled; false by default.
+       */
+      disableThirdPartyCookieHeuristics: boolean;
+    }
+    export type setCookieControlsReturnValue = {
     }
   }
   
@@ -11177,7 +11546,7 @@ Backend then generates 'inspectNodeRequested' event upon element selection.
     export type setShowHitTestBordersReturnValue = {
     }
     /**
-     * Request that backend shows an overlay with web vital metrics.
+     * Deprecated, no longer has any effect.
      */
     export type setShowWebVitalsParameters = {
       show: boolean;
@@ -11278,7 +11647,7 @@ as an ad.
      * All Permissions Policy features. This enum should match the one defined
 in third_party/blink/renderer/core/permissions_policy/permissions_policy_features.json5.
      */
-    export type PermissionsPolicyFeature = "accelerometer"|"ambient-light-sensor"|"attribution-reporting"|"autoplay"|"bluetooth"|"browsing-topics"|"camera"|"captured-surface-control"|"ch-dpr"|"ch-device-memory"|"ch-downlink"|"ch-ect"|"ch-prefers-color-scheme"|"ch-prefers-reduced-motion"|"ch-prefers-reduced-transparency"|"ch-rtt"|"ch-save-data"|"ch-ua"|"ch-ua-arch"|"ch-ua-bitness"|"ch-ua-platform"|"ch-ua-model"|"ch-ua-mobile"|"ch-ua-form-factors"|"ch-ua-full-version"|"ch-ua-full-version-list"|"ch-ua-platform-version"|"ch-ua-wow64"|"ch-viewport-height"|"ch-viewport-width"|"ch-width"|"clipboard-read"|"clipboard-write"|"compute-pressure"|"cross-origin-isolated"|"deferred-fetch"|"direct-sockets"|"display-capture"|"document-domain"|"encrypted-media"|"execution-while-out-of-viewport"|"execution-while-not-rendered"|"focus-without-user-activation"|"fullscreen"|"frobulate"|"gamepad"|"geolocation"|"gyroscope"|"hid"|"identity-credentials-get"|"idle-detection"|"interest-cohort"|"join-ad-interest-group"|"keyboard-map"|"local-fonts"|"magnetometer"|"microphone"|"midi"|"otp-credentials"|"payment"|"picture-in-picture"|"private-aggregation"|"private-state-token-issuance"|"private-state-token-redemption"|"publickey-credentials-create"|"publickey-credentials-get"|"run-ad-auction"|"screen-wake-lock"|"serial"|"shared-autofill"|"shared-storage"|"shared-storage-select-url"|"smart-card"|"speaker-selection"|"storage-access"|"sub-apps"|"sync-xhr"|"unload"|"usb"|"usb-unrestricted"|"vertical-scroll"|"web-printing"|"web-share"|"window-management"|"xr-spatial-tracking";
+    export type PermissionsPolicyFeature = "accelerometer"|"all-screens-capture"|"ambient-light-sensor"|"attribution-reporting"|"autoplay"|"bluetooth"|"browsing-topics"|"camera"|"captured-surface-control"|"ch-dpr"|"ch-device-memory"|"ch-downlink"|"ch-ect"|"ch-prefers-color-scheme"|"ch-prefers-reduced-motion"|"ch-prefers-reduced-transparency"|"ch-rtt"|"ch-save-data"|"ch-ua"|"ch-ua-arch"|"ch-ua-bitness"|"ch-ua-high-entropy-values"|"ch-ua-platform"|"ch-ua-model"|"ch-ua-mobile"|"ch-ua-form-factors"|"ch-ua-full-version"|"ch-ua-full-version-list"|"ch-ua-platform-version"|"ch-ua-wow64"|"ch-viewport-height"|"ch-viewport-width"|"ch-width"|"clipboard-read"|"clipboard-write"|"compute-pressure"|"controlled-frame"|"cross-origin-isolated"|"deferred-fetch"|"deferred-fetch-minimal"|"digital-credentials-get"|"direct-sockets"|"direct-sockets-private"|"display-capture"|"document-domain"|"encrypted-media"|"execution-while-out-of-viewport"|"execution-while-not-rendered"|"fenced-unpartitioned-storage-read"|"focus-without-user-activation"|"fullscreen"|"frobulate"|"gamepad"|"geolocation"|"gyroscope"|"hid"|"identity-credentials-get"|"idle-detection"|"interest-cohort"|"join-ad-interest-group"|"keyboard-map"|"local-fonts"|"magnetometer"|"media-playback-while-not-visible"|"microphone"|"midi"|"otp-credentials"|"payment"|"picture-in-picture"|"popins"|"private-aggregation"|"private-state-token-issuance"|"private-state-token-redemption"|"publickey-credentials-create"|"publickey-credentials-get"|"run-ad-auction"|"screen-wake-lock"|"serial"|"shared-autofill"|"shared-storage"|"shared-storage-select-url"|"smart-card"|"speaker-selection"|"storage-access"|"sub-apps"|"sync-xhr"|"unload"|"usb"|"usb-unrestricted"|"vertical-scroll"|"web-app-installation"|"web-printing"|"web-share"|"window-management"|"xr-spatial-tracking";
     /**
      * Reason for a permissions policy feature to be disabled.
      */
@@ -11693,7 +12062,7 @@ Example URLs: http://www.google.com/file.html -> "google.com"
        */
       fixed?: number;
     }
-    export type ClientNavigationReason = "formSubmissionGet"|"formSubmissionPost"|"httpHeaderRefresh"|"scriptInitiated"|"metaTagRefresh"|"pageBlockInterstitial"|"reload"|"anchorClick";
+    export type ClientNavigationReason = "anchorClick"|"formSubmissionGet"|"formSubmissionPost"|"httpHeaderRefresh"|"initialFrameNavigation"|"metaTagRefresh"|"other"|"pageBlockInterstitial"|"reload"|"scriptInitiated";
     export type ClientNavigationDisposition = "currentTab"|"newTab"|"newWindow"|"download";
     export interface InstallabilityErrorArgument {
       /**
@@ -11866,7 +12235,7 @@ https://github.com/WICG/manifest-incubations/blob/gh-pages/scope_extensions-expl
     /**
      * List of not restored reasons for back-forward cache.
      */
-    export type BackForwardCacheNotRestoredReason = "NotPrimaryMainFrame"|"BackForwardCacheDisabled"|"RelatedActiveContentsExist"|"HTTPStatusNotOK"|"SchemeNotHTTPOrHTTPS"|"Loading"|"WasGrantedMediaAccess"|"DisableForRenderFrameHostCalled"|"DomainNotAllowed"|"HTTPMethodNotGET"|"SubframeIsNavigating"|"Timeout"|"CacheLimit"|"JavaScriptExecution"|"RendererProcessKilled"|"RendererProcessCrashed"|"SchedulerTrackedFeatureUsed"|"ConflictingBrowsingInstance"|"CacheFlushed"|"ServiceWorkerVersionActivation"|"SessionRestored"|"ServiceWorkerPostMessage"|"EnteredBackForwardCacheBeforeServiceWorkerHostAdded"|"RenderFrameHostReused_SameSite"|"RenderFrameHostReused_CrossSite"|"ServiceWorkerClaim"|"IgnoreEventAndEvict"|"HaveInnerContents"|"TimeoutPuttingInCache"|"BackForwardCacheDisabledByLowMemory"|"BackForwardCacheDisabledByCommandLine"|"NetworkRequestDatapipeDrainedAsBytesConsumer"|"NetworkRequestRedirected"|"NetworkRequestTimeout"|"NetworkExceedsBufferLimit"|"NavigationCancelledWhileRestoring"|"NotMostRecentNavigationEntry"|"BackForwardCacheDisabledForPrerender"|"UserAgentOverrideDiffers"|"ForegroundCacheLimit"|"BrowsingInstanceNotSwapped"|"BackForwardCacheDisabledForDelegate"|"UnloadHandlerExistsInMainFrame"|"UnloadHandlerExistsInSubFrame"|"ServiceWorkerUnregistration"|"CacheControlNoStore"|"CacheControlNoStoreCookieModified"|"CacheControlNoStoreHTTPOnlyCookieModified"|"NoResponseHead"|"Unknown"|"ActivationNavigationsDisallowedForBug1234857"|"ErrorDocument"|"FencedFramesEmbedder"|"CookieDisabled"|"HTTPAuthRequired"|"CookieFlushed"|"BroadcastChannelOnMessage"|"WebViewSettingsChanged"|"WebViewJavaScriptObjectChanged"|"WebViewMessageListenerInjected"|"WebViewSafeBrowsingAllowlistChanged"|"WebViewDocumentStartJavascriptChanged"|"WebSocket"|"WebTransport"|"WebRTC"|"MainResourceHasCacheControlNoStore"|"MainResourceHasCacheControlNoCache"|"SubresourceHasCacheControlNoStore"|"SubresourceHasCacheControlNoCache"|"ContainsPlugins"|"DocumentLoaded"|"OutstandingNetworkRequestOthers"|"RequestedMIDIPermission"|"RequestedAudioCapturePermission"|"RequestedVideoCapturePermission"|"RequestedBackForwardCacheBlockedSensors"|"RequestedBackgroundWorkPermission"|"BroadcastChannel"|"WebXR"|"SharedWorker"|"WebLocks"|"WebHID"|"WebShare"|"RequestedStorageAccessGrant"|"WebNfc"|"OutstandingNetworkRequestFetch"|"OutstandingNetworkRequestXHR"|"AppBanner"|"Printing"|"WebDatabase"|"PictureInPicture"|"Portal"|"SpeechRecognizer"|"IdleManager"|"PaymentManager"|"SpeechSynthesis"|"KeyboardLock"|"WebOTPService"|"OutstandingNetworkRequestDirectSocket"|"InjectedJavascript"|"InjectedStyleSheet"|"KeepaliveRequest"|"IndexedDBEvent"|"Dummy"|"JsNetworkRequestReceivedCacheControlNoStoreResource"|"WebRTCSticky"|"WebTransportSticky"|"WebSocketSticky"|"SmartCard"|"LiveMediaStreamTrack"|"UnloadHandler"|"ParserAborted"|"ContentSecurityHandler"|"ContentWebAuthenticationAPI"|"ContentFileChooser"|"ContentSerial"|"ContentFileSystemAccess"|"ContentMediaDevicesDispatcherHost"|"ContentWebBluetooth"|"ContentWebUSB"|"ContentMediaSessionService"|"ContentScreenReader"|"EmbedderPopupBlockerTabHelper"|"EmbedderSafeBrowsingTriggeredPopupBlocker"|"EmbedderSafeBrowsingThreatDetails"|"EmbedderAppBannerManager"|"EmbedderDomDistillerViewerSource"|"EmbedderDomDistillerSelfDeletingRequestDelegate"|"EmbedderOomInterventionTabHelper"|"EmbedderOfflinePage"|"EmbedderChromePasswordManagerClientBindCredentialManager"|"EmbedderPermissionRequestManager"|"EmbedderModalDialog"|"EmbedderExtensions"|"EmbedderExtensionMessaging"|"EmbedderExtensionMessagingForOpenPort"|"EmbedderExtensionSentMessageToCachedFrame"|"RequestedByWebViewClient";
+    export type BackForwardCacheNotRestoredReason = "NotPrimaryMainFrame"|"BackForwardCacheDisabled"|"RelatedActiveContentsExist"|"HTTPStatusNotOK"|"SchemeNotHTTPOrHTTPS"|"Loading"|"WasGrantedMediaAccess"|"DisableForRenderFrameHostCalled"|"DomainNotAllowed"|"HTTPMethodNotGET"|"SubframeIsNavigating"|"Timeout"|"CacheLimit"|"JavaScriptExecution"|"RendererProcessKilled"|"RendererProcessCrashed"|"SchedulerTrackedFeatureUsed"|"ConflictingBrowsingInstance"|"CacheFlushed"|"ServiceWorkerVersionActivation"|"SessionRestored"|"ServiceWorkerPostMessage"|"EnteredBackForwardCacheBeforeServiceWorkerHostAdded"|"RenderFrameHostReused_SameSite"|"RenderFrameHostReused_CrossSite"|"ServiceWorkerClaim"|"IgnoreEventAndEvict"|"HaveInnerContents"|"TimeoutPuttingInCache"|"BackForwardCacheDisabledByLowMemory"|"BackForwardCacheDisabledByCommandLine"|"NetworkRequestDatapipeDrainedAsBytesConsumer"|"NetworkRequestRedirected"|"NetworkRequestTimeout"|"NetworkExceedsBufferLimit"|"NavigationCancelledWhileRestoring"|"NotMostRecentNavigationEntry"|"BackForwardCacheDisabledForPrerender"|"UserAgentOverrideDiffers"|"ForegroundCacheLimit"|"BrowsingInstanceNotSwapped"|"BackForwardCacheDisabledForDelegate"|"UnloadHandlerExistsInMainFrame"|"UnloadHandlerExistsInSubFrame"|"ServiceWorkerUnregistration"|"CacheControlNoStore"|"CacheControlNoStoreCookieModified"|"CacheControlNoStoreHTTPOnlyCookieModified"|"NoResponseHead"|"Unknown"|"ActivationNavigationsDisallowedForBug1234857"|"ErrorDocument"|"FencedFramesEmbedder"|"CookieDisabled"|"HTTPAuthRequired"|"CookieFlushed"|"BroadcastChannelOnMessage"|"WebViewSettingsChanged"|"WebViewJavaScriptObjectChanged"|"WebViewMessageListenerInjected"|"WebViewSafeBrowsingAllowlistChanged"|"WebViewDocumentStartJavascriptChanged"|"WebSocket"|"WebTransport"|"WebRTC"|"MainResourceHasCacheControlNoStore"|"MainResourceHasCacheControlNoCache"|"SubresourceHasCacheControlNoStore"|"SubresourceHasCacheControlNoCache"|"ContainsPlugins"|"DocumentLoaded"|"OutstandingNetworkRequestOthers"|"RequestedMIDIPermission"|"RequestedAudioCapturePermission"|"RequestedVideoCapturePermission"|"RequestedBackForwardCacheBlockedSensors"|"RequestedBackgroundWorkPermission"|"BroadcastChannel"|"WebXR"|"SharedWorker"|"WebLocks"|"WebHID"|"WebShare"|"RequestedStorageAccessGrant"|"WebNfc"|"OutstandingNetworkRequestFetch"|"OutstandingNetworkRequestXHR"|"AppBanner"|"Printing"|"WebDatabase"|"PictureInPicture"|"SpeechRecognizer"|"IdleManager"|"PaymentManager"|"SpeechSynthesis"|"KeyboardLock"|"WebOTPService"|"OutstandingNetworkRequestDirectSocket"|"InjectedJavascript"|"InjectedStyleSheet"|"KeepaliveRequest"|"IndexedDBEvent"|"Dummy"|"JsNetworkRequestReceivedCacheControlNoStoreResource"|"WebRTCSticky"|"WebTransportSticky"|"WebSocketSticky"|"SmartCard"|"LiveMediaStreamTrack"|"UnloadHandler"|"ParserAborted"|"ContentSecurityHandler"|"ContentWebAuthenticationAPI"|"ContentFileChooser"|"ContentSerial"|"ContentFileSystemAccess"|"ContentMediaDevicesDispatcherHost"|"ContentWebBluetooth"|"ContentWebUSB"|"ContentMediaSessionService"|"ContentScreenReader"|"ContentDiscarded"|"EmbedderPopupBlockerTabHelper"|"EmbedderSafeBrowsingTriggeredPopupBlocker"|"EmbedderSafeBrowsingThreatDetails"|"EmbedderAppBannerManager"|"EmbedderDomDistillerViewerSource"|"EmbedderDomDistillerSelfDeletingRequestDelegate"|"EmbedderOomInterventionTabHelper"|"EmbedderOfflinePage"|"EmbedderChromePasswordManagerClientBindCredentialManager"|"EmbedderPermissionRequestManager"|"EmbedderModalDialog"|"EmbedderExtensions"|"EmbedderExtensionMessaging"|"EmbedderExtensionMessagingForOpenPort"|"EmbedderExtensionSentMessageToCachedFrame"|"RequestedByWebViewClient"|"PostMessageByWebViewClient";
     /**
      * Types of not restored reasons for back-forward cache.
      */
@@ -11978,6 +12347,16 @@ dependent on the reason:
       reason: "remove"|"swap";
     }
     /**
+     * Fired before frame subtree is detached. Emitted before any frame of the
+subtree is actually detached.
+     */
+    export type frameSubtreeWillBeDetachedPayload = {
+      /**
+       * Id of the frame that is the root of the subtree that will be detached.
+       */
+      frameId: FrameId;
+    }
+    /**
      * Fired once navigation of the frame has completed. Frame is now associated with the new loader.
      */
     export type frameNavigatedPayload = {
@@ -11997,6 +12376,33 @@ dependent on the reason:
       frame: Frame;
     }
     export type frameResizedPayload = void;
+    /**
+     * Fired when a navigation starts. This event is fired for both
+renderer-initiated and browser-initiated navigations. For renderer-initiated
+navigations, the event is fired after `frameRequestedNavigation`.
+Navigation may still be cancelled after the event is issued. Multiple events
+can be fired for a single navigation, for example, when a same-document
+navigation becomes a cross-document navigation (such as in the case of a
+frameset).
+     */
+    export type frameStartedNavigatingPayload = {
+      /**
+       * ID of the frame that is being navigated.
+       */
+      frameId: FrameId;
+      /**
+       * The URL the navigation started with. The final URL can be different.
+       */
+      url: string;
+      /**
+       * Loader identifier. Even though it is present in case of same-document
+navigation, the previously committed loaderId would not change unless
+the navigation changes from a same-document to a cross-document
+navigation.
+       */
+      loaderId: Network.LoaderId;
+      navigationType: "reload"|"reloadBypassingCache"|"restore"|"restoreWithPost"|"historySameDocument"|"historyDifferentDocument"|"sameDocument"|"differentDocument";
+    }
     /**
      * Fired when a renderer-initiated navigation is requested.
 Navigation may still be cancelled after the event is issued.
@@ -12154,7 +12560,8 @@ the page execution. Execution can be resumed via calling Page.handleJavaScriptDi
       defaultPrompt?: string;
     }
     /**
-     * Fired for top level page lifecycle events such as navigation, load, paint, etc.
+     * Fired for lifecycle events (navigation, load, paint, etc) in the current
+target (including local frames).
      */
     export type lifecycleEventPayload = {
       /**
@@ -12207,6 +12614,10 @@ when bfcache navigation fails.
        * Frame's new url.
        */
       url: string;
+      /**
+       * Navigation type
+       */
+      navigationType: "fragment"|"historyApi"|"other";
     }
     /**
      * Compressed image data requested by the `startScreencast`.
@@ -13842,7 +14253,7 @@ For cached script it is the last time the cache entry was validated.
     /**
      * Enum of possible storage types.
      */
-    export type StorageType = "appcache"|"cookies"|"file_systems"|"indexeddb"|"local_storage"|"shader_cache"|"websql"|"service_workers"|"cache_storage"|"interest_groups"|"shared_storage"|"storage_buckets"|"all"|"other";
+    export type StorageType = "cookies"|"file_systems"|"indexeddb"|"local_storage"|"shader_cache"|"websql"|"service_workers"|"cache_storage"|"interest_groups"|"shared_storage"|"storage_buckets"|"all"|"other";
     /**
      * Usage for a storage type.
      */
@@ -14053,6 +14464,34 @@ int
       eventReportWindows: AttributionReportingEventReportWindows;
     }
     export type AttributionReportingTriggerDataMatching = "exact"|"modulus";
+    export interface AttributionReportingAggregatableDebugReportingData {
+      keyPiece: UnsignedInt128AsBase16;
+      /**
+       * number instead of integer because not all uint32 can be represented by
+int
+       */
+      value: number;
+      types: string[];
+    }
+    export interface AttributionReportingAggregatableDebugReportingConfig {
+      /**
+       * number instead of integer because not all uint32 can be represented by
+int, only present for source registrations
+       */
+      budget?: number;
+      keyPiece: UnsignedInt128AsBase16;
+      debugData: AttributionReportingAggregatableDebugReportingData[];
+      aggregationCoordinatorOrigin?: string;
+    }
+    export interface AttributionScopesData {
+      values: string[];
+      /**
+       * number instead of integer because not all uint32 can be represented by
+int
+       */
+      limit: number;
+      maxEventStates: number;
+    }
     export interface AttributionReportingSourceRegistration {
       time: Network.TimeSinceEpoch;
       /**
@@ -14074,8 +14513,12 @@ int
       aggregationKeys: AttributionReportingAggregationKeysEntry[];
       debugKey?: UnsignedInt64AsBase10;
       triggerDataMatching: AttributionReportingTriggerDataMatching;
+      destinationLimitPriority: SignedInt64AsBase10;
+      aggregatableDebugReportingConfig: AttributionReportingAggregatableDebugReportingConfig;
+      scopesData?: AttributionScopesData;
+      maxEventLevelReports: number;
     }
-    export type AttributionReportingSourceRegistrationResult = "success"|"internalError"|"insufficientSourceCapacity"|"insufficientUniqueDestinationCapacity"|"excessiveReportingOrigins"|"prohibitedByBrowserPolicy"|"successNoised"|"destinationReportingLimitReached"|"destinationGlobalLimitReached"|"destinationBothLimitsReached"|"reportingOriginsPerSiteLimitReached"|"exceedsMaxChannelCapacity"|"exceedsMaxTriggerStateCardinality";
+    export type AttributionReportingSourceRegistrationResult = "success"|"internalError"|"insufficientSourceCapacity"|"insufficientUniqueDestinationCapacity"|"excessiveReportingOrigins"|"prohibitedByBrowserPolicy"|"successNoised"|"destinationReportingLimitReached"|"destinationGlobalLimitReached"|"destinationBothLimitsReached"|"reportingOriginsPerSiteLimitReached"|"exceedsMaxChannelCapacity"|"exceedsMaxScopesChannelCapacity"|"exceedsMaxTriggerStateCardinality"|"exceedsMaxEventStatesLimit"|"destinationPerDayReportingLimitReached";
     export type AttributionReportingSourceRegistrationTimeConfig = "include"|"exclude";
     export interface AttributionReportingAggregatableValueDictEntry {
       key: string;
@@ -14084,6 +14527,7 @@ int
 int
        */
       value: number;
+      filteringId: UnsignedInt64AsBase10;
     }
     export interface AttributionReportingAggregatableValueEntry {
       values: AttributionReportingAggregatableValueDictEntry[];
@@ -14111,13 +14555,16 @@ int
       eventTriggerData: AttributionReportingEventTriggerData[];
       aggregatableTriggerData: AttributionReportingAggregatableTriggerData[];
       aggregatableValues: AttributionReportingAggregatableValueEntry[];
+      aggregatableFilteringIdMaxBytes: number;
       debugReporting: boolean;
       aggregationCoordinatorOrigin?: string;
       sourceRegistrationTimeConfig: AttributionReportingSourceRegistrationTimeConfig;
       triggerContextId?: string;
+      aggregatableDebugReportingConfig: AttributionReportingAggregatableDebugReportingConfig;
+      scopes: string[];
     }
     export type AttributionReportingEventLevelResult = "success"|"successDroppedLowerPriority"|"internalError"|"noCapacityForAttributionDestination"|"noMatchingSources"|"deduplicated"|"excessiveAttributions"|"priorityTooLow"|"neverAttributedSource"|"excessiveReportingOrigins"|"noMatchingSourceFilterData"|"prohibitedByBrowserPolicy"|"noMatchingConfigurations"|"excessiveReports"|"falselyAttributedSource"|"reportWindowPassed"|"notRegistered"|"reportWindowNotStarted"|"noMatchingTriggerData";
-    export type AttributionReportingAggregatableResult = "success"|"internalError"|"noCapacityForAttributionDestination"|"noMatchingSources"|"excessiveAttributions"|"excessiveReportingOrigins"|"noHistograms"|"insufficientBudget"|"noMatchingSourceFilterData"|"notRegistered"|"prohibitedByBrowserPolicy"|"deduplicated"|"reportWindowPassed"|"excessiveReports";
+    export type AttributionReportingAggregatableResult = "success"|"internalError"|"noCapacityForAttributionDestination"|"noMatchingSources"|"excessiveAttributions"|"excessiveReportingOrigins"|"noHistograms"|"insufficientBudget"|"insufficientNamedBudget"|"noMatchingSourceFilterData"|"notRegistered"|"prohibitedByBrowserPolicy"|"deduplicated"|"reportWindowPassed"|"excessiveReports";
     /**
      * A single Related Website Set object.
      */
@@ -14718,6 +15165,28 @@ session. The effective Related Website Sets will not change during a browser ses
     export type getRelatedWebsiteSetsReturnValue = {
       sets: RelatedWebsiteSet[];
     }
+    /**
+     * Returns the list of URLs from a page and its embedded resources that match
+existing grace period URL pattern rules.
+https://developers.google.com/privacy-sandbox/cookies/temporary-exceptions/grace-period
+     */
+    export type getAffectedUrlsForThirdPartyCookieMetadataParameters = {
+      /**
+       * The URL of the page currently being visited.
+       */
+      firstPartyUrl: string;
+      /**
+       * The list of embedded resource URLs from the page.
+       */
+      thirdPartyUrls: string[];
+    }
+    export type getAffectedUrlsForThirdPartyCookieMetadataReturnValue = {
+      /**
+       * Array of matching URLs. If there is a primary pattern match for the first-
+party URL, only the first-party URL is returned in the array.
+       */
+      matchedUrls: string[];
+    }
   }
   
   /**
@@ -14980,7 +15449,7 @@ supported.
       browserContextId?: Browser.BrowserContextID;
       /**
        * Provides additional details for specific target types. For example, for
-the type of "page", this may be set to "portal" or "prerender".
+the type of "page", this may be set to "prerender".
        */
       subtype?: string;
     }
@@ -15010,6 +15479,10 @@ If filter is not specified, the one assumed is
       host: string;
       port: number;
     }
+    /**
+     * The state of the target window.
+     */
+    export type WindowState = "normal"|"minimized"|"maximized"|"fullscreen";
     
     /**
      * Issued when attached to target because of auto-attach or `attachToTarget` command.
@@ -15202,29 +15675,42 @@ Parts of the URL other than those constituting origin are ignored.
        */
       url: string;
       /**
-       * Frame width in DIP (headless chrome only).
+       * Frame left origin in DIP (requires newWindow to be true or headless shell).
+       */
+      left?: number;
+      /**
+       * Frame top origin in DIP (requires newWindow to be true or headless shell).
+       */
+      top?: number;
+      /**
+       * Frame width in DIP (requires newWindow to be true or headless shell).
        */
       width?: number;
       /**
-       * Frame height in DIP (headless chrome only).
+       * Frame height in DIP (requires newWindow to be true or headless shell).
        */
       height?: number;
+      /**
+       * Frame window state (requires newWindow to be true or headless shell).
+Default is normal.
+       */
+      windowState?: WindowState;
       /**
        * The browser context to create the page in.
        */
       browserContextId?: Browser.BrowserContextID;
       /**
-       * Whether BeginFrames for this target will be controlled via DevTools (headless chrome only,
+       * Whether BeginFrames for this target will be controlled via DevTools (headless shell only,
 not supported on MacOS yet, false by default).
        */
       enableBeginFrameControl?: boolean;
       /**
-       * Whether to create a new Window or Tab (chrome-only, false by default).
+       * Whether to create a new Window or Tab (false by default, not supported by headless shell).
        */
       newWindow?: boolean;
       /**
-       * Whether to create the target in background or foreground (chrome-only,
-false by default).
+       * Whether to create the target in background or foreground (false by default, not supported
+by headless shell).
        */
       background?: boolean;
       /**
@@ -15651,6 +16137,8 @@ are ignored.
   export module Fetch {
     /**
      * Unique request identifier.
+Note that this does not identify individual HTTP requests that are part of
+a network request.
      */
     export type RequestId = string;
     /**
@@ -16033,7 +16521,7 @@ https://webaudio.github.io/web-audio-api/
     /**
      * Enum of AudioContextState from the spec
      */
-    export type ContextState = "suspended"|"running"|"closed";
+    export type ContextState = "suspended"|"running"|"closed"|"interrupted";
     /**
      * Enum of AudioNode types
      */
@@ -16365,12 +16853,39 @@ flag set to this value. Defaults to the authenticator's
 defaultBackupState value.
        */
       backupState?: boolean;
+      /**
+       * The credential's user.name property. Equivalent to empty if not set.
+https://w3c.github.io/webauthn/#dom-publickeycredentialentity-name
+       */
+      userName?: string;
+      /**
+       * The credential's user.displayName property. Equivalent to empty if
+not set.
+https://w3c.github.io/webauthn/#dom-publickeycredentialuserentity-displayname
+       */
+      userDisplayName?: string;
     }
     
     /**
      * Triggered when a credential is added to an authenticator.
      */
     export type credentialAddedPayload = {
+      authenticatorId: AuthenticatorId;
+      credential: Credential;
+    }
+    /**
+     * Triggered when a credential is deleted, e.g. through
+PublicKeyCredential.signalUnknownCredential().
+     */
+    export type credentialDeletedPayload = {
+      authenticatorId: AuthenticatorId;
+      credentialId: binary;
+    }
+    /**
+     * Triggered when a credential is updated, e.g. through
+PublicKeyCredential.signalCurrentUserDetails().
+     */
+    export type credentialUpdatedPayload = {
       authenticatorId: AuthenticatorId;
       credential: Credential;
     }
@@ -16805,9 +17320,19 @@ possible for multiple rule sets and links to trigger a single attempt.
       nodeIds: DOM.BackendNodeId[];
     }
     /**
+     * Chrome manages different types of preloads together using a
+concept of preloading pipeline. For example, if a site uses a
+SpeculationRules for prerender, Chrome first starts a prefetch and
+then upgrades it to prerender.
+
+CDP events for them are emitted separately but they share
+`PreloadPipelineId`.
+     */
+    export type PreloadPipelineId = string;
+    /**
      * List of FinalStatus reasons for Prerender2.
      */
-    export type PrerenderFinalStatus = "Activated"|"Destroyed"|"LowEndDevice"|"InvalidSchemeRedirect"|"InvalidSchemeNavigation"|"NavigationRequestBlockedByCsp"|"MainFrameNavigation"|"MojoBinderPolicy"|"RendererProcessCrashed"|"RendererProcessKilled"|"Download"|"TriggerDestroyed"|"NavigationNotCommitted"|"NavigationBadHttpStatus"|"ClientCertRequested"|"NavigationRequestNetworkError"|"CancelAllHostsForTesting"|"DidFailLoad"|"Stop"|"SslCertificateError"|"LoginAuthRequested"|"UaChangeRequiresReload"|"BlockedByClient"|"AudioOutputDeviceRequested"|"MixedContent"|"TriggerBackgrounded"|"MemoryLimitExceeded"|"DataSaverEnabled"|"TriggerUrlHasEffectiveUrl"|"ActivatedBeforeStarted"|"InactivePageRestriction"|"StartFailed"|"TimeoutBackgrounded"|"CrossSiteRedirectInInitialNavigation"|"CrossSiteNavigationInInitialNavigation"|"SameSiteCrossOriginRedirectNotOptInInInitialNavigation"|"SameSiteCrossOriginNavigationNotOptInInInitialNavigation"|"ActivationNavigationParameterMismatch"|"ActivatedInBackground"|"EmbedderHostDisallowed"|"ActivationNavigationDestroyedBeforeSuccess"|"TabClosedByUserGesture"|"TabClosedWithoutUserGesture"|"PrimaryMainFrameRendererProcessCrashed"|"PrimaryMainFrameRendererProcessKilled"|"ActivationFramePolicyNotCompatible"|"PreloadingDisabled"|"BatterySaverEnabled"|"ActivatedDuringMainFrameNavigation"|"PreloadingUnsupportedByWebContents"|"CrossSiteRedirectInMainFrameNavigation"|"CrossSiteNavigationInMainFrameNavigation"|"SameSiteCrossOriginRedirectNotOptInInMainFrameNavigation"|"SameSiteCrossOriginNavigationNotOptInInMainFrameNavigation"|"MemoryPressureOnTrigger"|"MemoryPressureAfterTriggered"|"PrerenderingDisabledByDevTools"|"SpeculationRuleRemoved"|"ActivatedWithAuxiliaryBrowsingContexts"|"MaxNumOfRunningEagerPrerendersExceeded"|"MaxNumOfRunningNonEagerPrerendersExceeded"|"MaxNumOfRunningEmbedderPrerendersExceeded"|"PrerenderingUrlHasEffectiveUrl"|"RedirectedPrerenderingUrlHasEffectiveUrl"|"ActivationUrlHasEffectiveUrl"|"JavaScriptInterfaceAdded"|"JavaScriptInterfaceRemoved"|"AllPrerenderingCanceled";
+    export type PrerenderFinalStatus = "Activated"|"Destroyed"|"LowEndDevice"|"InvalidSchemeRedirect"|"InvalidSchemeNavigation"|"NavigationRequestBlockedByCsp"|"MainFrameNavigation"|"MojoBinderPolicy"|"RendererProcessCrashed"|"RendererProcessKilled"|"Download"|"TriggerDestroyed"|"NavigationNotCommitted"|"NavigationBadHttpStatus"|"ClientCertRequested"|"NavigationRequestNetworkError"|"CancelAllHostsForTesting"|"DidFailLoad"|"Stop"|"SslCertificateError"|"LoginAuthRequested"|"UaChangeRequiresReload"|"BlockedByClient"|"AudioOutputDeviceRequested"|"MixedContent"|"TriggerBackgrounded"|"MemoryLimitExceeded"|"DataSaverEnabled"|"TriggerUrlHasEffectiveUrl"|"ActivatedBeforeStarted"|"InactivePageRestriction"|"StartFailed"|"TimeoutBackgrounded"|"CrossSiteRedirectInInitialNavigation"|"CrossSiteNavigationInInitialNavigation"|"SameSiteCrossOriginRedirectNotOptInInInitialNavigation"|"SameSiteCrossOriginNavigationNotOptInInInitialNavigation"|"ActivationNavigationParameterMismatch"|"ActivatedInBackground"|"EmbedderHostDisallowed"|"ActivationNavigationDestroyedBeforeSuccess"|"TabClosedByUserGesture"|"TabClosedWithoutUserGesture"|"PrimaryMainFrameRendererProcessCrashed"|"PrimaryMainFrameRendererProcessKilled"|"ActivationFramePolicyNotCompatible"|"PreloadingDisabled"|"BatterySaverEnabled"|"ActivatedDuringMainFrameNavigation"|"PreloadingUnsupportedByWebContents"|"CrossSiteRedirectInMainFrameNavigation"|"CrossSiteNavigationInMainFrameNavigation"|"SameSiteCrossOriginRedirectNotOptInInMainFrameNavigation"|"SameSiteCrossOriginNavigationNotOptInInMainFrameNavigation"|"MemoryPressureOnTrigger"|"MemoryPressureAfterTriggered"|"PrerenderingDisabledByDevTools"|"SpeculationRuleRemoved"|"ActivatedWithAuxiliaryBrowsingContexts"|"MaxNumOfRunningEagerPrerendersExceeded"|"MaxNumOfRunningNonEagerPrerendersExceeded"|"MaxNumOfRunningEmbedderPrerendersExceeded"|"PrerenderingUrlHasEffectiveUrl"|"RedirectedPrerenderingUrlHasEffectiveUrl"|"ActivationUrlHasEffectiveUrl"|"JavaScriptInterfaceAdded"|"JavaScriptInterfaceRemoved"|"AllPrerenderingCanceled"|"WindowClosed"|"SlowNetwork"|"OtherPrerenderedPageActivated"|"V8OptimizerDisabled"|"PrerenderFailedDuringPrefetch";
     /**
      * Preloading status values, see also PreloadingTriggeringOutcome. This
 status is shared by prefetchStatusUpdated and prerenderStatusUpdated.
@@ -16817,7 +17342,7 @@ status is shared by prefetchStatusUpdated and prerenderStatusUpdated.
      * TODO(https://crbug.com/1384419): revisit the list of PrefetchStatus and
 filter out the ones that aren't necessary to the developers.
      */
-    export type PrefetchStatus = "PrefetchAllowed"|"PrefetchFailedIneligibleRedirect"|"PrefetchFailedInvalidRedirect"|"PrefetchFailedMIMENotSupported"|"PrefetchFailedNetError"|"PrefetchFailedNon2XX"|"PrefetchFailedPerPageLimitExceeded"|"PrefetchEvictedAfterCandidateRemoved"|"PrefetchEvictedForNewerPrefetch"|"PrefetchHeldback"|"PrefetchIneligibleRetryAfter"|"PrefetchIsPrivacyDecoy"|"PrefetchIsStale"|"PrefetchNotEligibleBrowserContextOffTheRecord"|"PrefetchNotEligibleDataSaverEnabled"|"PrefetchNotEligibleExistingProxy"|"PrefetchNotEligibleHostIsNonUnique"|"PrefetchNotEligibleNonDefaultStoragePartition"|"PrefetchNotEligibleSameSiteCrossOriginPrefetchRequiredProxy"|"PrefetchNotEligibleSchemeIsNotHttps"|"PrefetchNotEligibleUserHasCookies"|"PrefetchNotEligibleUserHasServiceWorker"|"PrefetchNotEligibleBatterySaverEnabled"|"PrefetchNotEligiblePreloadingDisabled"|"PrefetchNotFinishedInTime"|"PrefetchNotStarted"|"PrefetchNotUsedCookiesChanged"|"PrefetchProxyNotAvailable"|"PrefetchResponseUsed"|"PrefetchSuccessfulButNotUsed"|"PrefetchNotUsedProbeFailed";
+    export type PrefetchStatus = "PrefetchAllowed"|"PrefetchFailedIneligibleRedirect"|"PrefetchFailedInvalidRedirect"|"PrefetchFailedMIMENotSupported"|"PrefetchFailedNetError"|"PrefetchFailedNon2XX"|"PrefetchEvictedAfterCandidateRemoved"|"PrefetchEvictedForNewerPrefetch"|"PrefetchHeldback"|"PrefetchIneligibleRetryAfter"|"PrefetchIsPrivacyDecoy"|"PrefetchIsStale"|"PrefetchNotEligibleBrowserContextOffTheRecord"|"PrefetchNotEligibleDataSaverEnabled"|"PrefetchNotEligibleExistingProxy"|"PrefetchNotEligibleHostIsNonUnique"|"PrefetchNotEligibleNonDefaultStoragePartition"|"PrefetchNotEligibleSameSiteCrossOriginPrefetchRequiredProxy"|"PrefetchNotEligibleSchemeIsNotHttps"|"PrefetchNotEligibleUserHasCookies"|"PrefetchNotEligibleUserHasServiceWorker"|"PrefetchNotEligibleBatterySaverEnabled"|"PrefetchNotEligiblePreloadingDisabled"|"PrefetchNotFinishedInTime"|"PrefetchNotStarted"|"PrefetchNotUsedCookiesChanged"|"PrefetchProxyNotAvailable"|"PrefetchResponseUsed"|"PrefetchSuccessfulButNotUsed"|"PrefetchNotUsedProbeFailed";
     /**
      * Information of headers to be displayed when the header mismatch occurred.
      */
@@ -16851,6 +17376,7 @@ filter out the ones that aren't necessary to the developers.
      */
     export type prefetchStatusUpdatedPayload = {
       key: PreloadingAttemptKey;
+      pipelineId: PreloadPipelineId;
       /**
        * The frame id of the frame initiating prefetch.
        */
@@ -16865,6 +17391,7 @@ filter out the ones that aren't necessary to the developers.
      */
     export type prerenderStatusUpdatedPayload = {
       key: PreloadingAttemptKey;
+      pipelineId: PreloadPipelineId;
       status: PreloadingStatus;
       prerenderStatus?: PrerenderFinalStatus;
       /**
@@ -17021,6 +17548,10 @@ https://www.iana.org/assignments/media-types/media-types.xhtml
       accepts: FileHandlerAccept[];
       displayName: string;
     }
+    /**
+     * If user prefers opening the app in browser or an app window.
+     */
+    export type DisplayMode = "standalone"|"browser";
     
     
     /**
@@ -17061,7 +17592,7 @@ manifestId.
     export type installReturnValue = {
     }
     /**
-     * Uninstals the given manifest_id and closes any opened app windows.
+     * Uninstalls the given manifest_id and closes any opened app windows.
      */
     export type uninstallParameters = {
       manifestId: string;
@@ -17090,7 +17621,7 @@ the files. The API returns one or more page Target.TargetIDs which can be
 used to attach to via Target.attachToTarget or similar APIs.
 If some files in the parameters cannot be handled by the web app, they will
 be ignored. If none of the files can be handled, this API returns an error.
-If no files provided as the parameter, this API also returns an error.
+If no files are provided as the parameter, this API also returns an error.
 
 According to the definition of the file handlers in the manifest file, one
 Target.TargetID may represent a page handling one or more files. The order
@@ -17111,12 +17642,138 @@ TODO(crbug.com/339454034): Check the existences of the input files.
     /**
      * Opens the current page in its web app identified by the manifest id, needs
 to be called on a page target. This function returns immediately without
-waiting for the app finishing loading.
+waiting for the app to finish loading.
      */
     export type openCurrentPageInAppParameters = {
       manifestId: string;
     }
     export type openCurrentPageInAppReturnValue = {
+    }
+    /**
+     * Changes user settings of the web app identified by its manifestId. If the
+app was not installed, this command returns an error. Unset parameters will
+be ignored; unrecognized values will cause an error.
+
+Unlike the ones defined in the manifest files of the web apps, these
+settings are provided by the browser and controlled by the users, they
+impact the way the browser handling the web apps.
+
+See the comment of each parameter.
+     */
+    export type changeAppUserSettingsParameters = {
+      manifestId: string;
+      /**
+       * If user allows the links clicked on by the user in the app's scope, or
+extended scope if the manifest has scope extensions and the flags
+`DesktopPWAsLinkCapturingWithScopeExtensions` and
+`WebAppEnableScopeExtensions` are enabled.
+
+Note, the API does not support resetting the linkCapturing to the
+initial value, uninstalling and installing the web app again will reset
+it.
+
+TODO(crbug.com/339453269): Setting this value on ChromeOS is not
+supported yet.
+       */
+      linkCapturing?: boolean;
+      displayMode?: DisplayMode;
+    }
+    export type changeAppUserSettingsReturnValue = {
+    }
+  }
+  
+  /**
+   * This domain allows configuring virtual Bluetooth devices to test
+the web-bluetooth API.
+   */
+  export module BluetoothEmulation {
+    /**
+     * Indicates the various states of Central.
+     */
+    export type CentralState = "absent"|"powered-off"|"powered-on";
+    /**
+     * Stores the manufacturer data
+     */
+    export interface ManufacturerData {
+      /**
+       * Company identifier
+https://bitbucket.org/bluetooth-SIG/public/src/main/assigned_numbers/company_identifiers/company_identifiers.yaml
+https://usb.org/developers
+       */
+      key: number;
+      /**
+       * Manufacturer-specific data
+       */
+      data: binary;
+    }
+    /**
+     * Stores the byte data of the advertisement packet sent by a Bluetooth device.
+     */
+    export interface ScanRecord {
+      name?: string;
+      uuids?: string[];
+      /**
+       * Stores the external appearance description of the device.
+       */
+      appearance?: number;
+      /**
+       * Stores the transmission power of a broadcasting device.
+       */
+      txPower?: number;
+      /**
+       * Key is the company identifier and the value is an array of bytes of
+manufacturer specific data.
+       */
+      manufacturerData?: ManufacturerData[];
+    }
+    /**
+     * Stores the advertisement packet information that is sent by a Bluetooth device.
+     */
+    export interface ScanEntry {
+      deviceAddress: string;
+      rssi: number;
+      scanRecord: ScanRecord;
+    }
+    
+    
+    /**
+     * Enable the BluetoothEmulation domain.
+     */
+    export type enableParameters = {
+      /**
+       * State of the simulated central.
+       */
+      state: CentralState;
+    }
+    export type enableReturnValue = {
+    }
+    /**
+     * Disable the BluetoothEmulation domain.
+     */
+    export type disableParameters = {
+    }
+    export type disableReturnValue = {
+    }
+    /**
+     * Simulates a peripheral with |address|, |name| and |knownServiceUuids|
+that has already been connected to the system.
+     */
+    export type simulatePreconnectedPeripheralParameters = {
+      address: string;
+      name: string;
+      manufacturerData: ManufacturerData[];
+      knownServiceUuids: string[];
+    }
+    export type simulatePreconnectedPeripheralReturnValue = {
+    }
+    /**
+     * Simulates an advertisement packet described in |entry| being received by
+the central.
+     */
+    export type simulateAdvertisementParameters = {
+      entry: ScanEntry;
+    }
+    export type simulateAdvertisementReturnValue = {
     }
   }
   
@@ -17352,15 +18009,26 @@ variables as its properties.
       /**
        * Type of the debug symbols.
        */
-      type: "None"|"SourceMap"|"EmbeddedDWARF"|"ExternalDWARF";
+      type: "SourceMap"|"EmbeddedDWARF"|"ExternalDWARF";
       /**
        * URL of the external symbol source.
        */
       externalURL?: string;
     }
+    export interface ResolvedBreakpoint {
+      /**
+       * Breakpoint unique identifier.
+       */
+      breakpointId: BreakpointId;
+      /**
+       * Actual breakpoint location.
+       */
+      location: Location;
+    }
     
     /**
      * Fired when breakpoint is resolved to an actual script and location.
+Deprecated in favor of `resolvedBreakpoints` in the `scriptParsed` event.
      */
     export type breakpointResolvedPayload = {
       /**
@@ -17446,6 +18114,10 @@ variables as its properties.
        */
       hash: string;
       /**
+       * For Wasm modules, the content of the `build_id` custom section.
+       */
+      buildId: string;
+      /**
        * Embedder-specific auxiliary data likely matching {isDefault: boolean, type: 'default'|'isolated'|'worker', frameId: string}
        */
       executionContextAuxData?: { [key: string]: string };
@@ -17520,6 +18192,10 @@ scripts upon enabling debugger.
        */
       hash: string;
       /**
+       * For Wasm modules, the content of the `build_id` custom section.
+       */
+      buildId: string;
+      /**
        * Embedder-specific auxiliary data likely matching {isDefault: boolean, type: 'default'|'isolated'|'worker', frameId: string}
        */
       executionContextAuxData?: { [key: string]: string };
@@ -17556,13 +18232,19 @@ scripts upon enabling debugger.
        */
       scriptLanguage?: Debugger.ScriptLanguage;
       /**
-       * If the scriptLanguage is WebASsembly, the source of debug symbols for the module.
+       * If the scriptLanguage is WebAssembly, the source of debug symbols for the module.
        */
-      debugSymbols?: Debugger.DebugSymbols;
+      debugSymbols?: Debugger.DebugSymbols[];
       /**
        * The name the embedder supplied for this script.
        */
       embedderName?: string;
+      /**
+       * The list of set breakpoints in this script if calls to `setBreakpointByUrl`
+matches this script's URL or hash. Clients that use this list can ignore the
+`breakpointResolved` event. They are equivalent.
+       */
+      resolvedBreakpoints?: ResolvedBreakpoint[];
     }
     
     /**
@@ -17882,6 +18564,19 @@ call stacks (default).
     export type setAsyncCallStackDepthReturnValue = {
     }
     /**
+     * Replace previous blackbox execution contexts with passed ones. Forces backend to skip
+stepping/pausing in scripts in these execution contexts. VM will try to leave blackboxed script by
+performing 'step in' several times, finally resorting to 'step out' if unsuccessful.
+     */
+    export type setBlackboxExecutionContextsParameters = {
+      /**
+       * Array of execution context unique ids for the debugger to ignore.
+       */
+      uniqueIds: string[];
+    }
+    export type setBlackboxExecutionContextsReturnValue = {
+    }
+    /**
      * Replace previous blackbox patterns with passed ones. Forces backend to skip stepping/pausing in
 scripts with url matching one of the patterns. VM will try to leave blackboxed script by
 performing 'step in' several times, finally resorting to 'step out' if unsuccessful.
@@ -17891,6 +18586,10 @@ performing 'step in' several times, finally resorting to 'step out' if unsuccess
        * Array of regexps that will be used to check script url for blackbox state.
        */
       patterns: string[];
+      /**
+       * If true, also ignore scripts with no source url.
+       */
+      skipAnonymous?: boolean;
     }
     export type setBlackboxPatternsReturnValue = {
     }
@@ -19471,13 +20170,21 @@ It is the total usage of the corresponding isolate not scoped to a particular Ru
     }
     export type getHeapUsageReturnValue = {
       /**
-       * Used heap size in bytes.
+       * Used JavaScript heap size in bytes.
        */
       usedSize: number;
       /**
-       * Allocated heap size in bytes.
+       * Allocated JavaScript heap size in bytes.
        */
       totalSize: number;
+      /**
+       * Used size in bytes in the embedder's garbage-collected heap.
+       */
+      embedderHeapUsedSize: number;
+      /**
+       * Size in bytes of backing storage for array buffers and external strings.
+       */
+      backingStorageSize: number;
     }
     /**
      * Returns properties of a given object. Object group of the result is inherited from the target
@@ -19770,6 +20477,7 @@ Error was thrown.
     "CSS.styleSheetAdded": CSS.styleSheetAddedPayload;
     "CSS.styleSheetChanged": CSS.styleSheetChangedPayload;
     "CSS.styleSheetRemoved": CSS.styleSheetRemovedPayload;
+    "CSS.computedStyleUpdated": CSS.computedStyleUpdatedPayload;
     "Cast.sinksUpdated": Cast.sinksUpdatedPayload;
     "Cast.issueUpdated": Cast.issueUpdatedPayload;
     "DOM.attributeModified": DOM.attributeModifiedPayload;
@@ -19783,6 +20491,7 @@ Error was thrown.
     "DOM.inlineStyleInvalidated": DOM.inlineStyleInvalidatedPayload;
     "DOM.pseudoElementAdded": DOM.pseudoElementAddedPayload;
     "DOM.topLayerElementsUpdated": DOM.topLayerElementsUpdatedPayload;
+    "DOM.scrollableFlagUpdated": DOM.scrollableFlagUpdatedPayload;
     "DOM.pseudoElementRemoved": DOM.pseudoElementRemovedPayload;
     "DOM.setChildNodes": DOM.setChildNodesPayload;
     "DOM.shadowRootPopped": DOM.shadowRootPoppedPayload;
@@ -19791,7 +20500,6 @@ Error was thrown.
     "DOMStorage.domStorageItemRemoved": DOMStorage.domStorageItemRemovedPayload;
     "DOMStorage.domStorageItemUpdated": DOMStorage.domStorageItemUpdatedPayload;
     "DOMStorage.domStorageItemsCleared": DOMStorage.domStorageItemsClearedPayload;
-    "Database.addDatabase": Database.addDatabasePayload;
     "Emulation.virtualTimeBudgetExpired": Emulation.virtualTimeBudgetExpiredPayload;
     "Input.dragIntercepted": Input.dragInterceptedPayload;
     "Inspector.detached": Inspector.detachedPayload;
@@ -19824,6 +20532,7 @@ Error was thrown.
     "Network.responseReceivedExtraInfo": Network.responseReceivedExtraInfoPayload;
     "Network.responseReceivedEarlyHints": Network.responseReceivedEarlyHintsPayload;
     "Network.trustTokenOperationDone": Network.trustTokenOperationDonePayload;
+    "Network.policyUpdated": Network.policyUpdatedPayload;
     "Network.subresourceWebBundleMetadataReceived": Network.subresourceWebBundleMetadataReceivedPayload;
     "Network.subresourceWebBundleMetadataError": Network.subresourceWebBundleMetadataErrorPayload;
     "Network.subresourceWebBundleInnerResponseParsed": Network.subresourceWebBundleInnerResponseParsedPayload;
@@ -19840,9 +20549,11 @@ Error was thrown.
     "Page.frameAttached": Page.frameAttachedPayload;
     "Page.frameClearedScheduledNavigation": Page.frameClearedScheduledNavigationPayload;
     "Page.frameDetached": Page.frameDetachedPayload;
+    "Page.frameSubtreeWillBeDetached": Page.frameSubtreeWillBeDetachedPayload;
     "Page.frameNavigated": Page.frameNavigatedPayload;
     "Page.documentOpened": Page.documentOpenedPayload;
     "Page.frameResized": Page.frameResizedPayload;
+    "Page.frameStartedNavigating": Page.frameStartedNavigatingPayload;
     "Page.frameRequestedNavigation": Page.frameRequestedNavigationPayload;
     "Page.frameScheduledNavigation": Page.frameScheduledNavigationPayload;
     "Page.frameStartedLoading": Page.frameStartedLoadingPayload;
@@ -19908,6 +20619,8 @@ Error was thrown.
     "WebAudio.nodeParamConnected": WebAudio.nodeParamConnectedPayload;
     "WebAudio.nodeParamDisconnected": WebAudio.nodeParamDisconnectedPayload;
     "WebAuthn.credentialAdded": WebAuthn.credentialAddedPayload;
+    "WebAuthn.credentialDeleted": WebAuthn.credentialDeletedPayload;
+    "WebAuthn.credentialUpdated": WebAuthn.credentialUpdatedPayload;
     "WebAuthn.credentialAsserted": WebAuthn.credentialAssertedPayload;
     "Media.playerPropertiesChanged": Media.playerPropertiesChangedPayload;
     "Media.playerEventsAdded": Media.playerEventsAddedPayload;
@@ -19971,6 +20684,11 @@ Error was thrown.
     "Audits.checkContrast": Audits.checkContrastParameters;
     "Audits.checkFormsIssues": Audits.checkFormsIssuesParameters;
     "Extensions.loadUnpacked": Extensions.loadUnpackedParameters;
+    "Extensions.uninstall": Extensions.uninstallParameters;
+    "Extensions.getStorageItems": Extensions.getStorageItemsParameters;
+    "Extensions.removeStorageItems": Extensions.removeStorageItemsParameters;
+    "Extensions.clearStorageItems": Extensions.clearStorageItemsParameters;
+    "Extensions.setStorageItems": Extensions.setStorageItemsParameters;
     "Autofill.trigger": Autofill.triggerParameters;
     "Autofill.setAddresses": Autofill.setAddressesParameters;
     "Autofill.disable": Autofill.disableParameters;
@@ -20003,15 +20721,20 @@ Error was thrown.
     "CSS.disable": CSS.disableParameters;
     "CSS.enable": CSS.enableParameters;
     "CSS.forcePseudoState": CSS.forcePseudoStateParameters;
+    "CSS.forceStartingStyle": CSS.forceStartingStyleParameters;
     "CSS.getBackgroundColors": CSS.getBackgroundColorsParameters;
     "CSS.getComputedStyleForNode": CSS.getComputedStyleForNodeParameters;
+    "CSS.resolveValues": CSS.resolveValuesParameters;
+    "CSS.getLonghandProperties": CSS.getLonghandPropertiesParameters;
     "CSS.getInlineStylesForNode": CSS.getInlineStylesForNodeParameters;
+    "CSS.getAnimatedStylesForNode": CSS.getAnimatedStylesForNodeParameters;
     "CSS.getMatchedStylesForNode": CSS.getMatchedStylesForNodeParameters;
     "CSS.getMediaQueries": CSS.getMediaQueriesParameters;
     "CSS.getPlatformFontsForNode": CSS.getPlatformFontsForNodeParameters;
     "CSS.getStyleSheetText": CSS.getStyleSheetTextParameters;
     "CSS.getLayersForNode": CSS.getLayersForNodeParameters;
     "CSS.getLocationForSelector": CSS.getLocationForSelectorParameters;
+    "CSS.trackComputedStyleUpdatesForNode": CSS.trackComputedStyleUpdatesForNodeParameters;
     "CSS.trackComputedStyleUpdates": CSS.trackComputedStyleUpdatesParameters;
     "CSS.takeComputedStyleUpdates": CSS.takeComputedStyleUpdatesParameters;
     "CSS.setEffectivePropertyValueForNode": CSS.setEffectivePropertyValueForNodeParameters;
@@ -20081,6 +20804,7 @@ Error was thrown.
     "DOM.setNodeStackTracesEnabled": DOM.setNodeStackTracesEnabledParameters;
     "DOM.getNodeStackTraces": DOM.getNodeStackTracesParameters;
     "DOM.getFileInfo": DOM.getFileInfoParameters;
+    "DOM.getDetachedDomNodes": DOM.getDetachedDomNodesParameters;
     "DOM.setInspectedNode": DOM.setInspectedNodeParameters;
     "DOM.setNodeName": DOM.setNodeNameParameters;
     "DOM.setNodeValue": DOM.setNodeValueParameters;
@@ -20113,10 +20837,6 @@ Error was thrown.
     "DOMStorage.getDOMStorageItems": DOMStorage.getDOMStorageItemsParameters;
     "DOMStorage.removeDOMStorageItem": DOMStorage.removeDOMStorageItemParameters;
     "DOMStorage.setDOMStorageItem": DOMStorage.setDOMStorageItemParameters;
-    "Database.disable": Database.disableParameters;
-    "Database.enable": Database.enableParameters;
-    "Database.executeSQL": Database.executeSQLParameters;
-    "Database.getDatabaseTableNames": Database.getDatabaseTableNamesParameters;
     "DeviceOrientation.clearDeviceOrientationOverride": DeviceOrientation.clearDeviceOrientationOverrideParameters;
     "DeviceOrientation.setDeviceOrientationOverride": DeviceOrientation.setDeviceOrientationOverrideParameters;
     "Emulation.canEmulate": Emulation.canEmulateParameters;
@@ -20139,6 +20859,8 @@ Error was thrown.
     "Emulation.getOverriddenSensorInformation": Emulation.getOverriddenSensorInformationParameters;
     "Emulation.setSensorOverrideEnabled": Emulation.setSensorOverrideEnabledParameters;
     "Emulation.setSensorOverrideReadings": Emulation.setSensorOverrideReadingsParameters;
+    "Emulation.setPressureSourceOverrideEnabled": Emulation.setPressureSourceOverrideEnabledParameters;
+    "Emulation.setPressureStateOverride": Emulation.setPressureStateOverrideParameters;
     "Emulation.setIdleOverride": Emulation.setIdleOverrideParameters;
     "Emulation.clearIdleOverride": Emulation.clearIdleOverrideParameters;
     "Emulation.setNavigatorOverrides": Emulation.setNavigatorOverridesParameters;
@@ -20159,6 +20881,7 @@ Error was thrown.
     "IO.close": IO.closeParameters;
     "IO.read": IO.readParameters;
     "IO.resolveBlob": IO.resolveBlobParameters;
+    "FileSystem.getDirectory": FileSystem.getDirectoryParameters;
     "IndexedDB.clearObjectStore": IndexedDB.clearObjectStoreParameters;
     "IndexedDB.deleteDatabase": IndexedDB.deleteDatabaseParameters;
     "IndexedDB.deleteObjectStoreEntries": IndexedDB.deleteObjectStoreEntriesParameters;
@@ -20198,6 +20921,7 @@ Error was thrown.
     "Log.startViolationsReport": Log.startViolationsReportParameters;
     "Log.stopViolationsReport": Log.stopViolationsReportParameters;
     "Memory.getDOMCounters": Memory.getDOMCountersParameters;
+    "Memory.getDOMCountersForLeakDetection": Memory.getDOMCountersForLeakDetectionParameters;
     "Memory.prepareForLeakDetection": Memory.prepareForLeakDetectionParameters;
     "Memory.forciblyPurgeJavaScriptMemory": Memory.forciblyPurgeJavaScriptMemoryParameters;
     "Memory.setPressureNotificationsSuppressed": Memory.setPressureNotificationsSuppressedParameters;
@@ -20241,6 +20965,7 @@ Error was thrown.
     "Network.getSecurityIsolationStatus": Network.getSecurityIsolationStatusParameters;
     "Network.enableReportingApi": Network.enableReportingApiParameters;
     "Network.loadNetworkResource": Network.loadNetworkResourceParameters;
+    "Network.setCookieControls": Network.setCookieControlsParameters;
     "Overlay.disable": Overlay.disableParameters;
     "Overlay.enable": Overlay.enableParameters;
     "Overlay.getHighlightObjectForTest": Overlay.getHighlightObjectForTestParameters;
@@ -20388,6 +21113,7 @@ Error was thrown.
     "Storage.setAttributionReportingTracking": Storage.setAttributionReportingTrackingParameters;
     "Storage.sendPendingAttributionReports": Storage.sendPendingAttributionReportsParameters;
     "Storage.getRelatedWebsiteSets": Storage.getRelatedWebsiteSetsParameters;
+    "Storage.getAffectedUrlsForThirdPartyCookieMetadata": Storage.getAffectedUrlsForThirdPartyCookieMetadataParameters;
     "SystemInfo.getInfo": SystemInfo.getInfoParameters;
     "SystemInfo.getFeatureState": SystemInfo.getFeatureStateParameters;
     "SystemInfo.getProcessInfo": SystemInfo.getProcessInfoParameters;
@@ -20461,6 +21187,11 @@ Error was thrown.
     "PWA.launch": PWA.launchParameters;
     "PWA.launchFilesInApp": PWA.launchFilesInAppParameters;
     "PWA.openCurrentPageInApp": PWA.openCurrentPageInAppParameters;
+    "PWA.changeAppUserSettings": PWA.changeAppUserSettingsParameters;
+    "BluetoothEmulation.enable": BluetoothEmulation.enableParameters;
+    "BluetoothEmulation.disable": BluetoothEmulation.disableParameters;
+    "BluetoothEmulation.simulatePreconnectedPeripheral": BluetoothEmulation.simulatePreconnectedPeripheralParameters;
+    "BluetoothEmulation.simulateAdvertisement": BluetoothEmulation.simulateAdvertisementParameters;
     "Console.clearMessages": Console.clearMessagesParameters;
     "Console.disable": Console.disableParameters;
     "Console.enable": Console.enableParameters;
@@ -20481,6 +21212,7 @@ Error was thrown.
     "Debugger.resume": Debugger.resumeParameters;
     "Debugger.searchInContent": Debugger.searchInContentParameters;
     "Debugger.setAsyncCallStackDepth": Debugger.setAsyncCallStackDepthParameters;
+    "Debugger.setBlackboxExecutionContexts": Debugger.setBlackboxExecutionContextsParameters;
     "Debugger.setBlackboxPatterns": Debugger.setBlackboxPatternsParameters;
     "Debugger.setBlackboxedRanges": Debugger.setBlackboxedRangesParameters;
     "Debugger.setBreakpoint": Debugger.setBreakpointParameters;
@@ -20567,6 +21299,11 @@ Error was thrown.
     "Audits.checkContrast": Audits.checkContrastReturnValue;
     "Audits.checkFormsIssues": Audits.checkFormsIssuesReturnValue;
     "Extensions.loadUnpacked": Extensions.loadUnpackedReturnValue;
+    "Extensions.uninstall": Extensions.uninstallReturnValue;
+    "Extensions.getStorageItems": Extensions.getStorageItemsReturnValue;
+    "Extensions.removeStorageItems": Extensions.removeStorageItemsReturnValue;
+    "Extensions.clearStorageItems": Extensions.clearStorageItemsReturnValue;
+    "Extensions.setStorageItems": Extensions.setStorageItemsReturnValue;
     "Autofill.trigger": Autofill.triggerReturnValue;
     "Autofill.setAddresses": Autofill.setAddressesReturnValue;
     "Autofill.disable": Autofill.disableReturnValue;
@@ -20599,15 +21336,20 @@ Error was thrown.
     "CSS.disable": CSS.disableReturnValue;
     "CSS.enable": CSS.enableReturnValue;
     "CSS.forcePseudoState": CSS.forcePseudoStateReturnValue;
+    "CSS.forceStartingStyle": CSS.forceStartingStyleReturnValue;
     "CSS.getBackgroundColors": CSS.getBackgroundColorsReturnValue;
     "CSS.getComputedStyleForNode": CSS.getComputedStyleForNodeReturnValue;
+    "CSS.resolveValues": CSS.resolveValuesReturnValue;
+    "CSS.getLonghandProperties": CSS.getLonghandPropertiesReturnValue;
     "CSS.getInlineStylesForNode": CSS.getInlineStylesForNodeReturnValue;
+    "CSS.getAnimatedStylesForNode": CSS.getAnimatedStylesForNodeReturnValue;
     "CSS.getMatchedStylesForNode": CSS.getMatchedStylesForNodeReturnValue;
     "CSS.getMediaQueries": CSS.getMediaQueriesReturnValue;
     "CSS.getPlatformFontsForNode": CSS.getPlatformFontsForNodeReturnValue;
     "CSS.getStyleSheetText": CSS.getStyleSheetTextReturnValue;
     "CSS.getLayersForNode": CSS.getLayersForNodeReturnValue;
     "CSS.getLocationForSelector": CSS.getLocationForSelectorReturnValue;
+    "CSS.trackComputedStyleUpdatesForNode": CSS.trackComputedStyleUpdatesForNodeReturnValue;
     "CSS.trackComputedStyleUpdates": CSS.trackComputedStyleUpdatesReturnValue;
     "CSS.takeComputedStyleUpdates": CSS.takeComputedStyleUpdatesReturnValue;
     "CSS.setEffectivePropertyValueForNode": CSS.setEffectivePropertyValueForNodeReturnValue;
@@ -20677,6 +21419,7 @@ Error was thrown.
     "DOM.setNodeStackTracesEnabled": DOM.setNodeStackTracesEnabledReturnValue;
     "DOM.getNodeStackTraces": DOM.getNodeStackTracesReturnValue;
     "DOM.getFileInfo": DOM.getFileInfoReturnValue;
+    "DOM.getDetachedDomNodes": DOM.getDetachedDomNodesReturnValue;
     "DOM.setInspectedNode": DOM.setInspectedNodeReturnValue;
     "DOM.setNodeName": DOM.setNodeNameReturnValue;
     "DOM.setNodeValue": DOM.setNodeValueReturnValue;
@@ -20709,10 +21452,6 @@ Error was thrown.
     "DOMStorage.getDOMStorageItems": DOMStorage.getDOMStorageItemsReturnValue;
     "DOMStorage.removeDOMStorageItem": DOMStorage.removeDOMStorageItemReturnValue;
     "DOMStorage.setDOMStorageItem": DOMStorage.setDOMStorageItemReturnValue;
-    "Database.disable": Database.disableReturnValue;
-    "Database.enable": Database.enableReturnValue;
-    "Database.executeSQL": Database.executeSQLReturnValue;
-    "Database.getDatabaseTableNames": Database.getDatabaseTableNamesReturnValue;
     "DeviceOrientation.clearDeviceOrientationOverride": DeviceOrientation.clearDeviceOrientationOverrideReturnValue;
     "DeviceOrientation.setDeviceOrientationOverride": DeviceOrientation.setDeviceOrientationOverrideReturnValue;
     "Emulation.canEmulate": Emulation.canEmulateReturnValue;
@@ -20735,6 +21474,8 @@ Error was thrown.
     "Emulation.getOverriddenSensorInformation": Emulation.getOverriddenSensorInformationReturnValue;
     "Emulation.setSensorOverrideEnabled": Emulation.setSensorOverrideEnabledReturnValue;
     "Emulation.setSensorOverrideReadings": Emulation.setSensorOverrideReadingsReturnValue;
+    "Emulation.setPressureSourceOverrideEnabled": Emulation.setPressureSourceOverrideEnabledReturnValue;
+    "Emulation.setPressureStateOverride": Emulation.setPressureStateOverrideReturnValue;
     "Emulation.setIdleOverride": Emulation.setIdleOverrideReturnValue;
     "Emulation.clearIdleOverride": Emulation.clearIdleOverrideReturnValue;
     "Emulation.setNavigatorOverrides": Emulation.setNavigatorOverridesReturnValue;
@@ -20755,6 +21496,7 @@ Error was thrown.
     "IO.close": IO.closeReturnValue;
     "IO.read": IO.readReturnValue;
     "IO.resolveBlob": IO.resolveBlobReturnValue;
+    "FileSystem.getDirectory": FileSystem.getDirectoryReturnValue;
     "IndexedDB.clearObjectStore": IndexedDB.clearObjectStoreReturnValue;
     "IndexedDB.deleteDatabase": IndexedDB.deleteDatabaseReturnValue;
     "IndexedDB.deleteObjectStoreEntries": IndexedDB.deleteObjectStoreEntriesReturnValue;
@@ -20794,6 +21536,7 @@ Error was thrown.
     "Log.startViolationsReport": Log.startViolationsReportReturnValue;
     "Log.stopViolationsReport": Log.stopViolationsReportReturnValue;
     "Memory.getDOMCounters": Memory.getDOMCountersReturnValue;
+    "Memory.getDOMCountersForLeakDetection": Memory.getDOMCountersForLeakDetectionReturnValue;
     "Memory.prepareForLeakDetection": Memory.prepareForLeakDetectionReturnValue;
     "Memory.forciblyPurgeJavaScriptMemory": Memory.forciblyPurgeJavaScriptMemoryReturnValue;
     "Memory.setPressureNotificationsSuppressed": Memory.setPressureNotificationsSuppressedReturnValue;
@@ -20837,6 +21580,7 @@ Error was thrown.
     "Network.getSecurityIsolationStatus": Network.getSecurityIsolationStatusReturnValue;
     "Network.enableReportingApi": Network.enableReportingApiReturnValue;
     "Network.loadNetworkResource": Network.loadNetworkResourceReturnValue;
+    "Network.setCookieControls": Network.setCookieControlsReturnValue;
     "Overlay.disable": Overlay.disableReturnValue;
     "Overlay.enable": Overlay.enableReturnValue;
     "Overlay.getHighlightObjectForTest": Overlay.getHighlightObjectForTestReturnValue;
@@ -20984,6 +21728,7 @@ Error was thrown.
     "Storage.setAttributionReportingTracking": Storage.setAttributionReportingTrackingReturnValue;
     "Storage.sendPendingAttributionReports": Storage.sendPendingAttributionReportsReturnValue;
     "Storage.getRelatedWebsiteSets": Storage.getRelatedWebsiteSetsReturnValue;
+    "Storage.getAffectedUrlsForThirdPartyCookieMetadata": Storage.getAffectedUrlsForThirdPartyCookieMetadataReturnValue;
     "SystemInfo.getInfo": SystemInfo.getInfoReturnValue;
     "SystemInfo.getFeatureState": SystemInfo.getFeatureStateReturnValue;
     "SystemInfo.getProcessInfo": SystemInfo.getProcessInfoReturnValue;
@@ -21057,6 +21802,11 @@ Error was thrown.
     "PWA.launch": PWA.launchReturnValue;
     "PWA.launchFilesInApp": PWA.launchFilesInAppReturnValue;
     "PWA.openCurrentPageInApp": PWA.openCurrentPageInAppReturnValue;
+    "PWA.changeAppUserSettings": PWA.changeAppUserSettingsReturnValue;
+    "BluetoothEmulation.enable": BluetoothEmulation.enableReturnValue;
+    "BluetoothEmulation.disable": BluetoothEmulation.disableReturnValue;
+    "BluetoothEmulation.simulatePreconnectedPeripheral": BluetoothEmulation.simulatePreconnectedPeripheralReturnValue;
+    "BluetoothEmulation.simulateAdvertisement": BluetoothEmulation.simulateAdvertisementReturnValue;
     "Console.clearMessages": Console.clearMessagesReturnValue;
     "Console.disable": Console.disableReturnValue;
     "Console.enable": Console.enableReturnValue;
@@ -21077,6 +21827,7 @@ Error was thrown.
     "Debugger.resume": Debugger.resumeReturnValue;
     "Debugger.searchInContent": Debugger.searchInContentReturnValue;
     "Debugger.setAsyncCallStackDepth": Debugger.setAsyncCallStackDepthReturnValue;
+    "Debugger.setBlackboxExecutionContexts": Debugger.setBlackboxExecutionContextsReturnValue;
     "Debugger.setBlackboxPatterns": Debugger.setBlackboxPatternsReturnValue;
     "Debugger.setBlackboxedRanges": Debugger.setBlackboxedRangesReturnValue;
     "Debugger.setBreakpoint": Debugger.setBreakpointReturnValue;

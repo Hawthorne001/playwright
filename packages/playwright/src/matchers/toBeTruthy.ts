@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-import { expectTypes, callLogText } from '../util';
+import { callLogText, expectTypes } from '../util';
 import { kNoElementsFoundError, matcherHint } from './matcherHint';
+
 import type { MatcherResult } from './matcherHint';
 import type { ExpectMatcherState } from '../../types/test';
 import type { Locator } from 'playwright-core';
@@ -26,7 +27,6 @@ export async function toBeTruthy(
   receiver: Locator,
   receiverType: string,
   expected: string,
-  unexpected: string,
   arg: string,
   query: (isNot: boolean, timeout: number) => Promise<{ matches: boolean, log?: string[], received?: any, timedOut?: boolean }>,
   options: { timeout?: number } = {},
@@ -39,19 +39,35 @@ export async function toBeTruthy(
   };
 
   const timeout = options.timeout ?? this.timeout;
-  const { matches, log, timedOut, received } = await query(!!this.isNot, timeout);
+  const { matches: pass, log, timedOut, received } = await query(!!this.isNot, timeout);
+  if (pass === !this.isNot) {
+    return {
+      name: matcherName,
+      message: () => '',
+      pass,
+      expected
+    };
+  }
+
   const notFound = received === kNoElementsFoundError ? received : undefined;
-  const actual = matches ? expected : unexpected;
+  let printedReceived: string | undefined;
+  let printedExpected: string | undefined;
+  if (pass) {
+    printedExpected = `Expected: not ${expected}`;
+    printedReceived = `Received: ${notFound ? kNoElementsFoundError : expected}`;
+  } else {
+    printedExpected = `Expected: ${expected}`;
+    printedReceived = `Received: ${notFound ? kNoElementsFoundError : received}`;
+  }
   const message = () => {
     const header = matcherHint(this, receiver, matcherName, 'locator', arg, matcherOptions, timedOut ? timeout : undefined);
     const logText = callLogText(log);
-    return matches ? `${header}Expected: not ${expected}\nReceived: ${notFound ? kNoElementsFoundError : expected}${logText}` :
-      `${header}Expected: ${expected}\nReceived: ${notFound ? kNoElementsFoundError : unexpected}${logText}`;
+    return `${header}${printedExpected}\n${printedReceived}${logText}`;
   };
   return {
     message,
-    pass: matches,
-    actual,
+    pass,
+    actual: received,
     name: matcherName,
     expected,
     log,
