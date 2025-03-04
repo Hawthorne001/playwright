@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import type * as api from '../../types/types';
 import type { BrowserContext } from './browserContext';
+import type * as api from '../../types/types';
 
 export class Clock implements api.Clock {
   private _browserContext: BrowserContext;
@@ -58,6 +58,8 @@ function parseTime(time: string | number | Date): { timeNumber?: number, timeStr
     return { timeNumber: time };
   if (typeof time === 'string')
     return { timeString: time };
+  if (!isFinite(time.getTime()))
+    throw new Error(`Invalid date: ${time}`);
   return { timeNumber: time.getTime() };
 }
 

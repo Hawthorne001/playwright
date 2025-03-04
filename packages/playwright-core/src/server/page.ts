@@ -15,36 +15,40 @@
  * limitations under the License.
  */
 
-import type * as dom from './dom';
-import * as frames from './frames';
-import * as input from './input';
-import * as js from './javascript';
-import type * as network from './network';
-import type * as channels from '@protocol/channels';
-import type { ScreenshotOptions } from './screenshotter';
-import { Screenshotter, validateScreenshotOptions } from './screenshotter';
-import { TimeoutSettings } from '../common/timeoutSettings';
-import type * as types from './types';
+import * as accessibility from './accessibility';
 import { BrowserContext } from './browserContext';
 import { ConsoleMessage } from './console';
-import * as accessibility from './accessibility';
+import { TargetClosedError, TimeoutError } from './errors';
 import { FileChooser } from './fileChooser';
-import type { Progress } from './progress';
-import { ProgressController } from './progress';
-import { LongStandingScope, assert, isError } from '../utils';
-import { ManualPromise } from '../utils/manualPromise';
-import { debugLogger } from '../utils/debugLogger';
-import type { ImageComparatorOptions } from '../utils/comparators';
-import { getComparator } from '../utils/comparators';
-import type { CallMetadata } from './instrumentation';
+import * as frames from './frames';
+import { helper } from './helper';
+import * as input from './input';
 import { SdkObject } from './instrumentation';
-import type { Artifact } from './artifact';
-import type { TimeoutOptions } from '../common/types';
-import { isInvalidSelectorError } from '../utils/isomorphic/selectorParser';
 import { parseEvaluationResultValue, source } from './isomorphic/utilityScriptSerializers';
+import * as js from './javascript';
+import { ProgressController } from './progress';
+import { Screenshotter, validateScreenshotOptions } from './screenshotter';
+import { TimeoutSettings } from './timeoutSettings';
+import { LongStandingScope, assert, trimStringWithEllipsis } from '../utils';
+import { createGuid } from './utils/crypto';
+import { asLocator } from '../utils';
+import { getComparator } from './utils/comparators';
+import { debugLogger } from './utils/debugLogger';
+import { isInvalidSelectorError } from '../utils/isomorphic/selectorParser';
+import { ManualPromise } from '../utils/isomorphic/manualPromise';
+import { compressCallLog } from './callLog';
+
+import type { Artifact } from './artifact';
+import type * as dom from './dom';
+import type { CallMetadata } from './instrumentation';
 import type { SerializedValue } from './isomorphic/utilityScriptSerializers';
-import { TargetClosedError } from './errors';
-import { asLocator } from '../utils/isomorphic/locatorGenerators';
+import type * as network from './network';
+import type { Progress } from './progress';
+import type { ScreenshotOptions } from './screenshotter';
+import type * as types from './types';
+import type { TimeoutOptions } from '../utils/isomorphic/types';
+import type { ImageComparatorOptions } from './utils/comparators';
+import type * as channels from '@protocol/channels';
 
 export interface PageDelegate {
   readonly rawMouse: input.RawMouse;
@@ -54,13 +58,10 @@ export interface PageDelegate {
   reload(): Promise<void>;
   goBack(): Promise<boolean>;
   goForward(): Promise<boolean>;
-  exposeBinding(binding: PageBinding): Promise<void>;
-  removeExposedBindings(): Promise<void>;
-  addInitScript(source: string): Promise<void>;
-  removeInitScripts(): Promise<void>;
+  requestGC(): Promise<void>;
+  addInitScript(initScript: InitScript): Promise<void>;
+  removeNonInternalInitScripts(): Promise<void>;
   closePage(runBeforeUnload: boolean): Promise<void>;
-  potentiallyUninitializedPage(): Page;
-  pageOrError(): Promise<Page | Error>;
 
   navigateFrame(frame: frames.Frame, url: string, referrer: string | undefined): Promise<frames.GotoResult>;
 
@@ -74,12 +75,10 @@ export interface PageDelegate {
   setBackgroundColor(color?: { r: number; g: number; b: number; a: number; }): Promise<void>;
   takeScreenshot(progress: Progress, format: string, documentRect: types.Rect | undefined, viewportRect: types.Rect | undefined, quality: number | undefined, fitsViewport: boolean, scale: 'css' | 'device'): Promise<Buffer>;
 
-  isElementHandle(remoteObject: any): boolean;
   adoptElementHandle<T extends Node>(handle: dom.ElementHandle<T>, to: dom.FrameExecutionContext): Promise<dom.ElementHandle<T>>;
   getContentFrame(handle: dom.ElementHandle): Promise<frames.Frame | null>;  // Only called for frame owner elements.
   getOwnerFrame(handle: dom.ElementHandle): Promise<string | null>; // Returns frameId.
-  getContentQuads(handle: dom.ElementHandle): Promise<types.Quad[] | null>;
-  setInputFiles(handle: dom.ElementHandle<HTMLInputElement>, files: types.FilePayload[]): Promise<void>;
+  getContentQuads(handle: dom.ElementHandle): Promise<types.Quad[] | null | 'error:notconnected'>;
   setInputFilePaths(handle: dom.ElementHandle<HTMLInputElement>, files: string[]): Promise<void>;
   getBoundingBox(handle: dom.ElementHandle): Promise<types.Rect | null>;
   getFrameElement(frame: frames.Frame): Promise<dom.ElementHandle>;
@@ -109,6 +108,7 @@ type EmulatedMedia = {
   colorScheme: types.ColorScheme;
   reducedMotion: types.ReducedMotion;
   forcedColors: types.ForcedColors;
+  contrast: types.Contrast;
 };
 
 type ExpectScreenshotOptions = ImageComparatorOptions & ScreenshotOptions & {
@@ -139,7 +139,8 @@ export class Page extends SdkObject {
 
   private _closedState: 'open' | 'closing' | 'closed' = 'open';
   private _closedPromise = new ManualPromise<void>();
-  private _initialized = false;
+  private _initialized: Page | Error | undefined;
+  private _initializedPromise = new ManualPromise<Page | Error>();
   private _eventsToEmitAfterInitialized: { event: string | symbol, args: any[] }[] = [];
   private _crashed = false;
   readonly openScope = new LongStandingScope();
@@ -154,7 +155,7 @@ export class Page extends SdkObject {
   private _emulatedMedia: Partial<EmulatedMedia> = {};
   private _interceptFileChooser = false;
   private readonly _pageBindings = new Map<string, PageBinding>();
-  readonly initScripts: string[] = [];
+  initScripts: InitScript[] = [];
   readonly _screenshotter: Screenshotter;
   readonly _frameManager: frames.FrameManager;
   readonly accessibility: accessibility.Accessibility;
@@ -164,7 +165,6 @@ export class Page extends SdkObject {
   _clientRequestInterceptor: network.RouteHandler | undefined;
   _serverRequestInterceptor: network.RouteHandler | undefined;
   _ownedContext: BrowserContext | undefined;
-  _pageIsError: Error | undefined;
   _video: Artifact | null = null;
   _opener: Page | undefined;
   private _isServerSideOnly = false;
@@ -194,23 +194,24 @@ export class Page extends SdkObject {
     this.coverage = delegate.coverage ? delegate.coverage() : null;
   }
 
-  async initOpener(opener: PageDelegate | null) {
-    if (!opener)
-      return;
-    const openerPage = await opener.pageOrError();
-    if (openerPage instanceof Page && !openerPage.isClosed())
-      this._opener = openerPage;
+  async reportAsNew(opener: Page | undefined, error: Error | undefined = undefined, contextEvent: string = BrowserContext.Events.Page) {
+    if (opener) {
+      const openerPageOrError = await opener.waitForInitializedOrError();
+      if (openerPageOrError instanceof Page && !openerPageOrError.isClosed())
+        this._opener = openerPageOrError;
+    }
+    this._markInitialized(error, contextEvent);
   }
 
-  reportAsNew(error: Error | undefined = undefined, contextEvent: string = BrowserContext.Events.Page) {
+  private _markInitialized(error: Error | undefined = undefined, contextEvent: string = BrowserContext.Events.Page) {
     if (error) {
       // Initialization error could have happened because of
       // context/browser closure. Just ignore the page.
       if (this._browserContext.isClosingOrClosed())
         return;
-      this._setIsError(error);
+      this._frameManager.createDummyMainFrameIfNeeded();
     }
-    this._initialized = true;
+    this._initialized = error || this;
     this.emitOnContext(contextEvent, this);
 
     for (const { event, args } of this._eventsToEmitAfterInitialized)
@@ -224,10 +225,18 @@ export class Page extends SdkObject {
       this.emit(Page.Events.Close);
     else
       this.instrumentation.onPageOpen(this);
+
+    // Note: it is important to resolve _initializedPromise at the end,
+    // so that anyone who awaits waitForInitializedOrError got a ready and reported page.
+    this._initializedPromise.resolve(this._initialized);
   }
 
-  initializedOrUndefined() {
+  initializedOrUndefined(): Page | undefined {
     return this._initialized ? this : undefined;
+  }
+
+  waitForInitializedOrError(): Promise<Page | Error> {
+    return this._initializedPromise;
   }
 
   emitOnContext(event: string | symbol, ...args: any[]) {
@@ -342,15 +351,15 @@ export class Page extends SdkObject {
       throw new Error(`Function "${name}" has been already registered in the browser context`);
     const binding = new PageBinding(name, playwrightBinding, needsHandle);
     this._pageBindings.set(name, binding);
-    await this._delegate.exposeBinding(binding);
+    await this._delegate.addInitScript(binding.initScript);
+    await Promise.all(this.frames().map(frame => frame.evaluateExpression(binding.initScript.source).catch(e => {})));
   }
 
   async _removeExposedBindings() {
-    for (const key of this._pageBindings.keys()) {
-      if (!key.startsWith('__pw'))
+    for (const [key, binding] of this._pageBindings) {
+      if (!binding.internal)
         this._pageBindings.delete(key);
     }
-    await this._delegate.removeExposedBindings();
   }
 
   setExtraHTTPHeaders(headers: types.HeadersArray) {
@@ -432,6 +441,10 @@ export class Page extends SdkObject {
     }), this._timeoutSettings.navigationTimeout(options));
   }
 
+  requestGC(): Promise<void> {
+    return this._delegate.requestGC();
+  }
+
   registerLocatorHandler(selector: string, noWaitAfter: boolean | undefined) {
     const uid = ++this._lastLocatorHandlerUid;
     this._locatorHandlers.set(uid, { selector, noWaitAfter });
@@ -452,7 +465,34 @@ export class Page extends SdkObject {
     this._locatorHandlers.delete(uid);
   }
 
-  async performLocatorHandlersCheckpoint(progress: Progress) {
+  async performActionPreChecks(progress: Progress) {
+    await this._performWaitForNavigationCheck(progress);
+    progress.throwIfAborted();
+    await this._performLocatorHandlersCheckpoint(progress);
+    progress.throwIfAborted();
+    // Wait once again, just in case a locator handler caused a navigation.
+    await this._performWaitForNavigationCheck(progress);
+  }
+
+  private async _performWaitForNavigationCheck(progress: Progress) {
+    if (process.env.PLAYWRIGHT_SKIP_NAVIGATION_CHECK)
+      return;
+    const mainFrame = this._frameManager.mainFrame();
+    if (!mainFrame || !mainFrame.pendingDocument())
+      return;
+    const url = mainFrame.pendingDocument()?.request?.url();
+    const toUrl = url ? `" ${trimStringWithEllipsis(url, 200)}"` : '';
+    progress.log(`  waiting for${toUrl} navigation to finish...`);
+    await helper.waitForEvent(progress, mainFrame, frames.Frame.Events.InternalNavigation, (e: frames.NavigationEvent) => {
+      if (!e.isPublic)
+        return false;
+      if (!e.error)
+        progress.log(`  navigated to "${trimStringWithEllipsis(mainFrame.url(), 200)}"`);
+      return true;
+    }).promise;
+  }
+
+  private async _performLocatorHandlersCheckpoint(progress: Progress) {
     // Do not run locator handlers from inside locator handler callbacks to avoid deadlocks.
     if (this._locatorHandlerRunningCounter)
       return;
@@ -470,7 +510,7 @@ export class Page extends SdkObject {
           progress.throwIfAborted();
           if (!handler.noWaitAfter) {
             progress.log(`  locator handler has finished, waiting for ${asLocator(this.attribution.playwright.options.sdkLanguage, handler.selector)} to be hidden`);
-            await this.mainFrame().waitForSelectorInternal(progress, handler.selector, { state: 'hidden' });
+            await this.mainFrame().waitForSelectorInternal(progress, handler.selector, false, { state: 'hidden' });
           } else {
             progress.log(`  locator handler has finished`);
           }
@@ -492,6 +532,8 @@ export class Page extends SdkObject {
       this._emulatedMedia.reducedMotion = options.reducedMotion;
     if (options.forcedColors !== undefined)
       this._emulatedMedia.forcedColors = options.forcedColors;
+    if (options.contrast !== undefined)
+      this._emulatedMedia.contrast = options.contrast;
 
     await this._delegate.updateEmulateMedia();
   }
@@ -503,6 +545,7 @@ export class Page extends SdkObject {
       colorScheme: this._emulatedMedia.colorScheme !== undefined ? this._emulatedMedia.colorScheme : contextOptions.colorScheme ?? 'light',
       reducedMotion: this._emulatedMedia.reducedMotion !== undefined ? this._emulatedMedia.reducedMotion : contextOptions.reducedMotion ?? 'no-preference',
       forcedColors: this._emulatedMedia.forcedColors !== undefined ? this._emulatedMedia.forcedColors : contextOptions.forcedColors ?? 'none',
+      contrast: this._emulatedMedia.contrast !== undefined ? this._emulatedMedia.contrast : contextOptions.contrast ?? 'no-preference',
     };
   }
 
@@ -526,14 +569,15 @@ export class Page extends SdkObject {
     await this._delegate.bringToFront();
   }
 
-  async addInitScript(source: string) {
-    this.initScripts.push(source);
-    await this._delegate.addInitScript(source);
+  async addInitScript(source: string, name?: string) {
+    const initScript = new InitScript(source, false /* internal */, name);
+    this.initScripts.push(initScript);
+    await this._delegate.addInitScript(initScript);
   }
 
   async _removeInitScripts() {
-    this.initScripts.splice(0, this.initScripts.length);
-    await this._delegate.removeInitScripts();
+    this.initScripts = this.initScripts.filter(script => script.internal);
+    await this._delegate.removeNonInternalInitScripts();
   }
 
   needsRequestInterception(): boolean {
@@ -555,7 +599,7 @@ export class Page extends SdkObject {
     const rafrafScreenshot = locator ? async (progress: Progress, timeout: number) => {
       return await locator.frame.rafrafTimeoutScreenshotElementWithProgress(progress, locator.selector, timeout, options || {});
     } : async (progress: Progress, timeout: number) => {
-      await this.performLocatorHandlersCheckpoint(progress);
+      await this.performActionPreChecks(progress);
       await this.mainFrame().rafrafTimeout(timeout);
       return await this._screenshotter.screenshotPage(progress, options || {});
     };
@@ -630,7 +674,7 @@ export class Page extends SdkObject {
         return {};
       }
 
-      if (areEqualScreenshots(actual, options.expected, previous)) {
+      if (areEqualScreenshots(actual, options.expected, undefined)) {
         progress.log(`screenshot matched expectation`);
         return {};
       }
@@ -640,10 +684,14 @@ export class Page extends SdkObject {
       // A: We want user to receive a friendly diff between actual and expected/previous.
       if (js.isJavaScriptErrorInEvaluate(e) || isInvalidSelectorError(e))
         throw e;
+      let errorMessage = e.message;
+      if (e instanceof TimeoutError && intermediateResult?.previous)
+        errorMessage = `Failed to take two consecutive stable screenshots.`;
       return {
-        log: e.message ? [...metadata.log, e.message] : metadata.log,
+        log: compressCallLog(e.message ? [...metadata.log, e.message] : metadata.log),
         ...intermediateResult,
-        errorMessage: e.message,
+        errorMessage,
+        timedOut: (e instanceof TimeoutError),
       };
     });
   }
@@ -671,11 +719,6 @@ export class Page extends SdkObject {
       await this._closedPromise;
     if (this._ownedContext)
       await this._ownedContext.close(options);
-  }
-
-  private _setIsError(error: Error) {
-    this._pageIsError = error;
-    this._frameManager.createDummyMainFrameIfNeeded();
   }
 
   isClosed(): boolean {
@@ -726,8 +769,9 @@ export class Page extends SdkObject {
       this._browserContext.addVisitedOrigin(origin);
   }
 
-  allBindings() {
-    return [...this._browserContext._pageBindings.values(), ...this._pageBindings.values()];
+  allInitScripts() {
+    const bindings = [...this._browserContext._pageBindings.values(), ...this._pageBindings.values()];
+    return [...bindings.map(binding => binding.initScript), ...this._browserContext.initScripts, ...this.initScripts];
   }
 
   getBinding(name: string) {
@@ -746,6 +790,17 @@ export class Page extends SdkObject {
 
   temporarilyDisableTracingScreencastThrottling() {
     this._frameThrottler.recharge();
+  }
+
+  async safeNonStallingEvaluateInAllFrames(expression: string, world: types.World, options: { throwOnJSErrors?: boolean } = {}) {
+    await Promise.all(this.frames().map(async frame => {
+      try {
+        await frame.nonStallingEvaluateInExistingContext(expression, world);
+      } catch (e) {
+        if (options.throwOnJSErrors && js.isJavaScriptErrorInEvaluate(e))
+          throw e;
+      }
+    }));
   }
 
   async hideHighlight() {
@@ -778,6 +833,7 @@ export class Worker extends SdkObject {
   _createExecutionContext(delegate: js.ExecutionContextDelegate) {
     this._existingExecutionContext = new js.ExecutionContext(this, delegate, 'worker');
     this._executionContextCallback(this._existingExecutionContext);
+    return this._existingExecutionContext;
   }
 
   url(): string {
@@ -807,37 +863,42 @@ type BindingPayload = {
 };
 
 export class PageBinding {
+  static kPlaywrightBinding = '__playwright__binding__';
+
   readonly name: string;
   readonly playwrightFunction: frames.FunctionWithSource;
-  readonly source: string;
+  readonly initScript: InitScript;
   readonly needsHandle: boolean;
+  readonly internal: boolean;
 
   constructor(name: string, playwrightFunction: frames.FunctionWithSource, needsHandle: boolean) {
     this.name = name;
     this.playwrightFunction = playwrightFunction;
-    this.source = `(${addPageBinding.toString()})(${JSON.stringify(name)}, ${needsHandle}, (${source})())`;
+    this.initScript = new InitScript(`(${addPageBinding.toString()})(${JSON.stringify(PageBinding.kPlaywrightBinding)}, ${JSON.stringify(name)}, ${needsHandle}, (${source})())`, true /* internal */);
     this.needsHandle = needsHandle;
+    this.internal = name.startsWith('__pw');
   }
 
   static async dispatch(page: Page, payload: string, context: dom.FrameExecutionContext) {
     const { name, seq, serializedArgs } = JSON.parse(payload) as BindingPayload;
     try {
       assert(context.world);
-      const binding = page.getBinding(name)!;
+      const binding = page.getBinding(name);
+      if (!binding)
+        throw new Error(`Function "${name}" is not exposed`);
       let result: any;
       if (binding.needsHandle) {
         const handle = await context.evaluateHandle(takeHandle, { name, seq }).catch(e => null);
         result = await binding.playwrightFunction({ frame: context.frame, page, context: page._browserContext }, handle);
       } else {
+        if (!Array.isArray(serializedArgs))
+          throw new Error(`serializedArgs is not an array. This can happen when Array.prototype.toJSON is defined incorrectly`);
         const args = serializedArgs!.map(a => parseEvaluationResultValue(a));
         result = await binding.playwrightFunction({ frame: context.frame, page, context: page._browserContext }, ...args);
       }
       context.evaluate(deliverResult, { name, seq, result }).catch(e => debugLogger.log('error', e));
     } catch (error) {
-      if (isError(error))
-        context.evaluate(deliverError, { name, seq, message: error.message, stack: error.stack }).catch(e => debugLogger.log('error', e));
-      else
-        context.evaluate(deliverErrorValue, { name, seq, error }).catch(e => debugLogger.log('error', e));
+      context.evaluate(deliverResult, { name, seq, error }).catch(e => debugLogger.log('error', e));
     }
 
     function takeHandle(arg: { name: string, seq: number }) {
@@ -846,29 +907,19 @@ export class PageBinding {
       return handle;
     }
 
-    function deliverResult(arg: { name: string, seq: number, result: any }) {
-      (globalThis as any)[arg.name]['callbacks'].get(arg.seq).resolve(arg.result);
-      (globalThis as any)[arg.name]['callbacks'].delete(arg.seq);
-    }
-
-    function deliverError(arg: { name: string, seq: number, message: string, stack: string | undefined }) {
-      const error = new Error(arg.message);
-      error.stack = arg.stack;
-      (globalThis as any)[arg.name]['callbacks'].get(arg.seq).reject(error);
-      (globalThis as any)[arg.name]['callbacks'].delete(arg.seq);
-    }
-
-    function deliverErrorValue(arg: { name: string, seq: number, error: any }) {
-      (globalThis as any)[arg.name]['callbacks'].get(arg.seq).reject(arg.error);
-      (globalThis as any)[arg.name]['callbacks'].delete(arg.seq);
+    function deliverResult(arg: { name: string, seq: number, result?: any, error?: any }) {
+      const callbacks = (globalThis as any)[arg.name]['callbacks'];
+      if ('error' in arg)
+        callbacks.get(arg.seq).reject(arg.error);
+      else
+        callbacks.get(arg.seq).resolve(arg.result);
+      callbacks.delete(arg.seq);
     }
   }
 }
 
-function addPageBinding(bindingName: string, needsHandle: boolean, utilityScriptSerializers: ReturnType<typeof source>) {
-  const binding = (globalThis as any)[bindingName];
-  if (binding.__installed)
-    return;
+function addPageBinding(playwrightBinding: string, bindingName: string, needsHandle: boolean, utilityScriptSerializers: ReturnType<typeof source>) {
+  const binding = (globalThis as any)[playwrightBinding];
   (globalThis as any)[bindingName] = (...args: any[]) => {
     const me = (globalThis as any)[bindingName];
     if (needsHandle && args.slice(1).some(arg => arg !== undefined))
@@ -903,6 +954,26 @@ function addPageBinding(bindingName: string, needsHandle: boolean, utilityScript
     return promise;
   };
   (globalThis as any)[bindingName].__installed = true;
+}
+
+export class InitScript {
+  readonly source: string;
+  readonly internal: boolean;
+  readonly name?: string;
+
+  constructor(source: string, internal?: boolean, name?: string) {
+    const guid = createGuid();
+    this.source = `(() => {
+      globalThis.__pwInitScripts = globalThis.__pwInitScripts || {};
+      const hasInitScript = globalThis.__pwInitScripts[${JSON.stringify(guid)}];
+      if (hasInitScript)
+        return;
+      globalThis.__pwInitScripts[${JSON.stringify(guid)}] = true;
+      ${source}
+    })();`;
+    this.internal = !!internal;
+    this.name = name;
+  }
 }
 
 class FrameThrottler {

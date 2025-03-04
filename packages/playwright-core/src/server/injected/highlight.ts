@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
-import { stringifySelector } from '../../utils/isomorphic/selectorParser';
-import type { ParsedSelector } from '../../utils/isomorphic/selectorParser';
-import type { InjectedScript } from './injectedScript';
-import { asLocator } from '../../utils/isomorphic/locatorGenerators';
-import type { Language } from '../../utils/isomorphic/locatorGenerators';
 import highlightCSS from './highlight.css?inline';
+import { asLocator } from '../../utils/isomorphic/locatorGenerators';
+import { stringifySelector } from '../../utils/isomorphic/selectorParser';
+
+import type { InjectedScript } from './injectedScript';
+import type { Language } from '../../utils/isomorphic/locatorGenerators';
+import type { ParsedSelector } from '../../utils/isomorphic/selectorParser';
+
 
 type HighlightEntry = {
   targetElement: Element,
@@ -90,7 +92,9 @@ export class Highlight {
   }
 
   install() {
-    this._injectedScript.document.documentElement.appendChild(this._glassPaneElement);
+    // NOTE: document.documentElement can be null: https://github.com/microsoft/TypeScript/issues/50078
+    if (this._injectedScript.document.documentElement && !this._injectedScript.document.documentElement.contains(this._glassPaneElement))
+      this._injectedScript.document.documentElement.appendChild(this._glassPaneElement);
   }
 
   setLanguage(language: Language) {
@@ -286,7 +290,7 @@ export class Highlight {
     return this._injectedScript.document.createElement('x-pw-highlight');
   }
 
-  appendChild(element: HTMLElement) {
+  appendChild(element: Element) {
     this._glassPaneShadow.appendChild(element);
   }
 }

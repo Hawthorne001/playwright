@@ -35,28 +35,6 @@ test('should load nested as esm when package.json has type module', async ({ run
   expect(result.passed).toBe(1);
 });
 
-test('should support import assertions', async ({ runInlineTest }) => {
-  const result = await runInlineTest({
-    'playwright.config.ts': `
-      import packageJSON from './package.json' assert { type: 'json' };
-      console.log('imported value: ' + packageJSON.foo);
-      export default { };
-    `,
-    'package.json': JSON.stringify({ type: 'module', foo: 'bar' }),
-    'a.esm.test.ts': `
-      import { test, expect } from '@playwright/test';
-
-      test('check project name', ({}, testInfo) => {
-        expect(1).toBe(1);
-      });
-    `
-  });
-
-  expect(result.exitCode).toBe(0);
-  expect(result.passed).toBe(1);
-  expect(result.stdout).toContain('imported value: bar');
-});
-
 test('should support import attributes', async ({ runInlineTest }) => {
   const result = await runInlineTest({
     'playwright.config.ts': `
@@ -67,9 +45,15 @@ test('should support import attributes', async ({ runInlineTest }) => {
     'package.json': JSON.stringify({ type: 'module', foo: 'bar' }),
     'a.test.ts': `
       import config from './package.json' with { type: 'json' };
+      import configFooFromUtils from './utils.js'
       console.log('imported value (test): ' + config.foo);
       import { test, expect } from '@playwright/test';
+      expect(configFooFromUtils.foo).toBe('bar');
       test('pass', async () => {});
+    `,
+    'utils.js': `
+      import config from './package.json' with { type: 'json' };
+      export default config;
     `
   });
   expect(result.exitCode).toBe(0);
@@ -128,8 +112,10 @@ test('should respect path resolver in experimental mode', async ({ runInlineTest
   const result = await runInlineTest({
     'package.json': JSON.stringify({ type: 'module' }),
     'playwright.config.ts': `
+      // Make sure that config can use the path mapping.
+      import { foo } from 'util/b.js';
       export default {
-        projects: [{name: 'foo'}],
+        projects: [{ name: foo }],
       };
     `,
     'tsconfig.json': `{
@@ -147,7 +133,8 @@ test('should respect path resolver in experimental mode', async ({ runInlineTest
       import { foo } from 'util/b.js';
       import { test, expect } from '@playwright/test';
       test('check project name', ({}, testInfo) => {
-        expect(testInfo.project.name).toBe(foo);
+        expect(testInfo.project.name).toBe('foo');
+        expect(foo).toBe('foo');
       });
     `,
     'foo/bar/util/b.ts': `
@@ -695,9 +682,6 @@ test('should be able to use use execSync with a Node.js file inside a spec', asy
     'global-setup import level',
     'execSync: hello from hello.js',
     'spawnSync: hello from hello.js',
-    'global-teardown import level',
-    'execSync: hello from hello.js',
-    'spawnSync: hello from hello.js',
     'global-setup export level',
     'execSync: hello from hello.js',
     'spawnSync: hello from hello.js',
@@ -712,6 +696,9 @@ test('should be able to use use execSync with a Node.js file inside a spec', asy
     'execSync: hello from hello.js',
     'spawnSync: hello from hello.js',
     'fork: hello from hellofork.js',
+    'global-teardown import level',
+    'execSync: hello from hello.js',
+    'spawnSync: hello from hello.js',
     'global-teardown export level',
     'execSync: hello from hello.js',
     'spawnSync: hello from hello.js',

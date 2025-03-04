@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-import type { LaunchAndroidServerOptions } from './client/types';
-import { ws } from './utilsBundle';
-import type { WebSocketEventEmitter } from './utilsBundle';
-import type { BrowserServer } from './client/browserType';
-import { createGuid } from './utils';
-import { createPlaywright } from './server/playwright';
 import { PlaywrightServer } from './remote/playwrightServer';
+import { createPlaywright } from './server/playwright';
+import { createGuid } from './server/utils/crypto';
+import { ws } from './utilsBundle';
+
+import type { BrowserServer } from './client/browserType';
+import type { LaunchAndroidServerOptions } from './client/types';
+import type { WebSocketEventEmitter } from './utilsBundle';
 
 export class AndroidServerLauncherImpl {
   async launchServer(options: LaunchAndroidServerOptions = {}): Promise<BrowserServer> {
@@ -38,7 +39,7 @@ export class AndroidServerLauncherImpl {
     if (options.deviceSerialNumber) {
       devices = devices.filter(d => d.serial === options.deviceSerialNumber);
       if (devices.length === 0)
-        throw new Error(`No device with serial number '${options.deviceSerialNumber}' not found`);
+        throw new Error(`No device with serial number '${options.deviceSerialNumber}' was found`);
     }
 
     if (devices.length > 1)

@@ -14,17 +14,20 @@
  * limitations under the License.
  */
 
+import fs from 'fs';
+import path from 'path';
+
+import { ManualPromise, SerializedFS, calculateSha1, createGuid, monotonicTime } from 'playwright-core/lib/utils';
+import { yauzl, yazl } from 'playwright-core/lib/zipBundle';
+
+import { filteredStackTrace } from '../util';
+
+import type { TestInfoImpl } from './testInfo';
+import type { PlaywrightWorkerOptions, TestInfo, TraceMode } from '../../types/test';
+import type { TestInfoErrorImpl } from '../common/ipc';
 import type { SerializedError, StackFrame } from '@protocol/channels';
 import type * as trace from '@trace/trace';
 import type EventEmitter from 'events';
-import fs from 'fs';
-import path from 'path';
-import { ManualPromise, calculateSha1, monotonicTime, createGuid, SerializedFS } from 'playwright-core/lib/utils';
-import { yauzl, yazl } from 'playwright-core/lib/zipBundle';
-import type { TestInfo, TestInfoError } from '../../types/test';
-import { filteredStackTrace } from '../util';
-import type { TraceMode, PlaywrightWorkerOptions } from '../../types/test';
-import type { TestInfoImpl } from './testInfo';
 
 export type Attachment = TestInfo['attachments'][0];
 export const testTraceEntryName = 'test.trace';
@@ -43,6 +46,7 @@ export class TestTracing {
   private _artifactsDir: string;
   private _tracesDir: string;
   private _contextCreatedEvent: trace.ContextCreatedTraceEvent;
+  private _didFinishTestFunctionAndAfterEachHooks = false;
 
   constructor(testInfo: TestInfoImpl, artifactsDir: string) {
     this._testInfo = testInfo;
@@ -110,6 +114,10 @@ export class TestTracing {
     }
   }
 
+  didFinishTestFunctionAndAfterEachHooks() {
+    this._didFinishTestFunctionAndAfterEachHooks = true;
+  }
+
   artifactsDir() {
     return this._artifactsDir;
   }
@@ -130,7 +138,7 @@ export class TestTracing {
     return `${this._testInfo.testId}${retrySuffix}${ordinalSuffix}`;
   }
 
-  generateNextTraceRecordingPath() {
+  private _generateNextTraceRecordingPath() {
     const file = path.join(this._artifactsDir, createGuid() + '.zip');
     this._temporaryTraceFiles.push(file);
     return file;
@@ -138,6 +146,22 @@ export class TestTracing {
 
   traceOptions() {
     return this._options;
+  }
+
+  maybeGenerateNextTraceRecordingPath() {
+    // Forget about traces that should be saved on failure, when no failure happened
+    // during the test and beforeEach/afterEach hooks.
+    // This avoids downloading traces over the wire when not really needed.
+    if (this._didFinishTestFunctionAndAfterEachHooks && this._shouldAbandonTrace())
+      return;
+    return this._generateNextTraceRecordingPath();
+  }
+
+  private _shouldAbandonTrace() {
+    if (!this._options)
+      return true;
+    const testFailed = this._testInfo.status !== this._testInfo.expectedStatus;
+    return !testFailed && (this._options.mode === 'retain-on-failure' || this._options.mode === 'retain-on-first-failure');
   }
 
   async stopIfNeeded() {
@@ -148,10 +172,7 @@ export class TestTracing {
     if (error)
       throw error;
 
-    const testFailed = this._testInfo.status !== this._testInfo.expectedStatus;
-    const shouldAbandonTrace = !testFailed && (this._options.mode === 'retain-on-failure' || this._options.mode === 'retain-on-first-failure');
-
-    if (shouldAbandonTrace) {
+    if (this._shouldAbandonTrace()) {
       for (const file of this._temporaryTraceFiles)
         await fs.promises.unlink(file).catch(() => {});
       return;
@@ -210,7 +231,7 @@ export class TestTracing {
 
     await new Promise(f => {
       zipFile.end(undefined, () => {
-        zipFile.outputStream.pipe(fs.createWriteStream(this.generateNextTraceRecordingPath())).on('close', f);
+        zipFile.outputStream.pipe(fs.createWriteStream(this._generateNextTraceRecordingPath())).on('close', f);
       });
     });
 
@@ -219,14 +240,21 @@ export class TestTracing {
     this._testInfo.attachments.push({ name: 'trace', path: tracePath, contentType: 'application/zip' });
   }
 
-  appendForError(error: TestInfoError) {
+  appendForError(error: TestInfoErrorImpl) {
     const rawStack = error.stack?.split('\n') || [];
     const stack = rawStack ? filteredStackTrace(rawStack) : [];
     this._appendTraceEvent({
       type: 'error',
-      message: error.message || String(error.value),
+      message: this._formatError(error),
       stack,
     });
+  }
+
+  _formatError(error: TestInfoErrorImpl) {
+    const parts: string[] = [error.message || String(error.value)];
+    if (error.cause)
+      parts.push('[cause]: ' + this._formatError(error.cause));
+    return parts.join('\n');
   }
 
   appendStdioToTrace(type: 'stdout' | 'stderr', chunk: string | Buffer) {
@@ -238,7 +266,7 @@ export class TestTracing {
     });
   }
 
-  appendBeforeActionForStep(callId: string, parentId: string | undefined, apiName: string, params: Record<string, any> | undefined, stack: StackFrame[]) {
+  appendBeforeActionForStep(callId: string, parentId: string | undefined, category: string, apiName: string, params: Record<string, any> | undefined, stack: StackFrame[]) {
     this._appendTraceEvent({
       type: 'before',
       callId,
@@ -252,12 +280,13 @@ export class TestTracing {
     });
   }
 
-  appendAfterActionForStep(callId: string, error?: SerializedError['error'], attachments: Attachment[] = []) {
+  appendAfterActionForStep(callId: string, error?: SerializedError['error'], attachments: Attachment[] = [], annotations?: trace.AfterActionTraceEventAnnotation[]) {
     this._appendTraceEvent({
       type: 'after',
       callId,
       endTime: monotonicTime(),
       attachments: serializeAttachments(attachments),
+      annotations,
       error,
     });
   }
@@ -270,6 +299,8 @@ export class TestTracing {
 }
 
 function serializeAttachments(attachments: Attachment[]): trace.AfterActionTraceEvent['attachments'] {
+  if (attachments.length === 0)
+    return undefined;
   return attachments.filter(a => a.name !== 'trace').map(a => {
     return {
       name: a.name,
@@ -302,6 +333,7 @@ function generatePreview(value: any, visited = new Set<any>()): string {
 }
 
 async function mergeTraceFiles(fileName: string, temporaryTraceFiles: string[]) {
+  temporaryTraceFiles = temporaryTraceFiles.filter(file => fs.existsSync(file));
   if (temporaryTraceFiles.length === 1) {
     await fs.promises.rename(temporaryTraceFiles[0], fileName);
     return;
@@ -327,7 +359,7 @@ async function mergeTraceFiles(fileName: string, temporaryTraceFiles: string[]) 
           // Keep the name for test traces so that the last test trace
           // that contains most of the information is kept in the trace.
           // Note the reverse order of the iteration (from new traces to old).
-        } else if (entry.fileName.match(/[\d-]*trace\./)) {
+        } else if (entry.fileName.match(/trace\.[a-z]*$/)) {
           entryName = i + '-' + entry.fileName;
         }
         if (entryNames.has(entryName)) {

@@ -60,7 +60,9 @@ Example:
     'ff-beta': 'firefox-beta',
     'wk': 'webkit',
   }[args[0].toLowerCase()] ?? args[0].toLowerCase();
-  const descriptors = [browsersJSON.browsers.find(b => b.name === browserName)];
+  const descriptors = browsersJSON.browsers.filter(b =>
+    b.name === browserName || b.name === `${browserName}-headless-shell`
+  );
 
   if (!descriptors.every(d => !!d)) {
     console.log(`Unknown browser "${browserName}"`);
@@ -101,13 +103,14 @@ Example:
     // 5. Generate types.
     console.log('\nGenerating protocol types...');
     const executablePath = registry.findExecutable(browserName).executablePathOrDie();
-    await protocolGenerator.generateProtocol(browserName, executablePath).catch(console.warn);
+    await protocolGenerator.generateProtocol(browserName, executablePath);
 
     // 6. Update docs.
     console.log('\nUpdating documentation...');
     try {
-      process.stdout.write(execSync('npm run --silent doc'));
+      execSync('npm run doc', { stdio: 'inherit' });
     } catch (e) {
+      console.log('npm run doc failed with non-zero exit code. This might have updated generated files.');
     }
   }
   console.log(`\nRolled ${browserName} to ${revision}`);

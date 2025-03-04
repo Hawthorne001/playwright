@@ -350,7 +350,7 @@ it('should be able to send third party cookies via an iframe', async ({ browser,
   }
 });
 
-it('should support requestStorageAccess', async ({ page, server, channel, browserName, isMac, isLinux, isWindows }) => {
+it('should support requestStorageAccess', async ({ page, server, channel, browserName, isMac, isLinux, isWindows, macVersion }) => {
   it.info().annotations.push({ type: 'issue', description: 'https://github.com/microsoft/playwright/issues/17285' });
   it.skip(browserName === 'chromium', 'requestStorageAccess API is not available in Chromium');
   it.skip(channel === 'firefox-beta', 'hasStorageAccess returns true, but no cookie is sent');
@@ -406,7 +406,6 @@ it('should support requestStorageAccess', async ({ page, server, channel, browse
 
 it('should parse cookie with large Max-Age correctly', async ({ server, page, defaultSameSiteCookieValue, browserName, platform }) => {
   it.info().annotations.push({ type: 'issue', description: 'https://github.com/microsoft/playwright/issues/30305' });
-  it.fixme(browserName === 'webkit' && platform === 'linux', 'https://github.com/microsoft/playwright/issues/30305');
 
   server.setRoute('/foobar', (req, res) => {
     res.setHeader('set-cookie', [
