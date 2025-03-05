@@ -107,36 +107,46 @@ for (const browserName of browserNames) {
     console.error(`Using executable at ${executablePath}`);
   const devtools = process.env.DEVTOOLS === '1';
   const testIgnore: RegExp[] = browserNames.filter(b => b !== browserName).map(b => new RegExp(b));
-  for (const folder of ['library', 'page']) {
-    config.projects.push({
-      name: `${browserName}-${folder}`,
-      testDir: path.join(testDir, folder),
-      testIgnore,
-      snapshotPathTemplate: `{testDir}/{testFileDir}/{testFileName}-snapshots/{arg}-${browserName}{ext}`,
-      use: {
-        mode,
-        browserName,
-        headless: !headed,
-        channel,
-        video: video ? 'on' : undefined,
-        launchOptions: {
-          executablePath,
-          devtools
-        },
-        trace: trace ? 'on' : undefined,
+
+  const projectTemplate: typeof config.projects[0] = {
+    testIgnore,
+    snapshotPathTemplate: `{testDir}/{testFileDir}/{testFileName}-snapshots/{arg}-${browserName}{ext}`,
+    use: {
+      mode,
+      browserName,
+      headless: !headed,
+      channel,
+      video: video ? 'on' : undefined,
+      launchOptions: {
+        executablePath,
+        devtools
       },
-      metadata: {
-        platform: process.platform,
-        docker: !!process.env.INSIDE_DOCKER,
-        headful: !!headed,
-        browserName,
-        channel,
-        mode,
-        video: !!video,
-        trace: !!trace,
-      },
-    });
-  }
+      trace: trace ? 'on' : undefined,
+    },
+    metadata: {
+      platform: process.platform,
+      docker: !!process.env.INSIDE_DOCKER,
+      headless: headed ? 'headed' : 'headless',
+      browserName,
+      channel,
+      mode,
+      video: !!video,
+      trace: !!trace,
+      clock: process.env.PW_CLOCK ? 'clock-' + process.env.PW_CLOCK : undefined,
+    }
+  };
+
+  config.projects.push({
+    name: `${browserName}-library`,
+    testDir: path.join(testDir, 'library'),
+    ...projectTemplate,
+  });
+
+  config.projects.push({
+    name: `${browserName}-page`,
+    testDir: path.join(testDir, 'page'),
+    ...projectTemplate,
+  });
 }
 
 export default config;

@@ -5,7 +5,11 @@ title: "Sharding"
 
 ## Introduction
 
-By default, Playwright runs test files in [parallel](./test-parallel.md) and strives for optimal utilization of CPU cores on your machine. In order to achieve even greater parallelisation, you can further scale Playwright test execution by running tests on multiple machines simultaneously. We call this mode of operation "sharding".
+By default, Playwright runs test files in [parallel](./test-parallel.md) and strives for optimal utilization of CPU cores on your machine. In order to achieve even greater parallelisation, you can further scale Playwright test execution by running tests on multiple machines simultaneously. We call this mode of operation "sharding". Sharding in Playwright means splitting your tests into smaller parts called "shards". Each shard is like a separate job that can run independently. The whole purpose is to divide your tests to speed up test runtime.
+
+When you shard your tests, each shard can run on its own, utilizing the available CPU cores. This helps speed up the testing process by doing tasks simultaneously.
+
+In a CI pipeline, each shard can run as a separate job, making use of the hardware resources available in your CI pipeline, like CPU cores, to run tests faster.
 
 ## Sharding tests between multiple machines
 
@@ -18,9 +22,28 @@ npx playwright test --shard=3/4
 npx playwright test --shard=4/4
 ```
 
-Now, if you run these shards in parallel on different computers, your test suite completes four times faster.
+Now, if you run these shards in parallel on different jobs, your test suite completes four times faster.
 
 Note that Playwright can only shard tests that can be run in parallel. By default, this means Playwright will shard test files. Learn about other options in the [parallelism guide](./test-parallel.md).
+
+
+## Balancing Shards
+
+Sharding can be done at two levels of granularity depending on whether you use the [`property: TestProject.fullyParallel`] option or not. This affects how the tests are balanced across the shards.
+
+**Sharding with fullyParallel**
+
+When `fullyParallel: true` is enabled, Playwright Test runs individual tests in parallel across multiple shards, ensuring each shard receives an even distribution of tests. This allows for test-level granularity, meaning each shard will attempt to balance the number of individual tests it runs. This is the preferred mode for ensuring even load distribution when sharding, as Playwright can optimize shard execution based on the total number of tests.
+
+**Sharding without fullyParallel**
+
+Without the fullyParallel setting, Playwright Test defaults to file-level granularity, meaning entire test files are assigned to shards (note that the same file may be assigned to different shards across different projects). In this case, the number of tests per file can greatly influence shard distribution. If your test files are not evenly sized (i.e., some files contain many more tests than others), certain shards may end up running significantly more tests, while others may run fewer or even none.
+
+**Key Takeaways:**
+
+- **With** `fullyParallel: true`: Tests are split at the individual test level, leading to more balanced shard execution.
+- **Without** `fullyParallel`: Tests are split at the file level, so to balance the shards, it's important to keep your test files small and evenly sized.
+- To ensure the most effective use of sharding, especially in CI environments, it is recommended to use `fullyParallel: true` when aiming for balanced distribution across shards. Otherwise, you may need to manually organize your test files to avoid imbalances.
 
 ## Merging reports from multiple shards
 
@@ -81,7 +104,7 @@ jobs:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
       with:
-        node-version: 18
+        node-version: lts/*
     - name: Install dependencies
       run: npm ci
     - name: Install Playwright browsers
@@ -114,7 +137,7 @@ jobs:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
       with:
-        node-version: 18
+        node-version: lts/*
     - name: Install dependencies
       run: npm ci
 

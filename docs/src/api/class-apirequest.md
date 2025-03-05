@@ -12,11 +12,21 @@ see [APIRequestContext].
 
 Creates new instances of [APIRequestContext].
 
+### option: APIRequest.newContext.clientCertificates = %%-context-option-clientCertificates-%%
+* since: 1.46
+
 ### option: APIRequest.newContext.useragent = %%-context-option-useragent-%%
 * since: v1.16
 
 ### option: APIRequest.newContext.extraHTTPHeaders = %%-context-option-extrahttpheaders-%%
 * since: v1.16
+
+### option: APIRequest.newContext.failOnStatusCode
+* since: v1.51
+- `failOnStatusCode` <[boolean]>
+
+Whether to throw on response codes other than 2xx and 3xx. By default response object is returned
+for all status codes.
 
 ### option: APIRequest.newContext.httpCredentials = %%-context-option-httpcredentials-%%
 * since: v1.16
@@ -61,6 +71,7 @@ Methods like [`method: APIRequestContext.get`] take the base URL into considerat
     - `localStorage` <[Array]<[Object]>>
       - `name` <[string]>
       - `value` <[string]>
+    - `indexedDB` ?<[Array]<[unknown]>> indexedDB to set for context
 
 Populates context with given storage state. This option can be used to initialize context with logged-in information
 obtained via [`method: BrowserContext.storageState`] or [`method: APIRequestContext.storageState`]. Either a path to the

@@ -94,10 +94,13 @@ export default defineConfig({
     - `threshold` ?<[float]> an acceptable perceived color difference between the same pixel in compared images, ranging from `0` (strict) and `1` (lax). `"pixelmatch"` comparator computes color difference in [YIQ color space](https://en.wikipedia.org/wiki/YIQ) and defaults `threshold` value to `0.2`.
     - `maxDiffPixels` ?<[int]> an acceptable amount of pixels that could be different, unset by default.
     - `maxDiffPixelRatio` ?<[float]> an acceptable ratio of pixels that are different to the total amount of pixels, between `0` and `1` , unset by default.
-    - `animations` ?<[ScreenshotAnimations]<"allow"|"disabled">> See [`option: animations`] in [`method: Page.screenshot`]. Defaults to `"disabled"`.
-    - `caret` ?<[ScreenshotCaret]<"hide"|"initial">> See [`option: caret`] in [`method: Page.screenshot`]. Defaults to `"hide"`.
-    - `scale` ?<[ScreenshotScale]<"css"|"device">> See [`option: scale`] in [`method: Page.screenshot`]. Defaults to `"css"`.
-    - `stylePath` ?<[string]|[Array]<[string]>> See [`option: style`] in [`method: Page.screenshot`].
+    - `animations` ?<[ScreenshotAnimations]<"allow"|"disabled">> See [`option: Page.screenshot.animations`] in [`method: Page.screenshot`]. Defaults to `"disabled"`.
+    - `caret` ?<[ScreenshotCaret]<"hide"|"initial">> See [`option: Page.screenshot.caret`] in [`method: Page.screenshot`]. Defaults to `"hide"`.
+    - `scale` ?<[ScreenshotScale]<"css"|"device">> See [`option: Page.screenshot.scale`] in [`method: Page.screenshot`]. Defaults to `"css"`.
+    - `stylePath` ?<[string]|[Array]<[string]>> See [`option: Page.screenshot.style`] in [`method: Page.screenshot`].
+    - `pathTemplate` ?<[string]> A template controlling location of the screenshots. See [`property: TestProject.snapshotPathTemplate`] for details.
+  - `toMatchAriaSnapshot` ?<[Object]> Configuration for the [`method: LocatorAssertions.toMatchAriaSnapshot#2`] method.
+    - `pathTemplate` ?<[string]> A template controlling location of the aria snapshots. See [`property: TestProject.snapshotPathTemplate`] for details.
   - `toMatchSnapshot` ?<[Object]> Configuration for the [`method: SnapshotAssertions.toMatchSnapshot#1`] method.
     - `threshold` ?<[float]> an acceptable perceived color difference between the same pixel in compared images, ranging from `0` (strict) and `1` (lax). `"pixelmatch"` comparator computes color difference in [YIQ color space](https://en.wikipedia.org/wiki/YIQ) and defaults `threshold` value to `0.2`.
     - `maxDiffPixels` ?<[int]> an acceptable amount of pixels that could be different, unset by default.
@@ -180,6 +183,10 @@ Metadata that will be put directly to the test report serialized as JSON.
 
 Project name is visible in the report and during test execution.
 
+:::warning
+Playwright executes the configuration file multiple times. Do not dynamically produce non-stable values in your configuration.
+:::
+
 ## property: TestProject.snapshotDir
 * since: v1.10
 - type: ?<[string]>
@@ -227,7 +234,7 @@ Use [`property: TestConfig.repeatEach`] to change this option for all projects.
 * since: v1.45
 - type: ?<[boolean]>
 
-Whether to skip entries from `.gitignore` when searching for test files. By default, if neither [`property: TestConfig.testDir`] nor [`property: TestProject.testDir`] are explicitely specified, Playwright will ignore any test files matching `.gitignore` entries. This option allows to override that behavior.
+Whether to skip entries from `.gitignore` when searching for test files. By default, if neither [`property: TestConfig.testDir`] nor [`property: TestProject.testDir`] are explicitly specified, Playwright will ignore any test files matching `.gitignore` entries. This option allows to override that behavior.
 
 ## property: TestProject.retries
 * since: v1.10

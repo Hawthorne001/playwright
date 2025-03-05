@@ -23,6 +23,7 @@ env:
   # Force terminal colors. @see https://www.npmjs.com/package/colors
   FORCE_COLOR: 1
   ELECTRON_SKIP_BINARY_DOWNLOAD: 1
+  DEBUG_GIT_COMMIT_INFO: 1
 
 jobs:
   test_linux:
@@ -63,7 +64,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04]
+        os: [ubuntu-22.04]
     runs-on: ${{ matrix.os }}
     permissions:
       id-token: write   # This is required for OIDC login (azure/login) to succeed
@@ -165,6 +166,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       PWTEST_BOT_NAME: "vscode-extension"
+      DEBUG_GIT_COMMIT_INFO: ""
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
@@ -215,11 +217,17 @@ jobs:
     - uses: actions/checkout@v4
     - run: npm install -g yarn@1
     - run: npm install -g pnpm@8
+    - name: Setup Ubuntu Binary Installation # TODO: Remove when https://github.com/electron/electron/issues/42510 is fixed
+      if: ${{ runner.os == 'Linux' }}
+      run: |
+        if grep -q "Ubuntu 24" /etc/os-release; then
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+        fi
+      shell: bash
     - uses: ./.github/actions/run-test
       with:
         command: npm run itest
         bot-name: "package-installations-${{ matrix.os }}"
-        # TODO: figure out why itest fails with 'bash' on Windows.
         shell: ${{ matrix.os == 'windows-latest' && 'pwsh' || 'bash' }}
         flakiness-client-id: ${{ secrets.AZURE_FLAKINESS_DASHBOARD_CLIENT_ID }}
         flakiness-tenant-id: ${{ secrets.AZURE_FLAKINESS_DASHBOARD_TENANT_ID }}

@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-import type * as js from '../javascript';
-import type * as channels from '@protocol/channels';
 import { Dispatcher } from './dispatcher';
 import { ElementHandleDispatcher } from './elementHandlerDispatcher';
 import { parseSerializedValue, serializeValue } from '../../protocol/serializers';
-import type { PageDispatcher, WorkerDispatcher } from './pageDispatcher';
+
+import type * as js from '../javascript';
 import type { ElectronApplicationDispatcher } from './electronDispatcher';
 import type { FrameDispatcher } from './frameDispatcher';
+import type { PageDispatcher, WorkerDispatcher } from './pageDispatcher';
 import type { CallMetadata } from '../instrumentation';
+import type * as channels from '@protocol/channels';
 
 export type JSHandleDispatcherParentScope = PageDispatcher | FrameDispatcher | WorkerDispatcher | ElectronApplicationDispatcher;
 
@@ -61,10 +62,6 @@ export class JSHandleDispatcher extends Dispatcher<js.JSHandle, channels.JSHandl
 
   async jsonValue(): Promise<channels.JSHandleJsonValueResult> {
     return { value: serializeResult(await this._object.jsonValue()) };
-  }
-
-  async objectCount(params?: channels.JSHandleObjectCountParams | undefined): Promise<channels.JSHandleObjectCountResult> {
-    return { count: await this._object.objectCount() };
   }
 
   async dispose(_: any, metadata: CallMetadata) {

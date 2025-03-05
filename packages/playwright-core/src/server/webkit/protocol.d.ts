@@ -193,142 +193,6 @@ export module Protocol {
     }
   }
   
-  export module ApplicationCache {
-    /**
-     * Detailed application cache resource information.
-     */
-    export interface ApplicationCacheResource {
-      /**
-       * Resource url.
-       */
-      url: string;
-      /**
-       * Resource size.
-       */
-      size: number;
-      /**
-       * Resource type.
-       */
-      type: string;
-    }
-    /**
-     * Detailed application cache information.
-     */
-    export interface ApplicationCache {
-      /**
-       * Manifest URL.
-       */
-      manifestURL: string;
-      /**
-       * Application cache size.
-       */
-      size: number;
-      /**
-       * Application cache creation time.
-       */
-      creationTime: number;
-      /**
-       * Application cache update time.
-       */
-      updateTime: number;
-      /**
-       * Application cache resources.
-       */
-      resources: ApplicationCacheResource[];
-    }
-    /**
-     * Frame identifier - manifest URL pair.
-     */
-    export interface FrameWithManifest {
-      /**
-       * Frame identifier.
-       */
-      frameId: Network.FrameId;
-      /**
-       * Manifest URL.
-       */
-      manifestURL: string;
-      /**
-       * Application cache status.
-       */
-      status: number;
-    }
-    
-    export type applicationCacheStatusUpdatedPayload = {
-      /**
-       * Identifier of the frame containing document whose application cache updated status.
-       */
-      frameId: Network.FrameId;
-      /**
-       * Manifest URL.
-       */
-      manifestURL: string;
-      /**
-       * Updated application cache status.
-       */
-      status: number;
-    }
-    export type networkStateUpdatedPayload = {
-      isNowOnline: boolean;
-    }
-    
-    /**
-     * Returns array of frame identifiers with manifest urls for each frame containing a document associated with some application cache.
-     */
-    export type getFramesWithManifestsParameters = {
-    }
-    export type getFramesWithManifestsReturnValue = {
-      /**
-       * Array of frame identifiers with manifest urls for each frame containing a document associated with some application cache.
-       */
-      frameIds: FrameWithManifest[];
-    }
-    /**
-     * Enables application cache domain notifications.
-     */
-    export type enableParameters = {
-    }
-    export type enableReturnValue = {
-    }
-    /**
-     * Disable application cache domain notifications.
-     */
-    export type disableParameters = {
-    }
-    export type disableReturnValue = {
-    }
-    /**
-     * Returns manifest URL for document in the given frame.
-     */
-    export type getManifestForFrameParameters = {
-      /**
-       * Identifier of the frame containing document whose manifest is retrieved.
-       */
-      frameId: Network.FrameId;
-    }
-    export type getManifestForFrameReturnValue = {
-      /**
-       * Manifest URL for document in the given frame.
-       */
-      manifestURL: string;
-    }
-    /**
-     * Returns relevant application cache data for the document in given frame.
-     */
-    export type getApplicationCacheForFrameParameters = {
-      /**
-       * Identifier of the frame containing document whose application cache is retrieved.
-       */
-      frameId: Network.FrameId;
-    }
-    export type getApplicationCacheForFrameReturnValue = {
-      /**
-       * Relevant application cache data for the document in given frame.
-       */
-      applicationCache: ApplicationCache;
-    }
-  }
-  
   export module Audit {
     
     
@@ -536,7 +400,7 @@ export module Protocol {
     /**
      * Pseudo-style identifier (see <code>enum PseudoId</code> in <code>RenderStyleConstants.h</code>).
      */
-    export type PseudoId = "first-line"|"first-letter"|"grammar-error"|"highlight"|"marker"|"before"|"after"|"selection"|"backdrop"|"spelling-error"|"view-transition"|"view-transition-group"|"view-transition-image-pair"|"view-transition-old"|"view-transition-new"|"-webkit-scrollbar"|"-webkit-resizer"|"-webkit-scrollbar-thumb"|"-webkit-scrollbar-button"|"-webkit-scrollbar-track"|"-webkit-scrollbar-track-piece"|"-webkit-scrollbar-corner";
+    export type PseudoId = "first-line"|"first-letter"|"grammar-error"|"highlight"|"marker"|"before"|"after"|"selection"|"backdrop"|"spelling-error"|"target-text"|"view-transition"|"view-transition-group"|"view-transition-image-pair"|"view-transition-old"|"view-transition-new"|"-webkit-scrollbar"|"-webkit-resizer"|"-webkit-scrollbar-thumb"|"-webkit-scrollbar-button"|"-webkit-scrollbar-track"|"-webkit-scrollbar-track-piece"|"-webkit-scrollbar-corner";
     /**
      * Pseudo-style identifier (see <code>enum PseudoId</code> in <code>RenderStyleConstants.h</code>).
      */
@@ -2122,6 +1986,10 @@ export module Protocol {
        * Array of <code>DOMNode</code> ids of any children marked as selected.
        */
       selectedChildNodeIds?: NodeId[];
+      /**
+       * On / off state of switch form controls.
+       */
+      switchState?: "off"|"on";
     }
     /**
      * A structure holding an RGBA color.
@@ -3640,81 +3508,6 @@ might return multiple quads for inline nodes.
     }
   }
   
-  export module Database {
-    /**
-     * Unique identifier of Database object.
-     */
-    export type DatabaseId = string;
-    /**
-     * Database object.
-     */
-    export interface Database {
-      /**
-       * Database ID.
-       */
-      id: DatabaseId;
-      /**
-       * Database domain.
-       */
-      domain: string;
-      /**
-       * Database name.
-       */
-      name: string;
-      /**
-       * Database version.
-       */
-      version: string;
-    }
-    /**
-     * Database error.
-     */
-    export interface Error {
-      /**
-       * Error message.
-       */
-      message: string;
-      /**
-       * Error code.
-       */
-      code: number;
-    }
-    
-    export type addDatabasePayload = {
-      database: Database;
-    }
-    
-    /**
-     * Enables database tracking, database events will now be delivered to the client.
-     */
-    export type enableParameters = {
-    }
-    export type enableReturnValue = {
-    }
-    /**
-     * Disables database tracking, prevents database events from being sent to the client.
-     */
-    export type disableParameters = {
-    }
-    export type disableReturnValue = {
-    }
-    export type getDatabaseTableNamesParameters = {
-      databaseId: DatabaseId;
-    }
-    export type getDatabaseTableNamesReturnValue = {
-      tableNames: string[];
-    }
-    export type executeSQLParameters = {
-      databaseId: DatabaseId;
-      query: string;
-    }
-    export type executeSQLReturnValue = {
-      columnNames?: string[];
-      values?: any[];
-      sqlError?: Error;
-    }
-  }
-  
   /**
    * Debugger domain exposes JavaScript debugging capabilities. It allows setting and removing breakpoints, stepping through execution, exploring stack traces, etc.
    */
@@ -4448,19 +4241,23 @@ might return multiple quads for inline nodes.
       savedResultIndex?: number;
     }
     /**
-     * Sets whether the given URL should be in the list of blackboxed scripts, which are ignored when pausing/stepping/debugging.
+     * Sets whether the given URL should be in the list of blackboxed scripts, which are ignored when pausing.
      */
     export type setShouldBlackboxURLParameters = {
       url: string;
       shouldBlackbox: boolean;
       /**
-       * If true, <code>url</code> is case sensitive.
+       * If <code>true</code>, <code>url</code> is case sensitive.
        */
       caseSensitive?: boolean;
       /**
-       * If true, treat <code>url</code> as regular expression.
+       * If <code>true</code>, treat <code>url</code> as regular expression.
        */
       isRegex?: boolean;
+      /**
+       * If provided, limits where in the script the debugger will skip pauses. Expected structure is a repeated <code>[startLine, startColumn, endLine, endColumn]</code>. Ignored if <code>shouldBlackbox</code> is <code>false</code>.
+       */
+      sourceRanges?: number[];
     }
     export type setShouldBlackboxURLReturnValue = {
     }
@@ -5009,6 +4806,23 @@ might return multiple quads for inline nodes.
      * UTC time in seconds, counted from January 1, 1970.
      */
     export type TimeSinceEpoch = number;
+    /**
+     * Touch point.
+     */
+    export interface TouchPoint {
+      /**
+       * X coordinate of the event relative to the main frame's viewport in CSS pixels.
+       */
+      x: number;
+      /**
+       * Y coordinate of the event relative to the main frame's viewport in CSS pixels.
+       */
+      y: number;
+      /**
+       * Identifier used to track touch sources between events, must be unique within an event.
+       */
+      id: number;
+    }
     
     
     /**
@@ -5164,6 +4978,26 @@ the top of the viewport and Y increases as it proceeds towards the bottom of the
       modifiers?: number;
     }
     export type dispatchTapEventReturnValue = {
+    }
+    /**
+     * Dispatches a touch event to the page.
+     */
+    export type dispatchTouchEventParameters = {
+      /**
+       * Type of the touch event.
+       */
+      type: "touchStart"|"touchMove"|"touchEnd"|"touchCancel";
+      /**
+       * Bit field representing pressed modifier keys. Alt=1, Ctrl=2, Meta/Command=4, Shift=8
+(default: 0).
+       */
+      modifiers?: number;
+      /**
+       * List of touch points
+       */
+      touchPoints?: TouchPoint[];
+    }
+    export type dispatchTouchEventReturnValue = {
     }
   }
   
@@ -6465,7 +6299,7 @@ the top of the viewport and Y increases as it proceeds towards the bottom of the
     /**
      * List of settings able to be overridden by WebInspector.
      */
-    export type Setting = "PrivateClickMeasurementDebugModeEnabled"|"AuthorAndUserStylesEnabled"|"ICECandidateFilteringEnabled"|"ITPDebugModeEnabled"|"ImagesEnabled"|"MediaCaptureRequiresSecureConnection"|"MockCaptureDevicesEnabled"|"NeedsSiteSpecificQuirks"|"ScriptEnabled"|"ShowDebugBorders"|"ShowRepaintCounter"|"WebSecurityEnabled"|"DeviceOrientationEventEnabled"|"SpeechRecognitionEnabled"|"PointerLockEnabled"|"NotificationsEnabled"|"FullScreenEnabled"|"InputTypeMonthEnabled"|"InputTypeWeekEnabled";
+    export type Setting = "PrivateClickMeasurementDebugModeEnabled"|"AuthorAndUserStylesEnabled"|"ICECandidateFilteringEnabled"|"ITPDebugModeEnabled"|"ImagesEnabled"|"MediaCaptureRequiresSecureConnection"|"MockCaptureDevicesEnabled"|"NeedsSiteSpecificQuirks"|"ScriptEnabled"|"ShowDebugBorders"|"ShowRepaintCounter"|"WebSecurityEnabled"|"DeviceOrientationEventEnabled"|"SpeechRecognitionEnabled"|"PointerLockEnabled"|"NotificationsEnabled"|"FullScreenEnabled"|"InputTypeMonthEnabled"|"InputTypeWeekEnabled"|"FixedBackgroundsPaintRelativeToDocument";
     /**
      * A user preference that can be overriden by Web Inspector, like an accessibility preference.
      */
@@ -6644,6 +6478,10 @@ the top of the viewport and Y increases as it proceeds towards the bottom of the
        * Cookie Same-Site policy.
        */
       sameSite: CookieSameSitePolicy;
+      /**
+       * Cookie partition key. If null and partitioned property is true, then key must be computed.
+       */
+      partitionKey?: string;
     }
     /**
      * Accessibility Node
@@ -7028,6 +6866,10 @@ the top of the viewport and Y increases as it proceeds towards the bottom of the
      */
     export type setCookieParameters = {
       cookie: Cookie;
+      /**
+       * If true, then cookie's partition key should be set.
+       */
+      shouldPartition?: boolean;
     }
     export type setCookieReturnValue = {
     }
@@ -7727,6 +7569,18 @@ the top of the viewport and Y increases as it proceeds towards the bottom of the
       ignore: boolean;
     }
     export type setIgnoreCertificateErrorsReturnValue = {
+    }
+    /**
+     * Changes page zoom factor.
+     */
+    export type setPageZoomFactorParameters = {
+      /**
+       * Unique identifier of the page proxy.
+       */
+      pageProxyId: PageProxyID;
+      zoomFactor: number;
+    }
+    export type setPageZoomFactorReturnValue = {
     }
     /**
      * Returns all cookies in the given browser context.
@@ -9220,8 +9074,6 @@ the top of the viewport and Y increases as it proceeds towards the bottom of the
     "Animation.trackingStart": Animation.trackingStartPayload;
     "Animation.trackingUpdate": Animation.trackingUpdatePayload;
     "Animation.trackingComplete": Animation.trackingCompletePayload;
-    "ApplicationCache.applicationCacheStatusUpdated": ApplicationCache.applicationCacheStatusUpdatedPayload;
-    "ApplicationCache.networkStateUpdated": ApplicationCache.networkStateUpdatedPayload;
     "Browser.extensionsEnabled": Browser.extensionsEnabledPayload;
     "Browser.extensionsDisabled": Browser.extensionsDisabledPayload;
     "CPUProfiler.trackingStart": CPUProfiler.trackingStartPayload;
@@ -9271,7 +9123,6 @@ the top of the viewport and Y increases as it proceeds towards the bottom of the
     "DOMStorage.domStorageItemRemoved": DOMStorage.domStorageItemRemovedPayload;
     "DOMStorage.domStorageItemAdded": DOMStorage.domStorageItemAddedPayload;
     "DOMStorage.domStorageItemUpdated": DOMStorage.domStorageItemUpdatedPayload;
-    "Database.addDatabase": Database.addDatabasePayload;
     "Debugger.globalObjectCleared": Debugger.globalObjectClearedPayload;
     "Debugger.scriptParsed": Debugger.scriptParsedPayload;
     "Debugger.scriptFailedToParse": Debugger.scriptFailedToParsePayload;
@@ -9353,11 +9204,6 @@ the top of the viewport and Y increases as it proceeds towards the bottom of the
     "Animation.resolveAnimation": Animation.resolveAnimationParameters;
     "Animation.startTracking": Animation.startTrackingParameters;
     "Animation.stopTracking": Animation.stopTrackingParameters;
-    "ApplicationCache.getFramesWithManifests": ApplicationCache.getFramesWithManifestsParameters;
-    "ApplicationCache.enable": ApplicationCache.enableParameters;
-    "ApplicationCache.disable": ApplicationCache.disableParameters;
-    "ApplicationCache.getManifestForFrame": ApplicationCache.getManifestForFrameParameters;
-    "ApplicationCache.getApplicationCacheForFrame": ApplicationCache.getApplicationCacheForFrameParameters;
     "Audit.setup": Audit.setupParameters;
     "Audit.run": Audit.runParameters;
     "Audit.teardown": Audit.teardownParameters;
@@ -9467,10 +9313,6 @@ the top of the viewport and Y increases as it proceeds towards the bottom of the
     "DOMStorage.setDOMStorageItem": DOMStorage.setDOMStorageItemParameters;
     "DOMStorage.removeDOMStorageItem": DOMStorage.removeDOMStorageItemParameters;
     "DOMStorage.clearDOMStorageItems": DOMStorage.clearDOMStorageItemsParameters;
-    "Database.enable": Database.enableParameters;
-    "Database.disable": Database.disableParameters;
-    "Database.getDatabaseTableNames": Database.getDatabaseTableNamesParameters;
-    "Database.executeSQL": Database.executeSQLParameters;
     "Debugger.enable": Debugger.enableParameters;
     "Debugger.disable": Debugger.disableParameters;
     "Debugger.setAsyncStackTraceDepth": Debugger.setAsyncStackTraceDepthParameters;
@@ -9528,6 +9370,7 @@ the top of the viewport and Y increases as it proceeds towards the bottom of the
     "Input.dispatchMouseEvent": Input.dispatchMouseEventParameters;
     "Input.dispatchWheelEvent": Input.dispatchWheelEventParameters;
     "Input.dispatchTapEvent": Input.dispatchTapEventParameters;
+    "Input.dispatchTouchEvent": Input.dispatchTouchEventParameters;
     "Inspector.enable": Inspector.enableParameters;
     "Inspector.disable": Inspector.disableParameters;
     "Inspector.initialized": Inspector.initializedParameters;
@@ -9604,6 +9447,7 @@ the top of the viewport and Y increases as it proceeds towards the bottom of the
     "Playwright.grantFileReadAccess": Playwright.grantFileReadAccessParameters;
     "Playwright.takePageScreenshot": Playwright.takePageScreenshotParameters;
     "Playwright.setIgnoreCertificateErrors": Playwright.setIgnoreCertificateErrorsParameters;
+    "Playwright.setPageZoomFactor": Playwright.setPageZoomFactorParameters;
     "Playwright.getAllCookies": Playwright.getAllCookiesParameters;
     "Playwright.setCookies": Playwright.setCookiesParameters;
     "Playwright.deleteAllCookies": Playwright.deleteAllCookiesParameters;
@@ -9664,11 +9508,6 @@ the top of the viewport and Y increases as it proceeds towards the bottom of the
     "Animation.resolveAnimation": Animation.resolveAnimationReturnValue;
     "Animation.startTracking": Animation.startTrackingReturnValue;
     "Animation.stopTracking": Animation.stopTrackingReturnValue;
-    "ApplicationCache.getFramesWithManifests": ApplicationCache.getFramesWithManifestsReturnValue;
-    "ApplicationCache.enable": ApplicationCache.enableReturnValue;
-    "ApplicationCache.disable": ApplicationCache.disableReturnValue;
-    "ApplicationCache.getManifestForFrame": ApplicationCache.getManifestForFrameReturnValue;
-    "ApplicationCache.getApplicationCacheForFrame": ApplicationCache.getApplicationCacheForFrameReturnValue;
     "Audit.setup": Audit.setupReturnValue;
     "Audit.run": Audit.runReturnValue;
     "Audit.teardown": Audit.teardownReturnValue;
@@ -9778,10 +9617,6 @@ the top of the viewport and Y increases as it proceeds towards the bottom of the
     "DOMStorage.setDOMStorageItem": DOMStorage.setDOMStorageItemReturnValue;
     "DOMStorage.removeDOMStorageItem": DOMStorage.removeDOMStorageItemReturnValue;
     "DOMStorage.clearDOMStorageItems": DOMStorage.clearDOMStorageItemsReturnValue;
-    "Database.enable": Database.enableReturnValue;
-    "Database.disable": Database.disableReturnValue;
-    "Database.getDatabaseTableNames": Database.getDatabaseTableNamesReturnValue;
-    "Database.executeSQL": Database.executeSQLReturnValue;
     "Debugger.enable": Debugger.enableReturnValue;
     "Debugger.disable": Debugger.disableReturnValue;
     "Debugger.setAsyncStackTraceDepth": Debugger.setAsyncStackTraceDepthReturnValue;
@@ -9839,6 +9674,7 @@ the top of the viewport and Y increases as it proceeds towards the bottom of the
     "Input.dispatchMouseEvent": Input.dispatchMouseEventReturnValue;
     "Input.dispatchWheelEvent": Input.dispatchWheelEventReturnValue;
     "Input.dispatchTapEvent": Input.dispatchTapEventReturnValue;
+    "Input.dispatchTouchEvent": Input.dispatchTouchEventReturnValue;
     "Inspector.enable": Inspector.enableReturnValue;
     "Inspector.disable": Inspector.disableReturnValue;
     "Inspector.initialized": Inspector.initializedReturnValue;
@@ -9915,6 +9751,7 @@ the top of the viewport and Y increases as it proceeds towards the bottom of the
     "Playwright.grantFileReadAccess": Playwright.grantFileReadAccessReturnValue;
     "Playwright.takePageScreenshot": Playwright.takePageScreenshotReturnValue;
     "Playwright.setIgnoreCertificateErrors": Playwright.setIgnoreCertificateErrorsReturnValue;
+    "Playwright.setPageZoomFactor": Playwright.setPageZoomFactorReturnValue;
     "Playwright.getAllCookies": Playwright.getAllCookiesReturnValue;
     "Playwright.setCookies": Playwright.setCookiesReturnValue;
     "Playwright.deleteAllCookies": Playwright.deleteAllCookiesReturnValue;

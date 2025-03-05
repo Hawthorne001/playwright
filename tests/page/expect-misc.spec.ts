@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { stripVTControlCharacters } from 'node:util';
 import { stripAnsi } from '../config/utils';
 import { test, expect } from './pageTest';
 
@@ -240,10 +241,45 @@ test.describe('toHaveURL', () => {
     await expect(page).toHaveURL('data:text/html,<div>A</div>');
   });
 
-  test('fail', async ({ page }) => {
-    await page.goto('data:text/html,<div>B</div>');
+  test('fail string', async ({ page }) => {
+    await page.goto('data:text/html,<div>A</div>');
     const error = await expect(page).toHaveURL('wrong', { timeout: 1000 }).catch(e => e);
-    expect(error.message).toContain('expect.toHaveURL with timeout 1000ms');
+    expect(stripVTControlCharacters(error.message)).toContain('Timed out 1000ms waiting for expect(locator).toHaveURL(expected)');
+    expect(stripVTControlCharacters(error.message)).toContain('Expected string: "wrong"\nReceived string: "data:text/html,<div>A</div>"');
+  });
+
+  test('fail with invalid argument', async ({ page }) => {
+    await page.goto('data:text/html,<div>A</div>');
+    // @ts-expect-error
+    const error = await expect(page).toHaveURL({}).catch(e => e);
+    expect(stripVTControlCharacters(error.message)).toContain(`expect(locator(':root')).toHaveURL([object Object])`);
+    expect(stripVTControlCharacters(error.message)).toContain('Expected has type:  object\nExpected has value: {}');
+  });
+
+  test('fail with positive predicate', async ({ page }) => {
+    await page.goto('data:text/html,<div>A</div>');
+    const error = await expect(page).toHaveURL(_url => false).catch(e => e);
+    expect(stripVTControlCharacters(error.message)).toContain('expect(page).toHaveURL(expected)');
+    expect(stripVTControlCharacters(error.message)).toContain('Expected predicate to succeed\nReceived string: "data:text/html,<div>A</div>"');
+  });
+
+  test('fail with negative predicate', async ({ page }) => {
+    await page.goto('data:text/html,<div>A</div>');
+    const error = await expect(page).not.toHaveURL(_url => true).catch(e => e);
+    expect(stripVTControlCharacters(error.message)).toContain('expect(page).not.toHaveURL(expected)');
+    expect(stripVTControlCharacters(error.message)).toContain('Expected predicate to fail\nReceived string: "data:text/html,<div>A</div>"');
+  });
+
+  test('resolve predicate on initial call', async ({ page }) => {
+    await page.goto('data:text/html,<div>A</div>');
+    await expect(page).toHaveURL(url => url.href === 'data:text/html,<div>A</div>', { timeout: 1000 });
+  });
+
+  test('resolve predicate after retries', async ({ page }) => {
+    await page.goto('data:text/html,<div>A</div>');
+    const expectPromise = expect(page).toHaveURL(url => url.href === 'data:text/html,<div>B</div>', { timeout: 1000 });
+    setTimeout(() => page.goto('data:text/html,<div>B</div>'), 500);
+    await expectPromise;
   });
 
   test('support ignoreCase', async ({ page }) => {
@@ -349,7 +385,8 @@ test.describe('toBeInViewport', () => {
   });
 
   test('should respect ratio option', async ({ page, isAndroid }) => {
-    test.fixme(isAndroid, 'fails due an upstream bug in Chrome, updating Chrome will fix it.');
+    test.fixme(isAndroid, 'ratio 0.24 is not in viewport for unknown reason');
+
     await page.setContent(`
       <style>body, div, html { padding: 0; margin: 0; }</style>
       <div id=big style="height: 400vh;"></div>
@@ -430,6 +467,9 @@ test('toHaveAccessibleName', async ({ page }) => {
   await expect(page.locator('div')).toHaveAccessibleName(/ell\w/);
   await expect(page.locator('div')).not.toHaveAccessibleName(/hello/);
   await expect(page.locator('div')).toHaveAccessibleName(/hello/, { ignoreCase: true });
+
+  await page.setContent(`<button>foo&nbsp;bar\nbaz</button>`);
+  await expect(page.locator('button')).toHaveAccessibleName('foo bar baz');
 });
 
 test('toHaveAccessibleDescription', async ({ page }) => {
@@ -442,7 +482,143 @@ test('toHaveAccessibleDescription', async ({ page }) => {
   await expect(page.locator('div')).toHaveAccessibleDescription(/ell\w/);
   await expect(page.locator('div')).not.toHaveAccessibleDescription(/hello/);
   await expect(page.locator('div')).toHaveAccessibleDescription(/hello/, { ignoreCase: true });
+
+  await page.setContent(`
+    <div role="button" aria-describedby="desc"></div>
+    <span id="desc">foo&nbsp;bar\nbaz</span>
+  `);
+  await expect(page.locator('div')).toHaveAccessibleDescription('foo bar baz');
 });
+
+test('toHaveAccessibleErrorMessage', async ({ page }) => {
+  await page.setContent(`
+    <form>
+      <input role="textbox" aria-invalid="true" aria-errormessage="error-message" />
+      <div id="error-message">Hello</div>
+      <div id="irrelevant-error">This should not be considered.</div>
+    </form>
+  `);
+
+  const locator = page.locator('input[role="textbox"]');
+  await expect(locator).toHaveAccessibleErrorMessage('Hello');
+  await expect(locator).not.toHaveAccessibleErrorMessage('hello');
+  await expect(locator).toHaveAccessibleErrorMessage('hello', { ignoreCase: true });
+  await expect(locator).toHaveAccessibleErrorMessage(/ell\w/);
+  await expect(locator).not.toHaveAccessibleErrorMessage(/hello/);
+  await expect(locator).toHaveAccessibleErrorMessage(/hello/, { ignoreCase: true });
+  await expect(locator).not.toHaveAccessibleErrorMessage('This should not be considered.');
+});
+
+test('toHaveAccessibleErrorMessage should handle multiple aria-errormessage references', async ({ page }) => {
+  await page.setContent(`
+    <form>
+      <input role="textbox" aria-invalid="true" aria-errormessage="error1 error2" />
+      <div id="error1">First error message.</div>
+      <div id="error2">Second error message.</div>
+      <div id="irrelevant-error">This should not be considered.</div>
+    </form>
+  `);
+
+  const locator = page.locator('input[role="textbox"]');
+
+  await expect(locator).toHaveAccessibleErrorMessage('First error message. Second error message.');
+  await expect(locator).toHaveAccessibleErrorMessage(/first error message./i);
+  await expect(locator).toHaveAccessibleErrorMessage(/second error message./i);
+  await expect(locator).not.toHaveAccessibleErrorMessage(/This should not be considered./i);
+});
+
+test.describe('toHaveAccessibleErrorMessage should handle aria-invalid attribute', () => {
+  const errorMessageText = 'Error message';
+
+  async function setupPage(page, ariaInvalidValue: string | null) {
+    const ariaInvalidAttr = ariaInvalidValue === null ? '' : `aria-invalid="${ariaInvalidValue}"`;
+    await page.setContent(`
+        <form>
+          <input id="node" role="textbox" ${ariaInvalidAttr} aria-errormessage="error-msg" />
+          <div id="error-msg">${errorMessageText}</div>
+        </form>
+      `);
+    return page.locator('#node');
+  }
+
+  test.describe('evaluated in false', () => {
+    test('no aria-invalid attribute', async ({ page }) => {
+      const locator = await setupPage(page, null);
+      await expect(locator).not.toHaveAccessibleErrorMessage(errorMessageText);
+    });
+    test('aria-invalid="false"', async ({ page }) => {
+      const locator = await setupPage(page, 'false');
+      await expect(locator).not.toHaveAccessibleErrorMessage(errorMessageText);
+    });
+    test('aria-invalid="" (empty string)', async ({ page }) => {
+      const locator = await setupPage(page, '');
+      await expect(locator).not.toHaveAccessibleErrorMessage(errorMessageText);
+    });
+  });
+  test.describe('evaluated in true', () => {
+    test('aria-invalid="true"', async ({ page }) => {
+      const locator = await setupPage(page, 'true');
+      await expect(locator).toHaveAccessibleErrorMessage(errorMessageText);
+    });
+    test('aria-invalid="foo" (unrecognized value)', async ({ page }) => {
+      const locator = await setupPage(page, 'foo');
+      await expect(locator).toHaveAccessibleErrorMessage(errorMessageText);
+    });
+  });
+});
+
+test.describe('toHaveAccessibleErrorMessage should handle validity state with aria-invalid', () => {
+  const errorMessageText = 'Error message';
+
+  test('should show error message when validity is false and aria-invalid is true', async ({ page }) => {
+    await page.setContent(`
+      <form>
+        <input id="node" role="textbox" type="number" min="1" max="100" aria-invalid="true" aria-errormessage="error-msg" />
+        <div id="error-msg">${errorMessageText}</div>
+      </form>
+    `);
+    const locator = page.locator('#node');
+    await locator.fill('101');
+    await expect(locator).toHaveAccessibleErrorMessage(errorMessageText);
+  });
+
+  test('should show error message when validity is true and aria-invalid is true', async ({ page }) => {
+    await page.setContent(`
+      <form>
+        <input id="node" role="textbox" type="number" min="1" max="100" aria-invalid="true" aria-errormessage="error-msg" />
+        <div id="error-msg">${errorMessageText}</div>
+      </form>
+    `);
+    const locator = page.locator('#node');
+    await locator.fill('99');
+    await expect(locator).toHaveAccessibleErrorMessage(errorMessageText);
+  });
+
+  test('should show error message when validity is false and aria-invalid is false', async ({ page }) => {
+    await page.setContent(`
+      <form>
+        <input id="node" role="textbox" type="number" min="1" max="100" aria-invalid="false" aria-errormessage="error-msg" />
+        <div id="error-msg">${errorMessageText}</div>
+      </form>
+    `);
+    const locator = page.locator('#node');
+    await locator.fill('101');
+    await expect(locator).toHaveAccessibleErrorMessage(errorMessageText);
+  });
+
+  test('should not show error message when validity is true and aria-invalid is false', async ({ page }) => {
+    await page.setContent(`
+      <form>
+        <input id="node" role="textbox" type="number" min="1" max="100" aria-invalid="false" aria-errormessage="error-msg" />
+        <div id="error-msg">${errorMessageText}</div>
+      </form>
+    `);
+    const locator = page.locator('#node');
+    await locator.fill('99');
+    await expect(locator).not.toHaveAccessibleErrorMessage(errorMessageText);
+  });
+});
+
 
 test('toHaveRole', async ({ page }) => {
   await page.setContent(`<div role="button">Button!</div>`);
